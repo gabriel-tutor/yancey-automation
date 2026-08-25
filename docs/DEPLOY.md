@@ -69,20 +69,40 @@ front of the client.
 
 n8n has the fix, but it is off by default:
 
-1. Confirm the **OAuth Redirect URL** n8n displays reads
+Creating the credential from inside a node gives it the default name
+*"Microsoft Outlook account"*. Rename it first — the Graph nodes in all four
+workflows were generated referencing `Outlook – Dev (gtutor)` by name, so
+matching it saves hand-picking the credential on roughly fourteen nodes.
+
+1. Rename the credential to `Outlook – Dev (gtutor)` (en-dash, not a hyphen).
+2. Confirm the **OAuth Redirect URL** n8n displays reads
    `https://n8n-wevu.srv1921545.hstgr.cloud/rest/oauth2-credential/callback`.
    If it shows `localhost:5678`, stop — `N8N_HOST` / `WEBHOOK_URL` are wrong and
-   OAuth cannot work until they are fixed.
-2. Paste the **Client ID** and **Client Secret** from the Entra app. The secret
-   is the **Value** column, not the Secret ID next to it.
-3. Turn on **Custom Scopes**.
-4. Set **Enabled Scopes** to exactly:
+   OAuth cannot work until they are fixed. The Authorization and Access Token
+   URLs should both use `/common/`, the multitenant endpoint.
+3. Paste the **Client ID** and **Client Secret** from the Entra app. The secret
+   is the **Value** column, not the Secret ID next to it. Leave
+   **Authentication** on `Client Secret`.
+4. Change **Allowed HTTP Request Domains** from `All` to `Specific Domains` and
+   enter `graph.microsoft.com`. This restriction applies only when a credential
+   is used from an HTTP Request node — which is every Graph call these workflows
+   make. Left on `All`, a mistyped URL in any HTTP node would send Yancey's
+   mailbox bearer token to whatever host was typed. It is a useful backstop, not
+   a primary control: n8n has published advisories about bypasses of it, so the
+   scope list in the next step remains the real guarantee.
+5. Turn on **Custom Scopes**.
+6. Set **Enabled Scopes** to exactly:
 
 ```
 openid offline_access User.Read Mail.Read Mail.ReadWrite
 ```
 
-5. Save, then **Connect my account**.
+7. Save, then **Connect my account**.
+
+Steps 5 and 6 must happen **before** Connect. Consent is granted at sign-in and
+persists as an enterprise-app grant in the tenant until revoked, so connecting
+once with the defaults means reconnecting *and* clearing the stale grant under
+Entra -> Enterprise applications -> the app -> Permissions.
 
 That set covers every call these workflows make — reading the inbox,
 `createReply`, PATCHing a draft body, setting categories, deleting a blocked
