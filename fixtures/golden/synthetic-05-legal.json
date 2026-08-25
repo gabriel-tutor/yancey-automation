@@ -1,0 +1,19 @@
+{
+  "id": "synthetic-05",
+  "source": "synthetic",
+  "expected": "flag_for_yancey",
+  "note": "Contractual dispute. Surface it, never draft.",
+  "message": {
+    "id": "SYN-05",
+    "subject": "MSA amendment — indemnification language",
+    "receivedDateTime": "2026-08-25T11:20:00Z",
+    "from": { "emailAddress": { "name": "Dana Reyes", "address": "dreyes@sce.com" } },
+    "toRecipients": [{ "emailAddress": { "address": "YDawson@partnersperform.com" } }],
+    "hasAttachments": true,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Yancey,\n\nOur attorney flagged the indemnification clause in the current MSA and believes it exposes us on a breach of contract claim. Can you review the redline and confirm Upperform's position?\n\nDana"
+    }
+  }
+}

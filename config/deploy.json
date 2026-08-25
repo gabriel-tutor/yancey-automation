@@ -1,0 +1,15 @@
+{
+  "projectId": "iQ01JuNC6TRAqIDj",
+  "contextFilePath": "/data/context/business-profile.md",
+  "dataTables": {
+    "emailLog": "zGcPKOA90SMVEenJ",
+    "errorLog": "Q6j7VEadubVstttP"
+  },
+  "workflows": {
+    "wfA": "dSGzw1yk46JTHD3Z",
+    "wfB": "Rjpk5KuPopQCpCQL",
+    "wfC": "vCbgJoNqfuVOqWGH",
+    "wfE": "XSKk6eHTFGqftrUM"
+  },
+  "n8nBaseUrl": "https://n8n-wevu.srv1921545.hstgr.cloud"
+}

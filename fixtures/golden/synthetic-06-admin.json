@@ -1,0 +1,19 @@
+{
+  "id": "synthetic-06",
+  "source": "synthetic",
+  "expected": "admin",
+  "note": "Scheduling logistics. A one-line reply is enough.",
+  "message": {
+    "id": "SYN-06",
+    "subject": "Momentum Room — moving to Thursday 2pm?",
+    "receivedDateTime": "2026-08-25T13:05:00Z",
+    "from": { "emailAddress": { "name": "Kathleen Dunlap", "address": "kdunlap@partnersperform.com" } },
+    "toRecipients": [{ "emailAddress": { "address": "YDawson@partnersperform.com" } }],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Yancey — SCE asked to shift the Momentum Room to Thursday at 2pm Central. Does that still work for you? I'll send the Teams invite once you confirm.\n\nKathleen"
+    }
+  }
+}

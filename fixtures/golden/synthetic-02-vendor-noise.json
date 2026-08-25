@@ -1,0 +1,19 @@
+{
+  "id": "synthetic-02",
+  "source": "synthetic",
+  "expected": "noise",
+  "note": "Channel-sales outreach. Yancey labelled this pattern JUNK.",
+  "message": {
+    "id": "SYN-02",
+    "subject": "Quick question about your retirement plan offering",
+    "receivedDateTime": "2026-08-24T09:12:00Z",
+    "from": { "emailAddress": { "name": "Brandon Case", "address": "bcase@paychex-partners.example.com" } },
+    "toRecipients": [{ "emailAddress": { "address": "YDawson@partnersperform.com" } }],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Hi Yancey,\n\nI work with firms your size on 401(k) and retirement benefits. Do you have 15 minutes this week or next to see whether we could reduce your plan costs?\n\nBest,\nBrandon"
+    }
+  }
+}

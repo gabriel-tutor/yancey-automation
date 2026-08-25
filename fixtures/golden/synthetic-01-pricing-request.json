@@ -1,0 +1,20 @@
+{
+  "id": "synthetic-01",
+  "source": "synthetic",
+  "expected": "flag_for_yancey",
+  "gate": "pricing",
+  "note": "Spec Gate 3. A new-work request that asks for a number Yancey has not given.",
+  "message": {
+    "id": "SYN-01",
+    "subject": "ILI program scoping",
+    "receivedDateTime": "2026-08-24T14:03:00Z",
+    "from": { "emailAddress": { "name": "Kris Murray", "address": "kris.murray@nisource.com" } },
+    "toRecipients": [{ "emailAddress": { "address": "YDawson@partnersperform.com" } }],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Yancey,\n\nWe are looking at extending the pigging and ILI work into the northern district next year. Is this possible, and can you provide an estimate of timeline and cost?\n\nThanks,\nKris"
+    }
+  }
+}

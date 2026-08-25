@@ -1,0 +1,16 @@
+{
+  "id": "synthetic-04",
+  "source": "synthetic",
+  "expected": "noise",
+  "note": "Courtesy acknowledgement closing a thread. Must not generate a draft.",
+  "message": {
+    "id": "SYN-04",
+    "subject": "RE: Pulse dashboard walkthrough",
+    "receivedDateTime": "2026-08-24T18:02:00Z",
+    "from": { "emailAddress": { "name": "Ashley Hall", "address": "ashley.hall@nisource.com" } },
+    "toRecipients": [{ "emailAddress": { "address": "YDawson@partnersperform.com" } }],
+    "hasAttachments": false,
+    "categories": [],
+    "body": { "contentType": "text", "content": "Received! Thank you!\n\nAshley" }
+  }
+}
