@@ -37,18 +37,79 @@ will be missing and classification quality drops.
 
 ## 2. Create the three credentials
 
-In n8n → **Credentials** → New. Names matter: the nodes already reference them.
+In n8n -> **Credentials** -> New. Names matter: the nodes already reference them
+by name, and the dash in the Outlook names is an en-dash (–), not a hyphen.
 
-| Name | Type | Notes |
-|---|---|---|
-| `Outlook – Dev (gtutor)` | Microsoft Outlook OAuth2 API | Client ID/Secret from the Entra app. Check the displayed **OAuth Redirect URL** reads `https://n8n-wevu.srv1921545.hstgr.cloud/rest/oauth2-credential/callback` before connecting. |
-| `OpenAI – Upperform` | OpenAI | Key from Yancey's platform.openai.com account. |
-| `SMTP – Digest Sender` | SMTP | The dedicated `agent@` sender. **Not** Yancey's mailbox — a separate sender is what keeps the no-send invariant true. |
+| Name | Type |
+|---|---|
+| `Outlook – Dev (gtutor)` | Microsoft Outlook OAuth2 API |
+| `OpenAI – Upperform` | OpenAI |
+| `SMTP – Digest Sender` | SMTP |
 
-Before connecting Outlook, confirm the Entra app's **Supported account types**
-is "Accounts in any organizational directory and personal Microsoft accounts".
-The single-tenant default fails with AADSTS50194 and is the single most common
-way this step goes wrong.
+The SMTP sender must be the dedicated `agent@` mailbox, **not** Yancey's. A
+separate sender is what lets the Graph app stay read-and-draft only.
+
+### 2a. The Outlook credential — the scope trap
+
+**Read this before clicking Connect.** n8n's Microsoft Outlook credential ships
+with a hidden default scope string:
+
+```
+openid offline_access Contacts.Read Contacts.ReadWrite Calendars.Read
+Calendars.Read.Shared Calendars.ReadWrite Mail.ReadWrite Mail.ReadWrite.Shared
+Mail.Send Mail.Send.Shared MailboxSettings.Read
+```
+
+`Mail.Send` and `Mail.Send.Shared` are in there. The Entra app uses dynamic
+consent — the scopes requested at sign-in are the scopes granted, regardless of
+what the app registration lists. Accept the defaults and Yancey's permission
+screen will say **"Send mail as you"**, which is precisely the thing you will be
+narrating as *not* on the list. It breaks the project's core promise, live, in
+front of the client.
+
+n8n has the fix, but it is off by default:
+
+1. Confirm the **OAuth Redirect URL** n8n displays reads
+   `https://n8n-wevu.srv1921545.hstgr.cloud/rest/oauth2-credential/callback`.
+   If it shows `localhost:5678`, stop — `N8N_HOST` / `WEBHOOK_URL` are wrong and
+   OAuth cannot work until they are fixed.
+2. Paste the **Client ID** and **Client Secret** from the Entra app. The secret
+   is the **Value** column, not the Secret ID next to it.
+3. Turn on **Custom Scopes**.
+4. Set **Enabled Scopes** to exactly:
+
+```
+openid offline_access User.Read Mail.Read Mail.ReadWrite
+```
+
+5. Save, then **Connect my account**.
+
+That set covers every call these workflows make — reading the inbox,
+`createReply`, PATCHing a draft body, setting categories, deleting a blocked
+draft, listing the Drafts folder — and nothing else. `Mail.ReadWrite` grants
+draft creation but not sending. This credential type defines no test request, so
+trimming the scopes will not cause a spurious connection failure.
+
+**What the consent screen should show:** read and write access to mail, sign-in,
+and "maintain access to data you have given it access to" (`offline_access`).
+No send. Screenshot it — the handover doc wants it as evidence.
+
+Also verify on the Entra side before connecting:
+
+- **Supported account types** = "Accounts in any organizational directory and
+  personal Microsoft accounts". The single-tenant default fails with
+  `AADSTS50194`. Fix under Authentication, or `signInAudience` in the Manifest.
+- **Authentication -> Web -> Redirect URIs** contains the callback URL above
+  exactly: https, no trailing slash, no stray whitespace.
+
+If your n8n build has no **Custom Scopes** toggle, do not proceed with the
+defaults. The fallback is a Generic OAuth2 credential with the scope string
+above, which also means switching the Graph HTTP nodes from
+`predefinedCredentialType` to `genericCredentialType`.
+
+At go-live this is repeated as `Outlook – Production (Yancey)` — same client ID
+and secret, same custom scopes, connected from Yancey's browser on his own
+machine. Then swap the credential on the nodes in WF-A, WF-B and WF-C.
 
 ## 3. Attach the credentials to the nodes
 
@@ -94,6 +155,9 @@ the whole UI — the coloured flags are what he sees on day one.
 
 Graph will accept a category name that does not exist yet, but it will not show
 a colour until the category is defined in the mailbox.
+
+Do this by hand. Creating categories through Graph would need
+`MailboxSettings.ReadWrite`, which step 2a deliberately leaves out.
 
 ## 7. Run Gate 1 before pointing anything at a real inbox
 
