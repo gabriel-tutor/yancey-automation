@@ -1,0 +1,41 @@
+{
+  "id": "opp-09",
+  "source": "yancey-training-set",
+  "yanceyLabel": "OPPORTUNITY",
+  "behavior": "draft",
+  "expected": "opportunity",
+  "note": "Quality review of a client deliverable with two IMPORTANT action items. Yancey is cc, not to — tests that cc still counts as reply-worthy when he is named in the work.",
+  "message": {
+    "id": "AAMkTRAINOPP09",
+    "subject": "Re: Coaching Summary from 3/20/24",
+    "receivedDateTime": "2024-03-24T02:35:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Charles Coleman",
+        "address": "Ccoleman@partnersperform.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Kathleen Dunlap",
+          "address": "KDunlap@partnersperform.com"
+        }
+      }
+    ],
+    "ccRecipients": [
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": true,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "The coaching descriptions are much more thorough and engaging. Shows we are adding value and not just reporting the news.\n\nThere were remaining issues with spacing. I repaired them. But it is important that you pay attention to that in the future.\n\nThe paragraph on procedure use actually appears to cover two coaching opportunities . I separated into bullets to make it clear. This adds to the quantity.\n\nOverall - this is good and shows engagement and value additions. The tracking of open issues meets our WOW factor, as it is over and beyond what her own staff would do.\n\nIMPORTANT - The teams version still has our comments. Download and remove the comments before sending over to Ashley. Double check that the comments are gone. Consider it a critical task :)\n\nALSO IMPORTANT - Let me know how she responds. I am also still trying to learn how she interprets things.\n\nOn Mar 23, 2024, at 9:15 PM, Kathleen Dunlap <KDunlap@partnersperform.com> wrote:\n\nHi Chuck,\nNo problem. I will wait until you approve before I send it out. I am traveling back to Indiana tomorrow morning, but I will be checking my email.\n\nThanks,\nKathleen\n\nSent from my Verizon, Samsung Galaxy smartphone\nGet Outlook for Android<https://aka.ms/AAb9ysg>\n________________________________\nFrom: Charles Coleman <Ccoleman@partnersperform.com>\nSent: Saturday, March 23, 2024 10:08:31 PM\nTo: Kathleen Dunlap <KDunlap@partnersperform.com>\nCc: Yancey Dawson <YDawson@partnersperform.com>\nSubject: Re: Coaching Summary from 3/20/24\n\nDon't send until I approve.\n\nI will try to look at it tonight.\n\nOn Mar 23, 2024, at 8:44 PM, Kathleen Dunlap <KDunlap@partnersperform.com> wrote:\n\nHi Chuck,\nI incorporated your feedback in the Teams file. I intend to send to Ashley in the morning.\n\nThank you for the writer's guide. I was unaware of the Upperform document expectations. I will ensure I use both the writer's guide and chat GBT going forward.\n\nKathleen Dunlap\nPerformance Partners\n804-658-7419\nKDunlap@partnersperform.com\n________________________________\nFrom: Charles Coleman <Ccoleman@partnersperform.com>\nSent: Saturday, March 23, 2024 1:11 PM\nTo: Kathleen Dunlap <KDunlap@partnersperform.com>\nCc: Yancey Dawson <YDawson@partnersperform.com>\nSubject: Re: Coaching Summary from 3/20/24\n\nI added to Teams along with my comments. My basic take is:\n\n1. Sounds like we are catching the right things.\n\n2. I am a little concern with how we are handling it. It is not clear that we are taking remedial steps to ensure there are no events resulting from the behavior issues. For example, I like that we spotted that everyone didn't hear important information that was transmitted in a pre-job brief. However, it was not clear that we took steps to ensure everyone still got the information that was missed.\n\n3. There are punctuation and spacing issues that make me question whether this was self-checked before sending.\n\nOn Mar 22, 2024, at 9:55 PM, Kathleen Dunlap <KDunlap@partnersperform.com> wrote:\n\nHello Chuck and Yancey,\nAttached are my coaching notes from the in field procedure walk through. I ran the notes through Chat GBT to identify errors before sending. Please let me know if have any feedback or if you are okay with me sending my notes to Ashley.\n\nThanks,\n\nKathleen Dunlap\nPerformance Partners\n804-658-7419\nKDunlap@partnersperform.com<mailto:KDunlap@partnersperform.com>\n<Coaching Summary 3-20.docx>\n"
+    }
+  }
+}

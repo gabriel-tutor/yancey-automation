@@ -1,0 +1,33 @@
+{
+  "id": "junk-01",
+  "source": "yancey-training-set",
+  "yanceyLabel": "JUNK",
+  "behavior": "ignore",
+  "expected": "noise",
+  "note": "Two-word courtesy acknowledgement (\"Received! Thank you!\") from Yancey’s personal tax preparer. A real human, but nothing to reply to.",
+  "message": {
+    "id": "AAMkTRAINJUNK01",
+    "subject": "Re: Write off Information - Yancey Dawson",
+    "receivedDateTime": "2026-08-19T17:10:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Community Tax Service",
+        "address": "communitytaxservice@yahoo.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Received! Thank you!\n\nCommunity Tax Services, LLC\nAngela Pikes\nPrincipal/Founder\nOffice:225-778-5700\nFax: 866-289-8520\nDirect: 318-405-2037\n\nSchedule Appointment with A Tax Expert Today!!<https://calendly.com/communitytaxservices/taxprep>\n\nOn Wednesday, August 19, 2026 at 12:09:09 PM CDT, Yancey Dawson <ydawson@partnersperform.com> wrote:\n\nFYI - we can talk through at meeting today\n\n[https://s-install.avcdn.net/ipm/preview/icons/icon-envelope-tick-round-orange-animated-no-repeat-v1.gif]<https://www.avast.com/sig-email?utm_medium=email&utm_source=link&utm_campaign=sig-email&utm_content=webmail>\nVirus-free.www.avast.com<https://www.avast.com/sig-email?utm_medium=email&utm_source=link&utm_campaign=sig-email&utm_content=webmail>\n"
+    }
+  }
+}

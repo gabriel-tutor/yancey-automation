@@ -82,6 +82,7 @@ const nowIso = new Date().toISOString();
 
 const c = normalizeClassification($json, {
   cleanText: String(src.cleanText || ''),
+  threadText: String(src.threadText || ''),
   subject: String(src.subject || ''),
   senderEmail: String(src.senderEmail || ''),
   confidenceMin: Number(cfg.confidenceMin) || 0.6,

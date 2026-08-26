@@ -1,0 +1,9 @@
+{
+  "id": "voice-02",
+  "source": "yancey-training-set",
+  "kind": "voice-reference",
+  "subject": "Damage Prevention Workbook + Quick Win Update",
+  "context": "Broadcast to a client team after a working session: thanks, metrics, how-to-read instructions.",
+  "author": "Yancey Dawson",
+  "body": "Team,\n\nThank you again for all the great engagement during our working session on the 21st. I really enjoyed the time we spent mapping out the functions for Damage Prevention. I've taken all of the sticky notes and organized them into the attached Damage Prevention Workbook. This tool gives us a clear view of all the core functions and how they connect across teams.\nQuick Win Highlight:\nWe made real progress together by aligning as a team and streamlining the Tableau reporting:\n\n  * 307 total reports/metrics reviewed\n  * 188 retired/deleted\n  * 96 kept\n  * 23 moved (to Construction to build or Apollo)\nThat's a 68% reduction in reports freeing up significant capacity to focus on higher-value tasks. This is exactly what optimization looks like. Great job!\nHow to Read the Workbook\n\n  1. Start with Function by Category to see how functions are grouped and where your area fits in the bigger picture.\n  2. Review the RACI Matrix to clarify roles and responsibilities-ensuring accountability is clear.\n  3. Check the Overlap Analysis for areas of redundancy or shared responsibilities across groups.\n  4. Finish with the Gap Analysis to spot missing functions or opportunities for improvement.\nThis workbook is both a reference guide and a working tool. As you review, think about how your team's work is represented and where we may need to refine definitions, clarify ownership, or close gaps.\nThanks again for the energy and collaboration during the working session this TEAM is driving real impact.\n\nthanks,\nYancey Dawson\n"
+}

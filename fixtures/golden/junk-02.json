@@ -1,0 +1,33 @@
+{
+  "id": "junk-02",
+  "source": "yancey-training-set",
+  "yanceyLabel": "JUNK",
+  "behavior": "ignore",
+  "expected": "noise",
+  "note": "Transactional PayPal invoice, $150. Note the display name is a person and the address is a trusted domain — the agent must not treat that as a human correspondent.",
+  "message": {
+    "id": "AAMkTRAINJUNK02",
+    "subject": "Invoice from JEREMIAH CHRISTIAN PLACENTE ROSALES (0028)",
+    "receivedDateTime": "2026-07-21T16:40:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "JEREMIAH CHRISTIAN PLACENTE ROSALES",
+        "address": "service@paypal.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "[Merchant logo]\n\nJEREMIAH CHRISTIAN PLACENTE ROSALES\n\nHello, YANCEY DAWSON\n\nHere's your invoice\n\n$150.00 USD\n\nDue on receipt\n\nView and Pay Invoice<https://www.paypal.com/invoice/payerView/details/INV2-Y42W-9EAU-VZSG-W2GD?locale.x=en_US&v=1&utm_source=unp&utm_medium=email&utm_campaign=RTI003384&utm_unptid=ccba9c21-8522-11f1-82de-ada39eeb0000&ppid=RTI003384&cnac=US&rsta=en_US%28en-US%29&unptid=ccba9c21-8522-11f1-82de-ada39eeb0000&calc=0000000000000000f5c97046398a1347&unp_tpcid=invoice-buyer-notification&page=main%3Aemail%3ARTI003384&pgrp=main%3Aemail&e=cl&mchn=em&s=ci&mail=sys&appVersion=1.428.0&tenant_name=&xt=182450%2C175543%2C104038%2C183981%2C184725%2C180509&xe=114833%2C114002%2C101255%2C114941%2C115052%2C114543&link_ref=details_inv2-y42w-9eau-vzsg-w2gd>\n\nInvoice summary\nInvoice number: 0028\n\nOM Savings Spreadsheet\n$150.00\n\n1 x $150.00\n\n________________________________\nSubtotal\n$150.00\nTotal\n$150.00 USD\n[PayPal]\n\nThis email was sent from miahcadia@gmail.com. If you think it is spam, you can report abuse to PayPal<https://www.paypal.com/invoice/payerView/details/INV2-Y42W-9EAU-VZSG-W2GD?locale.x=en_US&action=report-spam&v=1>.\n\nCopyright (c) 1999-2026 PayPal, Inc. All rights reserved. PayPal is located at 2211 N. First St., San Jose, CA 95131.\n\nRTI003384:en_US(en-US):1.2.1:0000000000000000f5c97046398a1347\n"
+    }
+  }
+}

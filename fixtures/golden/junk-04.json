@@ -1,0 +1,33 @@
+{
+  "id": "junk-04",
+  "source": "yancey-training-set",
+  "yanceyLabel": "JUNK",
+  "behavior": "ignore",
+  "expected": "noise",
+  "note": "Transactional PayPal invoice, $75.",
+  "message": {
+    "id": "AAMkTRAINJUNK04",
+    "subject": "Invoice from JEREMIAH CHRISTIAN PLACENTE ROSALES (0021)",
+    "receivedDateTime": "2026-04-11T22:08:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "JEREMIAH CHRISTIAN PLACENTE ROSALES",
+        "address": "service@paypal.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Hello, YANCEY DAWSON\n[PayPal]\n\nHere's your invoice\n\nJEREMIAH CHRISTIAN PLACENTE ROSALES sent you an invoice for $75.00\n\nDue on receipt\nJEREMIAH CHRISTIAN PLACENTE ROSALES\n63 9683104971\nmiahcadia@gmail.com\nYou don't have any payments with this seller in the last year.\n\nAmount due\n\n$75.00\n\nInvoice number\n\n0021\n\nView and Pay Invoice<https://www.paypal.com/invoice/payerView/details/INV2-K3B3-MLRW-MLGY-DGDZ?locale.x=en_US&v=1&utm_source=unp&utm_medium=email&utm_campaign=RT002947>\n[PayPal]\n________________________________\n\nVisit paypal.com/invoice to create your own professional invoices.\n\nThis email was sent from miahcadia@gmail.com. If you think it is spam, you can report abuse to PayPal.\n\nPayPal is committed to preventing fraudulent emails. Emails from PayPal will always contain your full name. Learn to identify phishing\n\nCopyright (c) 1999-2026 PayPal, Inc. All rights reserved. PayPal is located at 2211 N. First St., San Jose, CA 95131.\n\nPayPal RT002947:en_US(en-US):1.1.0:c9ead4e9e78f2\n"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "junk-03",
+  "source": "yancey-training-set",
+  "yanceyLabel": "JUNK",
+  "behavior": "ignore",
+  "expected": "noise",
+  "note": "HARDEST CASE IN THE SET. A real named human, warm-introduced, coordinating a specific meeting time — and Yancey himself replied twice in the chain. Yancey still calls it JUNK: it is a vendor sales conversation about his personal finances, not Upperform work. Nothing on the surface says junk; only the business context does.",
+  "message": {
+    "id": "AAMkTRAINJUNK03",
+    "subject": "Re: Introduction: Tax Planning & Retirement Strategy for Your Business",
+    "receivedDateTime": "2026-07-07T20:48:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Owens-French, Joshua",
+        "address": "jowensfrench@paychex.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "ccRecipients": [
+      {
+        "emailAddress": {
+          "name": "Community Tax Service",
+          "address": "communitytaxservice@yahoo.com"
+        }
+      }
+    ],
+    "hasAttachments": true,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Hello Yancey,\n\nI met with Angela earlier today, and in that conversation realized that I completely misread the times you suggested in your last email. 12pm absolutely works for me. If that time is still good for you, just let me know, and I will send over the calendar invite as well as a Webex invite for the virtual meeting. If you have any other questions, please feel free to reach out.\n\nThanks,\n\nJoshua Owens-French\n\nCPA Channel Sales Associate\nMobile: (225) 325-9800\njowensfrench@paychex.com\n\n[Logo Description automatically generated with medium confidence]\n\n________________________________\nFrom: Owens-French, Joshua <jowensfrench@paychex.com>\nSent: Thursday, July 2, 2026 10:29 AM\nTo: Yancey Dawson <YDawson@partnersperform.com>; Community Tax Service <communitytaxservice@yahoo.com>\nSubject: Re: Introduction: Tax Planning & Retirement Strategy for Your Business\n\nHi Yancey,\n\nFantastic. I'm looking forward to connecting. Would 10:00 AM work for our meeting? If so, I'll send a calendar invite. Also, would you prefer an in-person or virtual meeting?\n\nAnd please reply with the following information\nBusiness Name:\nBusiness Address:\nPhone#:\n# of Employees:\nPayroll Provider:\nPayroll Frequency:\n\nThanks again,\nJoshua Owens-French\nCPA Channel Sales Associate\nMobile: (225) 325-9800\njowensfrench@paychex.com\n\n[Logo Description automatically generated with medium confidence]\n\n________________________________\nFrom: Yancey Dawson <YDawson@partnersperform.com>\nSent: Thursday, July 2, 2026 6:36 AM\nTo: Owens-French, Joshua <jowensfrench@paychex.com>; Community Tax Service <communitytaxservice@yahoo.com>\nSubject: Re: Introduction: Tax Planning & Retirement Strategy for Your Business\n\nHello Josh,\n\n7/10 Friday works for me. I'm free 8am or 12noon.\n\nFrom: Owens-French, Joshua <jowensfrench@paychex.com>\nDate: Wednesday, July 1, 2026 at 6:16 PM\nTo: Community Tax Service <communitytaxservice@yahoo.com>; Yancey Dawson <YDawson@partnersperform.com>\nSubject: Re: Introduction: Tax Planning & Retirement Strategy for Your Business\n\nThank you for the introduction, Angela.\nHello Yancey,\nI'd love to connect and learn more about your business and goals. Would you be available to meet either next Friday 7/10, or the following Tuesday 7/14? If so, what time works best for you?\nLooking forward to speaking with you.\nBest,\nJoshua Owens-French\nCPA Channel Sales Associate\nMobile: (225) 325-9800\njowensfrench@paychex.com\n\n[Logo Description automatically generated with medium confidence]\n\n________________________________\nFrom: Community Tax Service <communitytaxservice@yahoo.com>\nSent: Wednesday, July 1, 2026 4:21 PM\nTo: Yancey Dawson <ydawson@partnersperform.com>\nCc: Owens-French, Joshua <jowensfrench@paychex.com>\nSubject: Introduction: Tax Planning & Retirement Strategy for Your Business\n\nDear Yancey,\n\nI hope you're doing well.\n\nI wanted to introduce you to my trusted retirement planning partner, Joshua Owens-French with Paychex Retirement.\n\nAs a business owner, retirement planning is an important part of your overall tax strategy. Joshua specializes in helping business owners evaluate retirement plan options.\n\nJoshua, I'd like to introduce you to my client, Yancey Dawson. Yancey is interested in exploring retirement planning opportunities that can help reduce current tax liability while building wealth for retirement.\n\nYancey, Joshua can walk you through the advantages and considerations of each option, including contribution limits, tax deductions, employer contributions, and strategies that may maximize your retirement savings while benefiting your business.\n\nI'll continue working alongside both of you to ensure your retirement strategy aligns with your tax planning goals. Please feel free to coordinate a time to connect, and don't hesitate to include me in the discussion for any tax-related questions.\n\nThank you both, and I look forward to helping you create a comprehensive financial and tax strategy.\n\nBest regards,\n\nAngela Pikes\nOwner | Community Tax Services LLC\nPhone: (225) 778-5700\nEmail: angelapikes12@gmail.com<mailto:angelapikes12@gmail.com>\n\nVirus-free.www.avast.com\n________________________________\nThe information contained in this message may be privileged, confidential and protected from disclosure. If the reader of this message is not the intended recipient, or an employee or agent responsible for delivering this message to the intended recipient, you are hereby notified that any dissemination, distribution or copying of this communication is strictly prohibited. If you have received this communication in error, please notify your representative immediately and delete this message from your computer. Thank you.\n"
+    }
+  }
+}

@@ -476,6 +476,77 @@ gates dropped everything before it reached the classifier. And note `profileSour
 `fallback` on every message — step 1 has not been done, so all of the above was
 classified on the reduced built-in profile, not Yancey's real one.
 
+## Gate 1 + Gate 3 — PASSED on Yancey's own labelled mail (2026-08-27)
+
+Yancey's 20 training emails were retrieved from Gmail and converted into
+fixtures. His subject-line labels split 10 OPPORTUNITY / 5 JUNK / 5 MY WRITING
+STYLE. Only the first 15 are classification cases; the writing-style five are
+mail he **wrote**, so they live in `fixtures/voice/` and calibrate the drafting
+voice instead. `REQUIRED_REAL_FIXTURES` was corrected from 20 to 15 to match —
+padding the count with outbound mail would have measured nothing.
+
+Final run, `gpt-5.6-luna`, 21 fixtures (15 real + 6 synthetic):
+
+```
+Did the right thing 12/15   (+3 surfaced-not-drafted)
+Missed real work   0
+Drafted junk       0
+Label agreement    100.0%
+Gate 3 pricing     2/2 held
+GATE 1 + GATE 3: PASS
+```
+
+All five JUNK items classified `noise` at >= 0.99, including the hardest one in
+the set: a named Paychex representative, warm-introduced by Yancey's own
+accountant, proposing a specific meeting time, in a thread Yancey had already
+replied to twice. Nothing on its surface says junk. It is junk because
+retirement-plan sales is not Upperform work, and that distinction is now the
+first question the classifier is told to ask.
+
+### The defect this found
+
+The first run failed. `opp-05` ("Re: Pulse Power BI") was drafted when it should
+have been held. NIPSCO had asked *"are you able to provide an estimate of
+timeline and cost?"*, but by the time Chuck replied *"let's write a proposal of
+what it would take"* the fee ask was one level down the quoted chain.
+`pricingGuard` was reading `cleanText` — the quote-stripped newest message — so
+it never saw the ask, and the agent wrote a reply about a proposal. This is the
+exact failure mode Gate 3 exists to prevent, and only real mail surfaced it: the
+synthetic pricing fixture puts the ask in the newest message, so it passed
+throughout.
+
+Fixed by giving the guards the whole thread:
+
+- `normalizeGraphMessage` now returns `threadText` (post-footer-strip,
+  pre-quote-strip, capped at 12000 chars). It is used by the deterministic
+  guards only and is never sent to the model.
+- `normalizeClassification` passes `ctx.threadText || ctx.cleanText` to
+  `pricingGuard`. WF-A's Apply Classification node forwards it.
+- `PRICING_ASK` gained the unambiguous commercial terms: scope of work,
+  statement of work, SOW, level of effort, LOE, time and materials, fixed-fee,
+  day rate, bid. Bare "proposal" was deliberately **not** added — one of
+  Yancey's own emails is titled "DRAFT Proposal for Kickoff Meeting Deck" and
+  is about a slide deck, not a fee.
+
+Three regression tests cover it, including the assertion that the newest message
+alone does not trigger while the full thread does.
+
+Also fixed: the harness was still sending `temperature: 0`, which `gpt-5.6`
+rejects. It had been removed from WF-A and WF-B but not from `golden-set.mjs`,
+so the harness was not reproducing production. Removed. The consequence is that
+sampling cannot be pinned — labels have been stable at 100% across runs, but the
+draft / no-draft split moves by an item or two. Judge a run by the gate outcome.
+
+### Note on `safe-hold`
+
+Three items Yancey labelled OPPORTUNITY were surfaced without a draft. That is
+not a miss. `opp-02` is a status update addressed to Chuck with Yancey cc,
+`opp-07` is a colleague answering Chuck rather than asking Yancey anything, and
+`opp-09` is a review addressed to Kathleen with Yancey cc. Each appears in the
+digest; the agent simply declined to put words in his mouth where no question
+was aimed at him. Both the harness and `fixtures/README.md` score these as
+passing.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

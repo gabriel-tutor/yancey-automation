@@ -1,0 +1,39 @@
+{
+  "id": "opp-08",
+  "source": "yancey-training-set",
+  "yanceyLabel": "OPPORTUNITY",
+  "behavior": "draft",
+  "expected": "opportunity",
+  "note": "Business development: Chuck rewrites Yancey’s PG&E prospecting note and asks \"let me know what you think.\" The one true new-business item in the set.",
+  "message": {
+    "id": "AAMkTRAINOPP08",
+    "subject": "Re: Follow-up from Upperform and PG&E Support",
+    "receivedDateTime": "2024-05-07T13:11:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Charles Coleman",
+        "address": "Ccoleman@partnersperform.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      },
+      {
+        "emailAddress": {
+          "name": "Chas Coleman",
+          "address": "ccoleman@chascoleman.com"
+        }
+      }
+    ],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "I made some suggestions. My key advice is to be more authentic and genuine. Subtly, it builds trust in people who are reading your words without the benefit of your body language and voice inflection. Also, I toned down the salesmanship a little. Take a look at let me know what you think:\n\n------------------------------------------------\nSubject: PG&E's Human Performance Journey\n\nDear Aaron,\n\nI hope you had a chance to relax after our engaging conference in Seattle. On behalf of Upperform Partners, thank you for attending our presentation on Integrating Human Performance into Pigging Operations. I trust you found the session both valuable and insightful.\n\nI got the sense from our interactions that your organization has made promising strides in integrating human performance tools and operational excellence into your business. That really piques my interest in learning more about your initiatives and discussing how Upperform Partners might contribute.\n\nCould we arrange a brief team call to explore potential collaborations? A direct conversation would be the most effective way to exchange ideas and assess our opportunities for partnership.\n\nI am flexible with timing and will accommodate your schedule. If preferred, you can include your admin in this correspondence to help find a suitable time.\n\nLooking forward to our discussion and the possibility of working together.\n\nWarm regards,\n\nYancey\n\nFrom: Yancey Dawson <YDawson@partnersperform.com>\nDate: Monday, May 6, 2024 at 2:17 PM\nTo: Charles Coleman <Ccoleman@partnersperform.com>, Chas Coleman <ccoleman@chascoleman.com>\nSubject: Follow-up from Upperform and PG&E Support\n\nDear Aaron,\n\nHappy Monday. I wanted to personally thank you for attending the Upperform presentation last Thursday. We greatly appreciated your presence and hope you found the session insightful and valuable.\n\nI also hope you enjoyed the AGA conference last week. It was a pleasure to connect with you and discuss potential opportunities for collaboration between Upperform and PG&E.\n\nI would like to further discuss PG&E's needs and how Upperform can support your organization. I believe a team's call would be the most effective way to have this conversation. I am flexible with scheduling and would be happy to work around your availability. Please let me know if you have an admin. I can liaise with you to set up a date and time that work best for you.\n\nI look forward to our conversation and the possibility of working together to support PG&E.\n\nBest regards,\n\nYancey\n"
+    }
+  }
+}

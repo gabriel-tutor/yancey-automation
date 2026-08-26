@@ -342,6 +342,10 @@ function normalizeGraphMessage(msg, options) {
     categories: Array.isArray(msg && msg.categories) ? msg.categories.slice() : [],
     bodyContentType: contentType || 'text',
     cleanText: limited.text,
+    // The whole visible thread, quoted history included, for the deterministic
+    // guards only. A fee ask one level down the chain is still a fee ask —
+    // scanning just the newest message misses it. Never sent to the model.
+    threadText: truncate(withoutFooter, 12000).text,
     quoteTrimmed: stripped.trimmed,
     quoteBoundaries: stripped.boundaries,
     truncated: limited.truncated,
@@ -478,13 +482,20 @@ function clampConfidence(value, fallback) {
   return Math.round(num * 100) / 100;
 }
 
-const PRICING_ASK = /\b(fee|fees|price|pricing|quote|quotation|cost|costs|estimate|budget|rate card|rates|retainer|proposal amount|how much|ballpark|order of magnitude|not to exceed|nte)\b/i;
+const PRICING_ASK =
+  /\b(fee|fees|price|pricing|quote|quotation|cost|costs|estimate|budget|rate card|rates|retainer|proposal amount|how much|ballpark|order of magnitude|not to exceed|nte|scope of work|statement of work|sow|level of effort|loe|time and materials|fixed[- ]fee|day rate|bid)\b/i;
 const PRICING_QUESTION = /\b(what would|what will|what does|how much|can you (provide|give|share)|could you (provide|give|share)|send (us|me) (a|your)|provide an? (estimate|indication))\b/i;
 const CURRENCY_IN_TEXT = /(?:[$€£]\s?\d|\b\d[\d,]*\s?(?:k|m)\b|\busd\b|\bdollars?\b|\bper hour\b|\bhourly rate\b)/i;
 
 /**
  * Deterministic backstop for the one failure mode that costs real money:
  * the agent originating or estimating a fee. Spec §11 Gate 3.
+ *
+ * Pass the WHOLE thread here, not the quote-stripped newest message. Found by
+ * Gate 1 on Yancey's own mail: NIPSCO asked "can you provide an estimate of
+ * timeline and cost?", and by the time Chuck replied "let's write a proposal"
+ * the fee ask was one level down the quoted chain. Scanning only the newest
+ * message let it through and the agent drafted a reply about a proposal.
  *
  * @param {string} text
  * @param {string} subject
@@ -539,7 +550,8 @@ function sensitivityGuard(senderEmail, text, subject, alwaysFlagSenders) {
  *
  * @param {any} raw
  * @param {{ cleanText: string, subject: string, senderEmail: string,
- *           confidenceMin: number, alwaysFlagSenders?: string[] }} ctx
+ *           confidenceMin: number, alwaysFlagSenders?: string[],
+ *           threadText?: string }} ctx
  */
 function normalizeClassification(raw, ctx) {
   const parsed = parseModelJson(raw) || {};
@@ -562,7 +574,7 @@ function normalizeClassification(raw, ctx) {
     ? parsed.asks_of_yancey.map((/** @type {unknown} */ a) => String(a)).filter(Boolean).slice(0, 6)
     : [];
 
-  const pricing = pricingGuard(ctx.cleanText, ctx.subject);
+  const pricing = pricingGuard(ctx.threadText || ctx.cleanText, ctx.subject);
   if (pricing.triggered) {
     label = 'flag_for_yancey';
     guards.push('pricing_guard');

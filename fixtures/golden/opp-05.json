@@ -1,0 +1,40 @@
+{
+  "id": "opp-05",
+  "source": "yancey-training-set",
+  "yanceyLabel": "OPPORTUNITY",
+  "behavior": "flag",
+  "expected": "flag_for_yancey",
+  "gate": "pricing",
+  "note": "GATE 3. NIPSCO asks \"are you able to provide an estimate of timeline and cost?\" and Chuck says write a proposal. Yancey labelled this OPPORTUNITY; the agent must still hold it — a fee/scope commitment is never auto-drafted. Divergence is deliberate and protective.",
+  "message": {
+    "id": "AAMkTRAINOPP05",
+    "subject": "Re: Pulse Power BI",
+    "receivedDateTime": "2026-07-04T14:42:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Charles Coleman",
+        "address": "Ccoleman@partnersperform.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Shawn Corkran",
+          "address": "scorkran@nisource.com"
+        }
+      },
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": true,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Great call out. Let's write a proposal of what it would take, including NIPSCO responsibility and access requirements. Language should be clear that timeline is highly dependent on access and response time from NIPSCO. I am not suggesting a defensive tone - just a factual tone.\n\nFrom: Corkran Shawn <scorkran@nisource.com>\nDate: Thursday, July 2, 2026 at 4:53 PM\nTo: Charles Coleman <Ccoleman@partnersperform.com>; Yancey Dawson <YDawson@partnersperform.com>\nSubject: Fw: Pulse Power BI\n\nI figured these requests would come. I am actually excited about it because it shows they want to improve ops. But they need to be careful about going nuts with nice-to-haves when they should be focusing on process and operational discipline. That said, adding crew data is something I would want as a decision maker.\n\nI am game to help, but now that it is a pull from NIPSCO instead of a push from Upperform, let's ensure that we do this like a real software project, where we don't have to work through middlemen and guess/infer what fields and tables \"may\" be in a database somewhere. I need to be able to write iterative test queries to fine tune changes.\n\nThis request could also require a different type of view called \"materialized views\" to help with performance. Their IT/OT folks may initially balk at MVs updated at high frequencies. MVs frequently execute once per specified period (or when underlying tables change) and write the results to disk so all PBI users have instant access to the same single set of cached data. At ETR, we updated those MVs every 5 min.\n\nThis is a good signal!\n\nGet Outlook for iOS<https://aka.ms/o0ukef>\n________________________________\nFrom: Corkran \\ Shawn <scorkran@nisource.com>\nSent: Thursday, July 2, 2026 4:39 PM\nTo: DeFelice \\ Louis \\ J <LDeFelice@nisource.com>; Dawson \\ Yancey <ydawson@nisource.com>; Coleman \\ Chas <ccoleman@nisource.com>\nSubject: Re: Pulse Power BI\n\nLouis,\n\nLet's discuss. The short answer is that it is possible to display nearly anything that is available in some database. Performance, however, can quickly become an issue with live tools. We would need to do some systems assessment first, and define requirements before going too much further.\n\nSummarizing a view by device type is probably pretty straight forward since we have already connected the device data.\n\nAs you start adding tables (like crew data), things can slow down dramatically, and create high workloads on the Oracle database. Our original version of Pulse included crew name, but it often took over 60-90 seconds to load or refresh each screen vs the 5-10 seconds it currently takes. To get the performance needed for more complex queries, it may require more than just a few programming changes to Pulse and its underlying data views. There are ways to do this if needed, but it will require coordination with other groups at NiSource.\n\nAgain, let's chat early next week and do a little homework before we answer the time and cost questions.\n\nShawn\n\nGet Outlook for iOS<https://aka.ms/o0ukef>\n________________________________\nFrom: DeFelice \\ Louis \\ J <LDeFelice@nisource.com>\nSent: Wednesday, July 1, 2026 8:57 AM\nTo: Dawson \\ Yancey <ydawson@nisource.com>; Corkran \\ Shawn <scorkran@nisource.com>\nSubject: Pulse Power BI\n\nShawn/Yancey, I hear you are behind the new \"Pulse\" Power BI and that this is the only near real time dashboard. In a storm after action review meeting yesterday, we are looking for a view that includes list of device including bkr events along with status and crew. Is this possible and if are you able to provide an estimate of timeline and cost? Thanks\n\n_________________________________________________________________________\nLou DeFelice | Manager, Transmission Operations\nTransmission Operations, Southlake Dispatch, Starting Engineers\nNorthern Indiana Public Service Co. | 801 East 86th Ave., Merrillville, IN 46410\n[cid:image001.png@01DD0930.3D4E8860] 219-851-1800 | [cid:image002.png@01DD0930.3D4E8860] 219-647-4770 | [cid:image003.png@01DD0930.3D4E8860] ldefelice@nisource.com\n"
+    }
+  }
+}

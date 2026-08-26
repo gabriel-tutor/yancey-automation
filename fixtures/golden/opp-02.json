@@ -1,0 +1,39 @@
+{
+  "id": "opp-02",
+  "source": "yancey-training-set",
+  "yanceyLabel": "OPPORTUNITY",
+  "behavior": "draft",
+  "expected": "opportunity",
+  "note": "Colleague status update on crossarm capitalization and vehicle idling, with an open ask back to Chuck. Internal but substantive.",
+  "message": {
+    "id": "AAMkTRAINOPP02",
+    "subject": "RE: ACTION NEEED",
+    "receivedDateTime": "2026-08-06T15:54:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Shawn Corkran",
+        "address": "SCorkran@partnersperform.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Charles Coleman",
+          "address": "Ccoleman@partnersperform.com"
+        }
+      },
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Chuck, a few update points:\n\nMaintenance Crossarm Capitalization:\n\n  * 2025 Breakdown and preventive maintenance crossarm usage was $6.4M in 2025\n  * Confirmed that all other crossarm applications (new business, reliability, etc.) are currently capitalized.\n  * Initial opinion from property accounting is that the change is appropriate, but it will require CAVE determination, regulatory input, and management review to determine implementation timing.\n  * Initial draft of hypothesis/charter document developed. If we capitalize breakdown and preventive maintenance crossarms, we can reduce O&M by $6.4 in preventive and breakdown distribution maintenance budgets, and increase capital investment by that amount.\n  * Partially developed draft sent to Nanique Castro with additional questions about the CAVE process, and comparisons to other projects that passed through the process.\n  * The additional questions are to determine if the materiality level and impacts are similar to other mid-GRC-cycle changes that were pursued - like the change of how underground locates were being charged (direct vs overhead allocations)\n\nVehicle Idling:\n\n  * Q and I Performed initial analysis of idling data, but require additional data to size the opportunity and develop the hypothesis.\n  * Sent data request to Julian Kung on Wed, 7/29/2026, requested due date of Friday, 8/7/2026 from Wil Nevarez,and provided SCE with guidance on which data items were the highest priorities. Wil Nevares indicated that this due date may not be achievable.\n  * Chuck - Need to check if we have set up Wil with access to the sharing team folder.\n  * Held transition meeting with Wil Nevarez (picking up the project) and Julian Kung\n  * As soon as we get the data, we will analyze and develop the Hypothesis.\n  * If we cannot get the data timely, we may need to develop a low to medium confidence estimate for a draft Hypothesis target for 8/12/2026. It would likely need to be stated in ranges - if we can reduce idle by 10%, 15%... on XXX set of vehicles, then we can save $WWW, $YYY, $ZZZ in distribution fuel O&M (and Capital depending on the allocations).\n  * Total 2025 idling > 2 minutes is 1.44M hours with an estimated idling fuel consumption of 1M gallons across all distribution vehicle and fuel types.\n  * At the current $4/gallon estimate in the Samsara data, this represents total annual idling cost of $4M (800k O&M at an 80/20 Capital/O&M split) subject to change based on the more detailed data request)\n  * The opportunity will be dependent on the fraction of addressable idle, but will be much less than the total $4M (Cap + O&M) per year.\n  * Light duty pickup trucks, vans, cars, and SUVs are significant contributors to the total idling > 2 minutes, and represent nearly half of the total idling > 2 minutes. Most idling events are brief (long right tailed distribution from shortest to longest idle times)\n\nPlease let me know if you need additional information. Generally we are awaiting either review/comments from Nanique on XARMs or Data on idling at this time, and will act quickly as soon as we get the docs and data back.\n\nShawn\n\n-----Original Message-----\nFrom: Shawn Corkran\nSent: Thursday, August 6, 2026 9:42 AM\nTo: Charles Coleman <Ccoleman@partnersperform.com>\nSubject: RE: ACTION NEEED\n\nChuck, will do. I ap preparing to pinch hit for Yancey on the weekly plan update with Phil Winter. As soon as I do that, I will shoot you my updates for SCE crossarms and fleet idling.\n\nShawn\n\n-----Original Message-----\n\nFrom: Charles Coleman <Ccoleman@partnersperform.com<mailto:Ccoleman@partnersperform.com>>\n\nSent: Thursday, August 6, 2026 6:55 AM\n\nTo: Shawn Corkran <SCorkran@partnersperform.com<mailto:SCorkran@partnersperform.com>>; Yancey Dawson <YDawson@partnersperform.com<mailto:YDawson@partnersperform.com>>; Darryl Yoes <DYoes@partnersperform.com<mailto:DYoes@partnersperform.com>>; Thomas Lowe <TLowe@partnersperform.com<mailto:TLowe@partnersperform.com>>; Quran Coleman <QColeman@partnersperform.com<mailto:QColeman@partnersperform.com>>\n\nSubject: ACTION NEEED\n\nTeam.\n\nThis has been a wild week with SoCal. I am assembling our Status Update for tomorrow. Please send me your updates for the items you are working on.\n\nSorry for the late ask but I really need them by noon if you can. I'd like to finish the update on my layover in Atlanta\n\nThank you\n"
+    }
+  }
+}

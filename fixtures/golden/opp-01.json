@@ -1,0 +1,39 @@
+{
+  "id": "opp-01",
+  "source": "yancey-training-set",
+  "yanceyLabel": "OPPORTUNITY",
+  "behavior": "draft",
+  "expected": "opportunity",
+  "note": "Chuck forwards a client delivery to SCE and asks the team to review; ends \"let us know if there are questions.\" Reply-worthy project coordination.",
+  "message": {
+    "id": "AAMkTRAINOPP01",
+    "subject": "FW: Monday Morning Deliverables",
+    "receivedDateTime": "2026-08-13T16:01:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Charles Coleman",
+        "address": "Ccoleman@partnersperform.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      },
+      {
+        "emailAddress": {
+          "name": "Shawn Corkran",
+          "address": "SCorkran@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": true,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "From: Charles Coleman <Ccoleman@partnersperform.com>\nDate: Monday, August 10, 2026 at 11:21 AM\nTo: Dean E Heiss <Dean.Heiss@sce.com>, James Vallecorsa <James.Vallecorsa@sce.com>\nCc: Jessica Elaine Doucette <jessica.elaine.doucette@sce.com>, Yancey Dawson <YDawson@partnersperform.com>\nSubject: Monday Morning Deliverables\n\nGood Morning All -\n\nPer our conversation, we are delivering a few items to move the portfolio forward:\n\n  *\nProposed email templates communicating the decisions made by the SLT\n  *\nAn overview of the Momentum Room process and meeting templates\n  *\nAn overview the CI Working Sessions and how to select and organize them.\n\nPlease note we are expecting some working sessions with you this evening but they are not on the calendar yet. These sessions are intended to help us prepare and get the sessions and Momentum Rooms stood up.\n\nPlease take a look at these items and let us know if there are questions.\n\nThanks!\n"
+    }
+  }
+}

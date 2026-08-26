@@ -1,0 +1,39 @@
+{
+  "id": "opp-07",
+  "source": "yancey-training-set",
+  "yanceyLabel": "OPPORTUNITY",
+  "behavior": "draft",
+  "expected": "opportunity",
+  "note": "Four-deep operational debate on fuse outages driving CAIDI. Yancey is an active participant in the chain.",
+  "message": {
+    "id": "AAMkTRAINOPP07",
+    "subject": "Re: VEM Spreadsheet",
+    "receivedDateTime": "2025-09-18T14:22:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Shawn Corkran",
+        "address": "SCorkran@partnersperform.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Charles Coleman",
+          "address": "Ccoleman@partnersperform.com"
+        }
+      },
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "I think it ties to supervisors owning the field execution, which includes using all available technology to track case statuses and crew locations. I will say, however, that some field presence expectation should remain. A drop-in on site here and there goes a long way to ensuring we get the expected crew behaviors. I just want to be careful about setting a quota of fuses to go visit due to the volume.\n\nGet Outlook for iOS<https://aka.ms/o0ukef>\n________________________________\nFrom: Charles Coleman <Ccoleman@partnersperform.com>\nSent: Thursday, September 18, 2025 8:50:43 AM\nTo: Shawn Corkran <SCorkran@partnersperform.com>; Yancey Dawson <YDawson@partnersperform.com>\nSubject: Re: VEM Spreadsheet\n\nFair enough. Seems like we are not really leveraging the intel that reducing duration of fuse outages would immediately drive CAIDI. Any other thoughts on how we can do that?\n\nGet Outlook for iOS<https://aka.ms/o0ukef>\n________________________________\nFrom: Shawn Corkran <SCorkran@partnersperform.com>\nSent: Thursday, September 18, 2025 8:32:18 AM\nTo: Yancey Dawson <YDawson@partnersperform.com>; Charles Coleman <Ccoleman@partnersperform.com>\nSubject: Re: VEM Spreadsheet\n\nI agree that the volume would be high, and would take them away from other duties. They have already said that they don't have support on non-day shifts, and we need to be careful not to make that more difficult.\n\nThis pattern could be the result of a couple of things such as:\n\n  1.\nBehavior when working out of sight from the office, that deserves some supervisor attention\n  2.\nIt could also be that we have fewer workers on each shift, and because fuses/xfmrs naturally have a lower priority than other outages (breakers and reclosers), they are taking longer.\n\nThis is where using technology to glance at crew geo-locations on the screen periodically, and asking questions if something looks out of place could be helpful.\n________________________________\nFrom: Yancey Dawson <YDawson@partnersperform.com>\nSent: Wednesday, September 17, 2025 10:24 PM\nTo: Charles Coleman <Ccoleman@partnersperform.com>; Shawn Corkran <SCorkran@partnersperform.com>\nSubject: Re: VEM Spreadsheet\n\nMy only concern with this is the number of fuse operations with a high volume could overwhelm duty supervisor.\n\nFrom: Charles Coleman <Ccoleman@partnersperform.com>\nDate: Wednesday, September 17, 2025 at 8:02 PM\nTo: Shawn Corkran <SCorkran@partnersperform.com>\nCc: Yancey Dawson <YDawson@partnersperform.com>\nSubject: Re: VEM Spreadsheet\n\nThinking about high value opportunities to show quick metric movement. We were looking for clear and measurable ways to engage supervisors. Does it make sense to employ some type of rule that requires the duty supervisor to have a field presence for outages cleared by fuses ? So once the operating device has been confirmed to be a fuse, the duty supervisor is required to engage and is responsible for the report out on the minutes?\n\nI am responding to our analysis that narrows these outages down as a primary CAIDI driver. Just not sure how practical my idea is.\n\nOn Sep 17, 2025, at 5:50 PM, Shawn Corkran <SCorkran@partnersperform.com> wrote:\n\nGents, I added column A to capture a line number that will not change for sorting. I also added column B to flag/identify the items we discussed this afternoon. I dropped in a few comments in the yellow boxes as well (but not all yellow boxes). Have a nice evening.\n\nShawn\n"
+    }
+  }
+}

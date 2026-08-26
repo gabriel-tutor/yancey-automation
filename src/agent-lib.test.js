@@ -221,6 +221,68 @@ describe('pricingGuard — spec Gate 3', () => {
   it('does not fire on ordinary delivery talk', () => {
     expect(pricingGuard('The O&M cost baseline slide is attached.', 'Deck').triggered).toBe(false);
   });
+
+  // Regression: Gate 1 on Yancey's own mail (opp-05, "Re: Pulse Power BI").
+  // NIPSCO asked for an estimate of timeline and cost; two replies later the
+  // newest message was only "let's write a proposal of what it would take".
+  // Scanning the quote-stripped newest message missed the fee ask entirely and
+  // the agent drafted a reply about a proposal.
+  it('fires when the fee ask is only in the quoted chain', () => {
+    const newest = "Let's write a proposal of what it would take, including NIPSCO responsibility and access requirements.";
+    const thread =
+      newest +
+      '\n\nFrom: DeFelice, Louis\nSubject: Pulse Power BI\n\n' +
+      'Is this possible and if are you able to provide an estimate of timeline and cost? Thanks';
+
+    expect(pricingGuard(newest, 'Re: Pulse Power BI').triggered).toBe(false);
+    expect(pricingGuard(thread, 'Re: Pulse Power BI').triggered).toBe(true);
+  });
+
+  it('recognises commercial scope terms', () => {
+    expect(
+      pricingGuard('Can you share a statement of work for the T-Week engagement?', 'SOW').triggered,
+    ).toBe(true);
+  });
+
+  it('does not fire on a deck merely called a proposal', () => {
+    expect(
+      pricingGuard(
+        'Team, here are my thoughts for a deck to guide the August 3 SLT kickoff. Weigh in as you see fit.',
+        'DRAFT Proposal for Kickoff Meeting Deck',
+      ).triggered,
+    ).toBe(false);
+  });
+});
+
+describe('thread-wide guard wiring', () => {
+  it('normalizeGraphMessage exposes the quoted chain as threadText', () => {
+    const n = normalizeGraphMessage(graphMessage({ body: { contentType: 'text', content: DEEP_FORWARD_CHAIN } }));
+    expect(n.threadText.length).toBeGreaterThan(n.cleanText.length);
+    expect(n.cleanText).not.toContain('Original Message');
+  });
+
+  it('normalizeClassification flags pricing found only in threadText', () => {
+    const raw = {
+      label: 'opportunity',
+      confidence: 0.98,
+      reasoning: 'Chuck is directing a proposal.',
+      requires_draft: true,
+      urgency: 'this_week',
+      asks_of_yancey: ['write a proposal'],
+    };
+    const ctx = {
+      cleanText: "Let's write a proposal of what it would take.",
+      threadText:
+        "Let's write a proposal of what it would take.\n\nAre you able to provide an estimate of timeline and cost?",
+      subject: 'Re: Pulse Power BI',
+      senderEmail: 'ccoleman@partnersperform.com',
+      confidenceMin: 0.6,
+    };
+    const verdict = normalizeClassification(raw, ctx);
+    expect(verdict.label).toBe('flag_for_yancey');
+    expect(verdict.requiresDraft).toBe(false);
+    expect(verdict.guardFlags).toContain('pricing_guard');
+  });
 });
 
 describe('sensitivityGuard', () => {

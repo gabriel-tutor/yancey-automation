@@ -1,0 +1,33 @@
+{
+  "id": "opp-06",
+  "source": "yancey-training-set",
+  "yanceyLabel": "OPPORTUNITY",
+  "behavior": "draft",
+  "expected": "opportunity",
+  "note": "Chuck replies to Yancey directly with two asks and an explicit \"I would be interested in knowing what you think about that.\" Clear reply expected.",
+  "message": {
+    "id": "AAMkTRAINOPP06",
+    "subject": "Re: NIPSCO Deliverables: Status Update",
+    "receivedDateTime": "2026-05-25T18:04:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Charles Coleman",
+        "address": "Ccoleman@partnersperform.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "This looks good. You probably have this, but just to remind. Be sure to get copies of closed initiatives from Kris. We need to review as a team so we know which ones we are depending on to be solid when we execute the 18 month plan. Jaren is helping me with a closure review process we can use to determine whether these closed actions are solid. I have a feeling most of them won't be. So when the time feels natural, make sure Phii knows we will need to review closed actions for quality as a part of this effort.\n\nTo be honest, I am thinking we probably need to do a class on how to properly close actions to action owners know what is expected. I would be interested in knowing what you think about that\n\nFrom: Yancey Dawson <YDawson@partnersperform.com>\nDate: Monday, May 25, 2026 at 11:04 AM\nTo: Charles Coleman <Ccoleman@partnersperform.com>\nSubject: NIPSCO Deliverables: Status Update\n\nQuick status update on NIPSCO deliverables:\n\nExecutive Decks - (Teams Folder under 2026 Plan refresh)\nHigh-level executive decks built for ETR, CAIDI, and Leader Discipline. Shawn is peer reviewing. Next step after peer review is to build out Excel accountable model tactical plans for each initiative, this is how we'll track all actions and metrics, and it will sit outside the Power Delivery Alignment work with Kris.\n\nMeetings Lined Up\n- Ashley Hall - Power Delivery Daily Review Form. Line is already filling out the form; we're reworking the questions into data points that can be turned into insights.\n- Phil Winter - Reviewing executive-level plans for Sprints, ETR, CAIDI, and Leader Discipline June 3rd in-person.\n- Amin Aburomi - Virtual and in-person meetings set for next week and the week after. When I asked Phil for someone on the NIPSCO side to be the face with Operations, he indicated he'd like Amin to lead.\n- Jason McChristian - Multiple meetings already on the calendar for next week and the week after LA. Focus is mapping out realistic data points for the sprints.\n- Kris Murray - Virtual Plan Refresh meeting May 26; in-person June 2 to map what needs to happen and move quickly on refreshing the Power Delivery Alignment Meeting.\n- Q - Starting on the Leader Discipline DITL power app. Kickoff meeting May 26.\n\nLet me know if you want to dig into any of these, on our call later.\n\nThanks\n\nYancey\n"
+    }
+  }
+}

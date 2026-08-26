@@ -1,0 +1,33 @@
+{
+  "id": "junk-05",
+  "source": "yancey-training-set",
+  "yanceyLabel": "JUNK",
+  "behavior": "ignore",
+  "expected": "noise",
+  "note": "Transactional PayPal invoice, $100, addressed to the raw mailbox string rather than a name.",
+  "message": {
+    "id": "AAMkTRAINJUNK05",
+    "subject": "Invoice from JEREMIAH CHRISTIAN PLACENTE ROSALES (0009)",
+    "receivedDateTime": "2025-12-19T00:53:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "JEREMIAH CHRISTIAN PLACENTE ROSALES",
+        "address": "service@intl.paypal.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": false,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Hello, YDawson@partnersperform.com\n[PayPal]\n\nHere's your invoice\n\nJEREMIAH CHRISTIAN PLACENTE ROSALES sent you an invoice for $100.00\n\nDue on receipt\nJEREMIAH CHRISTIAN PLACENTE ROSALES\n63 9683104971\nmiahcadia@gmail.com\nYou don't have any payments with this seller in the last year.\n\nAmount due\n\n$100.00\n\nInvoice number\n\n0009\n\nView and Pay Invoice<https://www.paypal.com/invoice/payerView/details/INV2-3L4S-3CQM-BAPH-KP9P?locale.x=en_PH&v=1&utm_source=unp&utm_medium=email&utm_campaign=RT002947>\n[PayPal]\n________________________________\n\nVisit paypal.com/invoice to create your own professional invoices.\n\nThis email was sent from miahcadia@gmail.com. If you think it is spam, you can report abuse to PayPal.\n\nPayPal is committed to preventing fraudulent emails. Emails from PayPal will always contain your full name. Learn to identify phishing\n\nCopyright (c) 1999-2025 PayPal. All rights reserved.\n\nPayPal Pte. Ltd. is (i) licensed by the Monetary Authority of Singapore as a Major Payment Institution under the Payment Services Act 2019 and (ii) regulated by the Bangko Sentral ng Pilipinas (https://www.bsp.gov.ph) as an Operator of Payment Services in the Philippines under the National Payment Systems Act.\n\nPayPal RT002947:en_PH(en-PH):1.1.0:f798139a19a7a\n"
+    }
+  }
+}

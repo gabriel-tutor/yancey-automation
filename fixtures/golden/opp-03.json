@@ -1,0 +1,39 @@
+{
+  "id": "opp-03",
+  "source": "yancey-training-set",
+  "yanceyLabel": "OPPORTUNITY",
+  "behavior": "draft",
+  "expected": "opportunity",
+  "note": "SCE client responds on the kickoff deck, supportive, flags slide 2 risk. External client voice — deserves a reply. Buried under a large Teams meeting block that must be stripped.",
+  "message": {
+    "id": "AAMkTRAINOPP03",
+    "subject": "Re: (External):Re: Vector Sync-Up",
+    "receivedDateTime": "2026-07-29T15:20:00Z",
+    "from": {
+      "emailAddress": {
+        "name": "Jessica Elaine Doucette",
+        "address": "Jessica.Elaine.Doucette@sce.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "name": "Charles Coleman",
+          "address": "Ccoleman@partnersperform.com"
+        }
+      },
+      {
+        "emailAddress": {
+          "name": "Yancey Dawson",
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
+    "hasAttachments": true,
+    "categories": [],
+    "body": {
+      "contentType": "text",
+      "content": "Good morning -\n\nThank you for the review, I am supportive of the content and flow. Thank you for taking me back to my finance days, I just spent a couple minutes fact checking the credit ratings on our investor site. Slide 2 might be susceptible to poking holes and getting stuck, but I will help push us forward. Irrespective of our GRC view, the T&D buy-in is the largest, and we have work to do.\n\nI will look for the revised deck with the additions you mention.\n\nSee you all at 2pm\n\nJessica Doucette\n\nPrincipal Manager\n\nPerformance Support and T&D Process Management\n\nT. 626-464-4010\n\n[cid:abe23e94-02cf-4494-9d8a-dc4a5e75a954]\n________________________________\nFrom: Charles Coleman <Ccoleman@partnersperform.com>\nSent: Tuesday, July 28, 2026 2:47 PM\nTo: Dean E Heiss <Dean.Heiss@sce.com>; James Vallecorsa <James.Vallecorsa@sce.com>; Lisset Guzman <lisset.guzman@sce.com>; Yancey Dawson <YDawson@partnersperform.com>\nCc: Jessica Elaine Doucette <Jessica.Elaine.Doucette@sce.com>\nSubject: (External):Re: Vector Sync-Up\n\nTeam - here is the first draft of the kickoff deck. Per you comments, I will be working on:\n\n  *\nAdding a slide showing the evolution from Catalyst to Vector (why this is not Catalyst)\n  *\nIntegrating the $80m capital solve\n  *\nClarifying Edison vs. T&D numbers\n\nI ask that you make any additional comments by close of business today. I will work on them in the morning and discuss at the touchpoint tomorrow.\n\nThank you\n\nFrom: Dean.Heiss@sce.com\nWhen: 4:00 PM - 4:30 PM July 28, 2026\nSubject: Vector Sync-Up\nLocation: Microsoft Teams Meeting\n\nPurpose: Prepare for the August 4th Kickoff meeting\n\n________________________________________________________________________________\n\nMicrosoft Teams meeting\n\nJoin: https://teams.microsoft.com/meet/271803246570777?p=v4PweCdkdPPaX5NcZk<https://urldefense.com/v3/__https://teams.microsoft.com/meet/271803246570777?p=v4PweCdkdPPaX5NcZk__;!!FPmBsh4YZ_RhLneAcPkcnpFqxg!Q0R60NLW023No2lmivln8uoXXputLh19J_LH8kqmpVLslsuuxF1CWohT0VqSjebVv74l53cpqTXSjnpGibvdfjXYdnrBBS0$>\n\nMeeting ID: 271 803 246 570 777\n\nPasscode: 4F6fh92k\n\n________________________________\n\nNeed help?<https://urldefense.com/v3/__https://aka.ms/JoinTeamsMeeting?omkt=en-US__;!!FPmBsh4YZ_RhLneAcPkcnpFqxg!Q0R60NLW023No2lmivln8uoXXputLh19J_LH8kqmpVLslsuuxF1CWohT0VqSjebVv74l53cpqTXSjnpGibvdfjXYy5zGx1g$> | System reference<https://urldefense.com/v3/__https://teams.microsoft.com/l/meetup-join/19*3ameeting_YjUzZWJlMGItMTRkNy00YTgxLThiYjMtYzNjY2YzNTM3MDU5*40thread.v2/0?context=*7b*22Tid*22*3a*225b2a8fee-4c95-4bdc-8aae-196f8aacb1b6*22*2c*22Oid*22*3a*22a90b1c05-0630-4434-936f-d58bf0221b61*22*7d__;JSUlJSUlJSUlJSUlJSUl!!FPmBsh4YZ_RhLneAcPkcnpFqxg!Q0R60NLW023No2lmivln8uoXXputLh19J_LH8kqmpVLslsuuxF1CWohT0VqSjebVv74l53cpqTXSjnpGibvdfjXYp5HeV4M$>\n\nDial in by phone\n\n+1 213-297-0156,,772281563#<tel:+12132970156,,772281563> United States, Los Angeles\n\nFind a local number<https://urldefense.com/v3/__https://dialin.teams.cloud.microsoft/96b520e5-50a3-4084-95b6-4f232475498c?id=772281563__;!!FPmBsh4YZ_RhLneAcPkcnpFqxg!Q0R60NLW023No2lmivln8uoXXputLh19J_LH8kqmpVLslsuuxF1CWohT0VqSjebVv74l53cpqTXSjnpGibvdfjXYFDalWlM$>\n\nPhone conference ID: 772 281 563#\n\nFor organizers: Meeting options<https://urldefense.com/v3/__https://teams.microsoft.com/meetingOptions/?organizerId=a90b1c05-0630-4434-936f-d58bf0221b61&tenantId=5b2a8fee-4c95-4bdc-8aae-196f8aacb1b6&threadId=19_meeting_YjUzZWJlMGItMTRkNy00YTgxLThiYjMtYzNjY2YzNTM3MDU5@thread.v2&messageId=0&language=en-US__;!!FPmBsh4YZ_RhLneAcPkcnpFqxg!Q0R60NLW023No2lmivln8uoXXputLh19J_LH8kqmpVLslsuuxF1CWohT0VqSjebVv74l53cpqTXSjnpGibvdfjXY3mbM_30$> | Reset dial-in PIN<https://urldefense.com/v3/__https://dialin.teams.cloud.microsoft/usp/pstnconferencing__;!!FPmBsh4YZ_RhLneAcPkcnpFqxg!Q0R60NLW023No2lmivln8uoXXputLh19J_LH8kqmpVLslsuuxF1CWohT0VqSjebVv74l53cpqTXSjnpGibvdfjXYYfAsYCA$>\n\nMeetings MAY be recorded only if the presenter enables the recording feature AND initiates recording. If the meeting is being recorded, you will be warned and you may either consent to recording by staying on the call or hang up and contact meeting host.\n\nOrg help<https://urldefense.com/v3/__https://support.office.com/en-us/article/join-a-meeting-in-teams-1613bb53-f3fa-431e-85a9-d6a91e3468c9__;!!FPmBsh4YZ_RhLneAcPkcnpFqxg!Q0R60NLW023No2lmivln8uoXXputLh19J_LH8kqmpVLslsuuxF1CWohT0VqSjebVv74l53cpqTXSjnpGibvdfjXYzMEFKk0$> | Privacy and security<https://urldefense.com/v3/__https://skype-disclaimer.edison.com/skypelegal.htm__;!!FPmBsh4YZ_RhLneAcPkcnpFqxg!Q0R60NLW023No2lmivln8uoXXputLh19J_LH8kqmpVLslsuuxF1CWohT0VqSjebVv74l53cpqTXSjnpGibvdfjXYmpB0Pos$>\n\n________________________________________________________________________________\n"
+    }
+  }
+}
