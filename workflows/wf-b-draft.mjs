@@ -90,7 +90,7 @@ if (incoming && incoming.error) {
       finalHtml: '',
       extraCategories: ['AI-Review'],
       draftId: composed.draftId,
-      draftIdEnc: composed.draftIdEnc,
+      draftIdEnc: failed.draftIdEnc,
       draftWebLink: composed.draftWebLink,
       draftCreatedAt: new Date().toISOString(),
       messageId: failed.messageId,

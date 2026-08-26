@@ -99,7 +99,8 @@ const c = normalizeClassification($json, {
   subject: String(src.subject || ''),
   senderEmail: String(src.senderEmail || ''),
   confidenceMin: Number(cfg.confidenceMin) || 0.6,
-  alwaysFlagSenders: Array.isArray(cfg.alwaysFlagSenders) ? cfg.alwaysFlagSenders : []
+  alwaysFlagSenders: Array.isArray(cfg.alwaysFlagSenders) ? cfg.alwaysFlagSenders : [],
+  authorised
 });
 
 const receivedAt = src.receivedAt || nowIso;
@@ -122,10 +123,8 @@ return {
     urgency: c.urgency,
     reasoning: c.reasoning,
     asks: JSON.stringify(c.asks),
-    requiresDraft: c.requiresDraft && authorised,
-    guardFlags: c.requiresDraft && !authorised
-      ? (c.guardFlags ? c.guardFlags + ',mailbox_not_addressed' : 'mailbox_not_addressed')
-      : c.guardFlags,
+    requiresDraft: c.requiresDraft,
+    guardFlags: c.guardFlags,
     status: c.label === 'noise' ? 'resolved' : 'classified',
     followupDueAt: addBusinessDays(new Date(receivedAt), Number(cfg.followupDays) || 3).toISOString(),
     categories: decideCategories(src.categories, c.label),

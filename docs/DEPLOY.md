@@ -815,6 +815,53 @@ drafting only on label and confidence. It is kept because it fails closed and
 guards a real handover hazard, but it is recorded here as an addition to the
 spec rather than an implementation of it.
 
+## Standards-axis findings acted on (2026-08-27)
+
+Two hard violations and four judgement calls. The hard ones are fixed; two of
+the judgement calls are fixed; two are recorded as accepted.
+
+**Guard composition — fixed.** The interlock hand-rolled comma-joining of
+`guardFlags` in the WF-A node body, when every other guard pushes onto the
+`guards` array inside `normalizeClassification`. That split ownership of
+`requiresDraft` across two files, in a template literal `checkJs` never reads —
+so the next guard would have needed edits in both. It now flows through
+`ctx.authorised` like pricing and sensitivity do. Absent means "no mailbox
+context", which is what the golden-set harness has; only an explicit `false`
+withholds a draft.
+
+**Second coercion idiom — fixed.** `String(x || '').toLowerCase().trim()` is
+the file's idiom (`sensitivityGuard`, `recipientAddresses`). The new function
+had invented its own.
+
+**Speculative Generality — fixed.** `describeDraftFailure` carried a
+`blockedByGuard` branch and a `hasDraftToDelete` field that never ran: the
+guard path computes its own status inline, and the helper is only reached when
+the model errored. Both removed, and the call site now uses `failed.draftIdEnc`
+rather than reaching past the helper to `composed.draftIdEnc` — one source of
+truth for the id that deletes the empty draft.
+
+**Mysterious Name — fixed.** `mailboxMatches(entry, box)` compared a *recipient*
+to a mailbox. Renamed `sameAddress`.
+
+**Accepted, not fixed.** The status vocabulary (`drafted` / `draft_blocked` /
+`draft_failed`) is spelled in four places, one of them inside an n8n expression
+string that cannot import a constant, so a shared enum would only partly help.
+And `VOICE_GUARD` / `APPLY_CLASSIFICATION` are the only two node-body constants
+exported, purely so `nodes.test.js` can reach them; registering bodies in
+`HELPERS` alongside their helper lists would be tidier and is worth doing when
+the next node body needs a test.
+
+**Two fidelity notes on the new harness**, worth knowing before trusting it:
+`nodeRef` returns the same value from `first()`, `all()` and `item`, so the
+`$itemIndex` pairing that `APPLY_CLASSIFICATION`'s own comment calls subtle is
+never exercised. And the cc test uses `GTutor@PartnersPerform.com`, which
+cannot occur in production because `recipientAddresses` lowercases first — the
+case-insensitivity it proves is defensive, not load-bearing.
+
+Re-verified after the refactor: 132 tests, typecheck clean, both deployed node
+bodies simulated against the local build, and a live email through the whole
+chain came back `opportunity` 0.98, drafted, no guard flags.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

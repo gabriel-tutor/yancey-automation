@@ -11,7 +11,7 @@ import {
   normalizeClassification,
   normalizeGraphMessage,
   describeDraftFailure,
-  mailboxMatches,
+  sameAddress,
   addressedToMailbox,
   isPassThroughHead,
   parseModelJson,
@@ -710,19 +710,7 @@ describe('describeDraftFailure — nothing is left stranded in the mailbox', () 
   const request = { messageId: 'AAMkMSG', messageIdEnc: 'AAMkMSG%3D' };
   const draft = { draftIdEnc: 'AAMkDRAFT%3D' };
 
-  it('reports a voice-guard block and keeps its flags', () => {
-    const out = describeDraftFailure({
-      item: { ok: false, guardFlags: 'invented_fact,too_long', draftIdEnc: 'AAMkDRAFT%3D' },
-      request,
-      draft,
-    });
-    expect(out.status).toBe('draft_blocked');
-    expect(out.guardFlags).toBe('invented_fact,too_long');
-    expect(out.draftIdEnc).toBe('AAMkDRAFT%3D');
-    expect(out.hasDraftToDelete).toBe(true);
-  });
-
-  it('reports a model failure distinctly from a guard block', () => {
+  it('reports a model failure as a fault, not a decision', () => {
     const out = describeDraftFailure({
       item: { error: { message: 'OpenAI 500: upstream timeout' } },
       request,
@@ -732,7 +720,6 @@ describe('describeDraftFailure — nothing is left stranded in the mailbox', () 
     expect(out.guardFlags).toBe('draft_generation_failed');
     // the empty draft still exists and must be reachable for deletion
     expect(out.draftIdEnc).toBe('AAMkDRAFT%3D');
-    expect(out.hasDraftToDelete).toBe(true);
   });
 
   it('falls back to the trigger for identifiers when Voice Guard never ran', () => {
@@ -743,7 +730,7 @@ describe('describeDraftFailure — nothing is left stranded in the mailbox', () 
 
   it('prefers the id on the item over the one from the prompt node', () => {
     const out = describeDraftFailure({
-      item: { ok: false, guardFlags: 'x', draftIdEnc: 'FROM_ITEM' },
+      item: { error: 'boom', draftIdEnc: 'FROM_ITEM' },
       request,
       draft,
     });
@@ -753,7 +740,6 @@ describe('describeDraftFailure — nothing is left stranded in the mailbox', () 
   it('says plainly when there is no draft to delete', () => {
     const out = describeDraftFailure({ item: { error: 'boom' }, request, draft: {} });
     expect(out.draftIdEnc).toBe('');
-    expect(out.hasDraftToDelete).toBe(false);
   });
 
   it('carries a short error note without letting it run away', () => {
@@ -768,27 +754,27 @@ describe('describeDraftFailure — nothing is left stranded in the mailbox', () 
   it('never throws on a shape it has not seen', () => {
     const out = describeDraftFailure({ item: null, request: null, draft: null });
     expect(out.status).toBe('draft_failed');
-    expect(out.hasDraftToDelete).toBe(false);
+    expect(out.draftIdEnc).toBe('');
   });
 });
 
-describe('mailboxMatches — the drafting interlock', () => {
+describe('sameAddress — the drafting interlock primitive', () => {
   it('matches regardless of case and padding', () => {
-    expect(mailboxMatches('  YDawson@PartnersPerform.com ', 'ydawson@partnersperform.com')).toBe(true);
+    expect(sameAddress('  YDawson@PartnersPerform.com ', 'ydawson@partnersperform.com')).toBe(true);
   });
 
   it('refuses a different mailbox', () => {
-    expect(mailboxMatches('ydawson@partnersperform.com', 'gtutor@partnersperform.com')).toBe(false);
+    expect(sameAddress('ydawson@partnersperform.com', 'gtutor@partnersperform.com')).toBe(false);
   });
 
   it('fails closed when the mailbox could not be read', () => {
-    expect(mailboxMatches('', 'gtutor@partnersperform.com')).toBe(false);
+    expect(sameAddress('', 'gtutor@partnersperform.com')).toBe(false);
   });
 
   it('fails closed when no mailbox is configured', () => {
     // An unset interlock must not silently mean "draft into anything".
-    expect(mailboxMatches('gtutor@partnersperform.com', '')).toBe(false);
-    expect(mailboxMatches('gtutor@partnersperform.com', undefined)).toBe(false);
+    expect(sameAddress('gtutor@partnersperform.com', '')).toBe(false);
+    expect(sameAddress('gtutor@partnersperform.com', undefined)).toBe(false);
   });
 });
 
@@ -864,5 +850,45 @@ describe('pricingGuard suppression — only a quoted FEE stands the guard down',
   it('is stood down by an hourly rate stated in-thread', () => {
     const thread = ASK + '\n\nAs discussed our blended hourly rate is $265 per hour.';
     expect(pricingGuard(thread, 'Scope').triggered).toBe(false);
+  });
+});
+
+describe('normalizeClassification owns the interlock flag', () => {
+  const raw = {
+    label: 'opportunity', confidence: 0.95, reasoning: 'live work',
+    requires_draft: true, urgency: 'this_week', asks_of_yancey: ['send workbook'],
+  };
+  const base = {
+    cleanText: 'Can you pull the workbook together?',
+    subject: 'RE: Vector CI',
+    senderEmail: 'ccoleman@partnersperform.com',
+    confidenceMin: 0.6,
+  };
+
+  it('drafts when the mailbox is authorised', () => {
+    const v = normalizeClassification(raw, { ...base, authorised: true });
+    expect(v.requiresDraft).toBe(true);
+    expect(v.guardFlags).toBe('');
+  });
+
+  it('withholds the draft and flags it, joined like every other guard', () => {
+    const v = normalizeClassification(raw, { ...base, authorised: false });
+    expect(v.requiresDraft).toBe(false);
+    expect(v.guardFlags).toBe('mailbox_not_addressed');
+    expect(v.label).toBe('opportunity');
+  });
+
+  it('joins the interlock flag with others rather than hand-rolling a comma', () => {
+    const v = normalizeClassification(
+      { ...raw, confidence: 0.2 },
+      { ...base, authorised: false },
+    );
+    // Low confidence already blocks the draft, so only that flag applies.
+    expect(v.guardFlags).toBe('below_confidence_min');
+  });
+
+  it('treats an absent mailbox context as no restriction', () => {
+    // The golden-set harness scores prompts, not deployments.
+    expect(normalizeClassification(raw, base).requiresDraft).toBe(true);
   });
 });

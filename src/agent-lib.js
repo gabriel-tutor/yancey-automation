@@ -305,6 +305,12 @@ function recipientAddresses(recipients) {
 /**
  * Turn a raw Graph message into the shape every downstream node expects.
  * @param {any} msg
+/** How much of the thread the deterministic guards scan. Never sent to the model. */
+const GUARD_SCAN_CHARS = 12000;
+
+/**
+ * Normalise a Graph message into the shape every downstream node reads.
+ * @param {any} msg
  * @param {{ maxChars?: number }} [options]
  */
 function normalizeGraphMessage(msg, options) {
@@ -345,7 +351,7 @@ function normalizeGraphMessage(msg, options) {
     // The whole visible thread, quoted history included, for the deterministic
     // guards only. A fee ask one level down the chain is still a fee ask —
     // scanning just the newest message misses it. Never sent to the model.
-    threadText: truncate(withoutFooter, 12000).text,
+    threadText: truncate(withoutFooter, GUARD_SCAN_CHARS).text,
     quoteTrimmed: stripped.trimmed,
     quoteBoundaries: stripped.boundaries,
     truncated: limited.truncated,
@@ -594,22 +600,18 @@ function pricingGuard(text, subject) {
 }
 
 /**
- * Work out what to do after a draft attempt failed to produce a reply.
- *
- * Two different things land here. A draft the Voice Guard rejected is a
- * *decision*. A draft the model or Graph never finished is a *fault*. Both
- * leave the empty reply that `createReply` already put in the mailbox, and
- * both have to clear it up — but they should not read the same in the log.
+ * Describe a draft attempt that failed outright — the model erroring after its
+ * retries, not the Voice Guard rejecting a reply. A rejection is a decision and
+ * carries its own flags; this is a fault and should read as one in the log.
  *
  * Identifiers come from the trigger, never from the Voice Guard node. On the
  * fault path the Voice Guard never executed, so an expression reaching for it
- * throws — and the empty draft stays in the mailbox, which is the bug this
- * exists to close.
+ * throws — and the empty reply `createReply` already put in the mailbox stays
+ * there, which is the bug this exists to close.
  *
  * @param {{ item?: any, request?: any, draft?: any } | null} input
  * @returns {{ status: string, guardFlags: string, note: string,
- *             messageId: string, messageIdEnc: string, draftIdEnc: string,
- *             hasDraftToDelete: boolean }}
+ *             messageId: string, messageIdEnc: string, draftIdEnc: string }}
  */
 function describeDraftFailure(input) {
   const src = input || {};
@@ -617,48 +619,35 @@ function describeDraftFailure(input) {
   const request = src.request || {};
   const draft = src.draft || {};
 
-  const blockedByGuard = item.ok === false;
-  const guardFlags = blockedByGuard
-    ? String(item.guardFlags || 'voice_guard')
-    : 'draft_generation_failed';
-
-  const draftIdEnc = String(item.draftIdEnc || draft.draftIdEnc || '');
-
-  let note = '';
-  if (!blockedByGuard) {
-    const err = item.error;
-    if (typeof err === 'string') note = err;
-    else if (err && err.message) note = String(err.message);
-    else note = 'draft step failed';
-  }
+  const err = item.error;
+  let note = 'draft step failed';
+  if (typeof err === 'string') note = err;
+  else if (err && err.message) note = String(err.message);
 
   return {
-    status: blockedByGuard ? 'draft_blocked' : 'draft_failed',
-    guardFlags,
+    status: 'draft_failed',
+    guardFlags: 'draft_generation_failed',
     note: note.slice(0, 200),
     messageId: String(request.messageId || item.messageId || ''),
     messageIdEnc: String(request.messageIdEnc || item.messageIdEnc || ''),
-    draftIdEnc,
-    hasDraftToDelete: draftIdEnc.length > 0,
+    draftIdEnc: String(item.draftIdEnc || draft.draftIdEnc || ''),
   };
 }
 
 /**
- * The drafting interlock: does the connected mailbox match the one drafting
- * was authorised for?
+ * Are these the same email address? Case- and padding-insensitive.
  *
- * Fails closed on purpose. An unset or unreadable mailbox must never be taken
- * to mean "write into whatever is connected" — the failure this guards against
- * is a credential swapped to Yancey while drafting is still switched on, and
- * the safe answer when we cannot tell is to label only.
+ * Fails closed: an empty address on either side is never a match. The caller
+ * is deciding whether to write into a mailbox, and "cannot tell" must not read
+ * as "yes".
  *
- * @param {unknown} actual
- * @param {unknown} allowed
+ * @param {unknown} left
+ * @param {unknown} right
  * @returns {boolean}
  */
-function mailboxMatches(actual, allowed) {
-  const a = actual === undefined || actual === null ? '' : String(actual).trim().toLowerCase();
-  const b = allowed === undefined || allowed === null ? '' : String(allowed).trim().toLowerCase();
+function sameAddress(left, right) {
+  const a = String(left || '').toLowerCase().trim();
+  const b = String(right || '').toLowerCase().trim();
   if (a.length === 0 || b.length === 0) return false;
   return a === b;
 }
@@ -666,14 +655,13 @@ function mailboxMatches(actual, allowed) {
 /**
  * Is this message actually addressed to the mailbox drafting was authorised
  * for? The interlock against the one dangerous configuration mistake: the
- * Outlook credential re-pointed at Yancey while `draftingEnabled` is still on,
+ * Outlook credential re-pointed at Yancey while drafting is still switched on,
  * which would start writing replies into a live client mailbox mid-rollout.
  *
  * Checks to and cc, because Yancey is cc rather than to on several of the
- * emails he labelled OPPORTUNITY himself. Mail that reaches him only via bcc
- * or a distribution list will not draft — that is a deliberate,
- * label-instead-of-draft failure, and it shows up as `mailbox_not_addressed`
- * in guard_flags so it is never a silent one.
+ * emails he labelled OPPORTUNITY himself. Mail reaching him only via bcc or a
+ * distribution list will not draft — a deliberate label-instead-of-draft
+ * failure, surfaced as `mailbox_not_addressed` so it is never a silent one.
  *
  * @param {unknown} toRecipients
  * @param {unknown} ccRecipients
@@ -681,7 +669,7 @@ function mailboxMatches(actual, allowed) {
  * @returns {boolean}
  */
 function addressedToMailbox(toRecipients, ccRecipients, mailbox) {
-  const box = mailbox === undefined || mailbox === null ? '' : String(mailbox).trim().toLowerCase();
+  const box = String(mailbox || '').toLowerCase().trim();
   if (box.length === 0) return false;
 
   const lists = [toRecipients, ccRecipients];
@@ -689,7 +677,7 @@ function addressedToMailbox(toRecipients, ccRecipients, mailbox) {
     if (!Array.isArray(list)) continue;
     for (const entry of list) {
       if (typeof entry !== 'string') continue;
-      if (mailboxMatches(entry, box)) return true;
+      if (sameAddress(entry, box)) return true;
     }
   }
   return false;
@@ -729,7 +717,7 @@ function sensitivityGuard(senderEmail, text, subject, alwaysFlagSenders) {
  * @param {any} raw
  * @param {{ cleanText: string, subject: string, senderEmail: string,
  *           confidenceMin: number, alwaysFlagSenders?: string[],
- *           threadText?: string }} ctx
+ *           threadText?: string, authorised?: boolean }} ctx
  */
 function normalizeClassification(raw, ctx) {
   const parsed = parseModelJson(raw) || {};
@@ -773,11 +761,18 @@ function normalizeClassification(raw, ctx) {
 
   const draftable = label === 'opportunity' || label === 'admin';
   const modelWantsDraft = parsed.requires_draft !== false;
-  const requiresDraft =
-    draftable && modelWantsDraft && confidence >= ctx.confidenceMin;
+  const confident = confidence >= ctx.confidenceMin;
+  // Absent means "no mailbox context" — the golden-set harness scores the
+  // prompt, not a deployment. Only an explicit false withholds the draft.
+  const authorised = ctx.authorised !== false;
 
-  if (draftable && modelWantsDraft && !requiresDraft) {
+  const requiresDraft = draftable && modelWantsDraft && confident && authorised;
+
+  if (draftable && modelWantsDraft && !confident) {
     guards.push('below_confidence_min');
+  }
+  if (draftable && modelWantsDraft && confident && !authorised) {
+    guards.push('mailbox_not_addressed');
   }
 
   return {
@@ -1377,7 +1372,7 @@ export {
   htmlToText,
   injectReplyIntoDraftHtml,
   inventedTokens,
-  mailboxMatches,
+  sameAddress,
   normalizeClassification,
   normalizeGraphMessage,
   parseModelJson,
