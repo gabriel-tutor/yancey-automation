@@ -12,5 +12,24 @@
     "wfE": "XSKk6eHTFGqftrUM",
     "wfT": "1fCjIsw2JjVGkNJb"
   },
-  "n8nBaseUrl": "https://n8n-wevu.srv1921545.hstgr.cloud"
+  "n8nBaseUrl": "https://n8n-wevu.srv1921545.hstgr.cloud",
+  "credentials": {
+    "_note": "IDs only. Secrets live in n8n, encrypted under N8N_ENCRYPTION_KEY. Never store keys here.",
+    "outlookDev": {
+      "id": "gBDmBd3jHGBqqQjl",
+      "name": "Outlook \u2013 Dev (gtutor)",
+      "type": "microsoftOutlookOAuth2Api"
+    },
+    "smtp": {
+      "id": "zf9Tel6L2frlA9MB",
+      "name": "SMTP account",
+      "type": "smtp"
+    },
+    "openai": {
+      "id": null,
+      "name": null,
+      "type": "openAiApi",
+      "_status": "PENDING \u2014 two candidate keys on the instance, awaiting confirmation of which belongs to the Upperform account"
+    }
+  }
 }
