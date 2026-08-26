@@ -1,0 +1,389 @@
+<title>Upperform Inbox Assistant</title>
+<style>
+  :root {
+    --ground:      #F5F6F7;
+    --panel:       #FFFFFF;
+    --ink:         #141D26;
+    --ink-soft:    #5A6672;
+    --ink-faint:   #8A94A0;
+    --rule:        #D9DEE3;
+    --rule-soft:   #E8EBEE;
+    --live:        #B5610C;
+    --live-wash:   #FBF2E7;
+    --inert:       #8A94A0;
+    --cat-grey:    #7C8794;
+    --cat-amber:   #C2761A;
+    --cat-red:     #B3261E;
+    --cat-green:   #2E7D4F;
+    --shadow:      0 1px 2px rgba(20,29,38,.05), 0 8px 24px -18px rgba(20,29,38,.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:    #0F151B;
+      --panel:     #161E26;
+      --ink:       #E4E9ED;
+      --ink-soft:  #9AA6B2;
+      --ink-faint: #6C7885;
+      --rule:      #2A343E;
+      --rule-soft: #202932;
+      --live:      #E39B4E;
+      --live-wash: #221A10;
+      --inert:     #6C7885;
+      --cat-grey:  #8A94A0;
+      --cat-amber: #E0A050;
+      --cat-red:   #E8776E;
+      --cat-green: #6BBF8E;
+      --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:    #0F151B;
+    --panel:     #161E26;
+    --ink:       #E4E9ED;
+    --ink-soft:  #9AA6B2;
+    --ink-faint: #6C7885;
+    --rule:      #2A343E;
+    --rule-soft: #202932;
+    --live:      #E39B4E;
+    --live-wash: #221A10;
+    --inert:     #6C7885;
+    --cat-grey:  #8A94A0;
+    --cat-amber: #E0A050;
+    --cat-red:   #E8776E;
+    --cat-green: #6BBF8E;
+    --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page { max-width: 1000px; margin: 0 auto; padding: 56px 28px 96px; }
+  .prose { max-width: 66ch; }
+
+  .eyebrow {
+    font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(30px, 4.6vw, 46px);
+    line-height: 1.08; font-weight: 400; letter-spacing: -.01em;
+    text-wrap: balance; margin: 14px 0 0;
+  }
+  .standfirst { font-size: 19px; line-height: 1.55; color: var(--ink-soft); margin: 16px 0 0; max-width: 60ch; }
+
+  h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 25px; font-weight: 400; line-height: 1.2;
+    text-wrap: balance; margin: 0;
+  }
+  h3 { font-size: 15px; font-weight: 650; margin: 0 0 6px; letter-spacing: -.005em; }
+  p { margin: 0 0 14px; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 650; }
+
+  section { margin-top: 56px; }
+  .sec-head { display: flex; flex-direction: column; gap: 8px; padding-top: 22px; border-top: 1px solid var(--rule); margin-bottom: 26px; }
+  .sec-head p { color: var(--ink-soft); margin: 0; max-width: 62ch; }
+
+  figure { margin: 0; }
+  .figwrap { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 26px 22px 18px; box-shadow: var(--shadow); }
+  .scroll { overflow-x: auto; }
+  svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+  figcaption {
+    font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--ink-faint); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule-soft);
+  }
+
+  .cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(228px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 16px 18px; }
+  .card p { font-size: 14.5px; color: var(--ink-soft); margin: 0; }
+
+  .tag {
+    display: inline-block; font: 600 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .1em; text-transform: uppercase; padding: 5px 8px; border-radius: 2px;
+    border: 1px solid currentColor; margin-bottom: 10px;
+  }
+  .t-grey  { color: var(--cat-grey); }
+  .t-amber { color: var(--cat-amber); }
+  .t-red   { color: var(--cat-red); }
+  .t-green { color: var(--cat-green); }
+
+  .steps { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+  .step { display: grid; grid-template-columns: 92px 1fr; gap: 20px; padding: 16px 18px; border-bottom: 1px solid var(--rule-soft); }
+  .step:last-child { border-bottom: 0; }
+  .step .when { font: 600 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--live); letter-spacing: .04em; padding-top: 1px; }
+  .step .what { font-size: 14.5px; color: var(--ink-soft); }
+  .step .what b { color: var(--ink); font-weight: 650; }
+
+  .callout { background: var(--live-wash); border: 1px solid var(--rule); border-left: 3px solid var(--live); border-radius: 3px; padding: 18px 20px; }
+  .callout p { font-size: 15px; }
+  .callout p:first-child { font-weight: 650; color: var(--ink); }
+
+  ul.asks { list-style: none; padding: 0; margin: 0; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+  ul.asks li { padding: 14px 18px; border-bottom: 1px solid var(--rule-soft); font-size: 14.5px; color: var(--ink-soft); }
+  ul.asks li:last-child { border-bottom: 0; }
+  ul.asks b { color: var(--ink); font-weight: 650; display: block; margin-bottom: 2px; }
+
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-faint); }
+
+  @media (max-width: 560px) {
+    .page { padding: 36px 18px 64px; }
+    .step { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="prose">
+    <div class="eyebrow">Upperform Partners &middot; prepared for Yancey Dawson</div>
+    <h1>The inbox assistant, and what it can&rsquo;t do</h1>
+    <p class="standfirst">It watches your mailbox, sorts what arrives, and writes replies for you to review. It has no ability to send them. This is how that works.</p>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2>What happens to one email</h2>
+      <p>Everything runs inside the Outlook you already use. Nothing new to log into, nothing new to check.</p>
+    </div>
+
+    <div class="figwrap">
+      <figure>
+        <div class="scroll">
+          <svg viewBox="0 0 1080 400" role="img" aria-label="An email arrives, the assistant reads it within two minutes and sorts it into one of four kinds. Only the reply-worthy kind produces a draft, which lands in the Drafts folder and leaves the mailbox only when Yancey presses Send.">
+            <defs>
+              <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor"/>
+              </marker>
+              <marker id="ar-live" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#B5610C"/>
+              </marker>
+            </defs>
+
+            <g fill="none" stroke="currentColor" stroke-width="1.25" opacity=".75">
+              <line x1="150" y1="200" x2="196" y2="200" marker-end="url(#ar)"/>
+              <line x1="366" y1="200" x2="404" y2="200" marker-end="url(#ar)"/>
+            </g>
+
+            <rect x="16" y="172" width="134" height="56" fill="none" stroke="currentColor" stroke-width="1.25" rx="2"/>
+            <text x="83" y="196" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">New email</text>
+            <text x="83" y="213" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".6">arrives</text>
+
+            <rect x="196" y="164" width="170" height="72" fill="none" stroke="currentColor" stroke-width="1.25" rx="2"/>
+            <text x="281" y="190" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Assistant reads it</text>
+            <text x="281" y="209" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">within 2 minutes</text>
+
+            <g fill="none" stroke="currentColor" stroke-width="1.25" opacity=".55">
+              <path d="M404 200 L432 200 L432 46  L470 46"  marker-end="url(#ar)"/>
+              <path d="M404 200 L432 200 L432 148 L470 148" marker-end="url(#ar)"/>
+              <path d="M404 200 L432 200 L432 250 L470 250" marker-end="url(#ar)"/>
+            </g>
+            <path d="M404 200 L432 200 L432 352 L470 352" fill="none" stroke="#B5610C" stroke-width="1.75" marker-end="url(#ar-live)"/>
+
+            <g font-size="13" font-weight="600">
+              <rect x="470" y="20" width="212" height="52" fill="none" stroke="#7C8794" stroke-width="1.25" rx="2"/>
+              <text x="486" y="42" fill="#7C8794">Junk</text>
+              <text x="486" y="60" font-size="11.5" font-weight="400" fill="currentColor" opacity=".6">no reply needed</text>
+
+              <rect x="470" y="122" width="212" height="52" fill="none" stroke="#C2761A" stroke-width="1.25" rx="2"/>
+              <text x="486" y="144" fill="#C2761A">Needs you</text>
+              <text x="486" y="162" font-size="11.5" font-weight="400" fill="currentColor" opacity=".6">but no reply to write</text>
+
+              <rect x="470" y="224" width="212" height="52" fill="none" stroke="#B3261E" stroke-width="1.25" rx="2"/>
+              <text x="486" y="246" fill="#B3261E">Sensitive</text>
+              <text x="486" y="264" font-size="11.5" font-weight="400" fill="currentColor" opacity=".6">never drafted &mdash; ever</text>
+
+              <rect x="470" y="326" width="212" height="52" fill="#FBF2E7" stroke="#B5610C" stroke-width="1.75" rx="2"/>
+              <text x="486" y="348" fill="#B5610C">Worth a reply</text>
+              <text x="486" y="366" font-size="11.5" font-weight="400" fill="#B5610C" opacity=".85">a draft gets written</text>
+            </g>
+
+            <g font-size="11" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".5">
+              <text x="700" y="50">flagged grey, that&rsquo;s all</text>
+              <text x="700" y="152">flagged orange</text>
+              <text x="700" y="254">flagged red</text>
+            </g>
+
+            <path d="M682 352 L724 352" fill="none" stroke="#B5610C" stroke-width="1.75" marker-end="url(#ar-live)"/>
+            <rect x="724" y="326" width="150" height="52" fill="none" stroke="#B5610C" stroke-width="1.75" rx="2"/>
+            <text x="799" y="348" text-anchor="middle" font-size="13" font-weight="600" fill="#B5610C">Your Drafts</text>
+            <text x="799" y="365" text-anchor="middle" font-size="11.5" fill="#B5610C" opacity=".85">folder</text>
+
+            <path d="M874 352 L916 352" fill="none" stroke="#B5610C" stroke-width="1.75" marker-end="url(#ar-live)"/>
+            <rect x="916" y="318" width="148" height="68" fill="none" stroke="currentColor" stroke-width="2" rx="2"/>
+            <text x="990" y="342" text-anchor="middle" font-size="13.5" font-weight="700" fill="currentColor">You press Send</text>
+            <text x="990" y="361" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">the only way out</text>
+            <text x="990" y="377" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">of the mailbox</text>
+          </svg>
+        </div>
+        <figcaption>Four kinds in, one path out. Three of the four stop at a coloured flag in your inbox &mdash; the assistant has done its work by telling you the mail is there. Only the fourth produces a draft, and that draft still waits for you.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>What you&rsquo;ll actually see</h2>
+      <p>Coloured flags on the emails you already have open. They appear on their own, within a couple of minutes of the mail landing.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="tag t-grey">Junk</span>
+        <h3>Read and dismissed</h3>
+        <p>Vendor pitches, invoice notifications, &ldquo;Received, thank you!&rdquo;. Flagged so you know it was seen, then left alone.</p>
+      </div>
+      <div class="card">
+        <span class="tag t-amber">Needs you</span>
+        <h3>Worth your eyes</h3>
+        <p>Live engagement work &mdash; a deck in review, a status update, an action Chuck has put your way.</p>
+      </div>
+      <div class="card">
+        <span class="tag t-red">Sensitive</span>
+        <h3>Surfaced, never drafted</h3>
+        <p>Legal, contracts, HR, press, disputes &mdash; and anything asking your price. The assistant will not put words in your mouth on these.</p>
+      </div>
+      <div class="card">
+        <span class="tag t-green">Drafted</span>
+        <h3>A reply is waiting</h3>
+        <p>A draft sits in your Drafts folder, threaded to the original, recipients filled in. Read it, change it, send it or bin it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Why it cannot send mail</h2>
+      <p>Not a setting we chose and could change by accident. The permission was never requested, so the path does not exist.</p>
+    </div>
+
+    <div class="figwrap">
+      <figure>
+        <div class="scroll">
+          <svg viewBox="0 0 760 300" role="img" aria-label="A one-line diagram. The assistant connects to the mailbox through three branches. Reading mail and saving a draft are closed circuits. The send branch is an open contact, because the sending permission was never granted.">
+            <defs>
+              <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor"/>
+              </marker>
+            </defs>
+
+            <rect x="16" y="112" width="140" height="66" fill="none" stroke="currentColor" stroke-width="1.5" rx="2"/>
+            <text x="86" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Assistant</text>
+            <text x="86" y="158" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">on your server</text>
+
+            <path d="M156 145 L206 145" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M206 62 L206 236" fill="none" stroke="currentColor" stroke-width="1.5"/>
+
+            <g fill="none" stroke="currentColor" stroke-width="1.5">
+              <line x1="206" y1="62" x2="560" y2="62" marker-end="url(#ar2)"/>
+              <line x1="206" y1="145" x2="560" y2="145" marker-end="url(#ar2)"/>
+            </g>
+            <g fill="currentColor">
+              <rect x="352" y="55" width="14" height="14"/>
+              <rect x="352" y="138" width="14" height="14"/>
+            </g>
+            <g font-size="12.5" font-weight="600" fill="currentColor">
+              <text x="216" y="50">Read your mail</text>
+              <text x="216" y="133">Save a draft</text>
+            </g>
+            <g font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".55">
+              <text x="392" y="67">granted</text>
+              <text x="392" y="150">granted</text>
+            </g>
+
+            <line x1="206" y1="236" x2="344" y2="236" stroke="#8A94A0" stroke-width="1.5"/>
+            <circle cx="344" cy="236" r="4" fill="none" stroke="#8A94A0" stroke-width="1.5"/>
+            <line x1="344" y1="236" x2="392" y2="206" stroke="#8A94A0" stroke-width="1.5"/>
+            <circle cx="400" cy="236" r="4" fill="none" stroke="#8A94A0" stroke-width="1.5"/>
+            <line x1="400" y1="236" x2="560" y2="236" stroke="#8A94A0" stroke-width="1.5" stroke-dasharray="3 5"/>
+            <text x="216" y="224" font-size="12.5" font-weight="600" fill="#8A94A0">Send mail</text>
+            <text x="392" y="258" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="#8A94A0">never granted &mdash; open circuit</text>
+
+            <rect x="592" y="88" width="152" height="114" fill="none" stroke="currentColor" stroke-width="1.5" rx="2"/>
+            <text x="668" y="138" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Your mailbox</text>
+            <text x="668" y="156" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">Microsoft 365</text>
+          </svg>
+        </div>
+        <figcaption>Microsoft holds the switchgear, not us. On the permission screen you&rsquo;ll be shown, sending simply isn&rsquo;t on the list &mdash; so the contact stays open no matter what the software asks for afterwards.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <p>We tested this by trying to break it.</p>
+      <p>The assistant was pointed at a test mailbox and deliberately instructed to send an email. Microsoft refused it. That test now runs before the assistant is connected to any mailbox, and it has to fail &mdash; that&rsquo;s how we know the guarantee is real rather than assumed.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Your morning summary</h2>
+      <p>One email, 7:30 Central, weekdays. Monday looks back across the weekend so nothing from Friday afternoon slips.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>Needs you</h3>
+        <p>What arrived that wants your judgement, most urgent first, with one line on why it was flagged.</p>
+      </div>
+      <div class="card">
+        <h3>Drafts waiting</h3>
+        <p>Replies sitting in your Drafts folder, with a count of how many business days each has been waiting.</p>
+      </div>
+      <div class="card">
+        <h3>Follow-ups due</h3>
+        <p>Threads that have gone quiet for three business days, so a live conversation doesn&rsquo;t die of silence.</p>
+      </div>
+    </div>
+    <p class="prose" style="margin-top:18px;color:var(--ink-soft)">Once you send a draft it disappears from the list on its own. There&rsquo;s nothing to tick off &mdash; pressing Send <em>is</em> how the assistant knows you&rsquo;ve dealt with it.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>How we&rsquo;ll switch it on</h2>
+      <p>Deliberately slow at the start. You get to correct its judgement before it writes a word on your behalf.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="when">15 min</div>
+        <div class="what"><b>We connect it, together.</b> You sign in on Microsoft&rsquo;s own screen, on your own computer. I never see your password. You&rsquo;ll read the permission list before you approve it &mdash; that&rsquo;s the moment to check sending isn&rsquo;t on it.</div>
+      </div>
+      <div class="step">
+        <div class="when">Days 1&ndash;3</div>
+        <div class="what"><b>Flags only.</b> No drafts at all. Coloured flags start appearing on your real mail. You tell me which ones it got wrong, and I tune its judgement &mdash; usually the same day.</div>
+      </div>
+      <div class="step">
+        <div class="when">Week 2</div>
+        <div class="what"><b>Drafts switch on.</b> Replies begin appearing in your Drafts folder and the morning summary starts. Still nothing sends itself.</div>
+      </div>
+      <div class="step">
+        <div class="when">After</div>
+        <div class="what"><b>Handover.</b> A week running clean, then everything transfers to you &mdash; accounts, access, documentation. You can revoke my access, and the assistant&rsquo;s, from your own settings at any time.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Five things I need from you</h2>
+      <p>All small, and all things only you can answer.</p>
+    </div>
+    <ul class="asks">
+      <li><b>Your email signature</b> Copy and paste how you normally sign off to someone you&rsquo;ve not met before &mdash; title, phone, anything else you include.</li>
+      <li><b>A booking link</b> Calendly or similar, if you use one, so drafts can offer it when proposing a call. If you don&rsquo;t, no problem.</li>
+      <li><b>The summary time</b> I&rsquo;ve set 7:30&nbsp;AM Central, Monday to Friday. Say the word if you&rsquo;d rather have it later.</li>
+      <li><b>Follow-up patience</b> How many days of silence before a thread shows up as needing a nudge? I&rsquo;ve assumed three business days.</li>
+      <li><b>Anyone to always flag</b> Specific people or subjects you want surfaced with no draft written, beyond legal, HR, press and pricing, which are already covered.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Upperform Partners inbox assistant &middot; Phase&nbsp;1 &middot; prepared by Gabriel O. Tutor
+  </footer>
+
+</div>
