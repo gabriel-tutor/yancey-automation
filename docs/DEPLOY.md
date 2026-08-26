@@ -36,8 +36,9 @@ Done on 2026-08-26. The live compose is `/docker/n8n-wevu/docker-compose.yml`
 ```yaml
     environment:
       - TZ=${TZ}
-      - EXECUTIONS_DATA_PRUNE=true      # added
-      - EXECUTIONS_DATA_MAX_AGE=168     # added
+      - N8N_RESTRICT_FILE_ACCESS_TO=/data/context   # added
+      - EXECUTIONS_DATA_PRUNE=true                  # added
+      - EXECUTIONS_DATA_MAX_AGE=168                 # added
     volumes:
       - n8n_data:/home/node/.n8n
       - /root/context:/data/context:ro  # added
@@ -47,6 +48,24 @@ The two pruning variables were missing entirely, so n8n was storing every
 execution — full email bodies included — indefinitely. Spec §10 requires a
 7-day window precisely so client mail does not linger on disk. A backup of the
 original sits at `docker-compose.yml.bak-preprofile`.
+
+**`N8N_RESTRICT_FILE_ACCESS_TO` is the one that catches people out.** The mount
+alone is not enough. This variable used to be unset, meaning "allow everything",
+but since **n8n v1.123.5 it defaults to `/home/node/.n8n-files`** — so a correctly
+mounted `/data/context` is refused with:
+
+```
+Access to the file is not allowed.
+```
+
+The filesystem is fine at that point; n8n is the one saying no. `ls` from inside
+the container will happily show the file, which makes this confusing to diagnose.
+This VPS runs n8n 2.35.7, well past the change. Scoping the variable to
+`/data/context` alone is also tighter than the old default, since the profile is
+the only file these workflows ever read.
+
+If you ever need more than one path, note the separator is unreliable: the docs
+say colon, but Docker deployments generally need a semicolon.
 
 Mount the *directory*, not the file. Editors write a new file and rename it on
 save, which changes the inode; a single-file mount would leave the container
