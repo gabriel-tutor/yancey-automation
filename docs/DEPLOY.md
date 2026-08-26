@@ -30,10 +30,51 @@ the n8n service's `volumes:` add:
 docker compose down && docker compose up -d
 ```
 
+Done on 2026-08-26. The live compose is `/docker/n8n-wevu/docker-compose.yml`
+(find it with `docker compose ls`), and the applied diff was:
+
+```yaml
+    environment:
+      - TZ=${TZ}
+      - EXECUTIONS_DATA_PRUNE=true      # added
+      - EXECUTIONS_DATA_MAX_AGE=168     # added
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - /root/context:/data/context:ro  # added
+```
+
+The two pruning variables were missing entirely, so n8n was storing every
+execution — full email bodies included — indefinitely. Spec §10 requires a
+7-day window precisely so client mail does not linger on disk. A backup of the
+original sits at `docker-compose.yml.bak-preprofile`.
+
+Mount the *directory*, not the file. Editors write a new file and rename it on
+save, which changes the inode; a single-file mount would leave the container
+reading the old one forever.
+
 **Verify:** open WF-A → **Resolve Context** → Execute step. `profileSource`
 must read `file`. If it reads `fallback`, the mount is wrong — the agent will
 still run, on a reduced built-in profile, but Yancey's taxonomy and voice notes
 will be missing and classification quality drops.
+
+### Access to the VPS
+
+Root login is by SSH key. Gabriel's key is registered through hPanel → VPS →
+SSH keys, labelled `gabriel-macbook-gabdotcode01@gmail.com` so Yancey can
+identify and revoke it at handover. Host key fingerprint:
+`SHA256:uShZrPIML5j8Me9d+rnHj0oDpIoilHYjmT8xng8k8SM` — if SSH ever warns that it
+changed and nobody rebuilt the server, investigate before reconnecting.
+
+Editing the profile afterwards needs no restart and no redeploy:
+
+```bash
+ssh root@31.220.53.70
+nano /root/context/business-profile.md
+```
+
+WF-A reads the file fresh on every run, so the next 2-minute poll picks it up.
+That is the tuning loop for shadow mode. Keep `context/business-profile.md` in
+this repo in sync, or the handover copy drifts from what is actually running.
 
 ## 2. Create the three credentials
 
