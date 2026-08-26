@@ -156,6 +156,14 @@ describe('normalizeGraphMessage', () => {
     expect(n.cleanText).not.toContain('<p');
   });
 
+  it('normalises CRLF in a text body', () => {
+    const n = normalizeGraphMessage(
+      graphMessage({ body: { contentType: 'text', content: 'line one\r\nline two\r\n\r\nline three' } }),
+    );
+    expect(n.cleanText).not.toContain('\r');
+    expect(n.cleanText).toBe('line one\nline two\n\nline three');
+  });
+
   it('survives a message with no body at all', () => {
     const n = normalizeGraphMessage({ id: 'x' });
     expect(n.messageId).toBe('x');

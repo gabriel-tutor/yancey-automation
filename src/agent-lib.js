@@ -315,7 +315,10 @@ function normalizeGraphMessage(msg, options) {
   const contentType = String(body.contentType || '').toLowerCase();
   const rawContent = String(body.content || msg.bodyPreview || '');
 
-  const plain = contentType === 'html' ? htmlToText(rawContent) : rawContent.trim();
+  const plain =
+    contentType === 'html'
+      ? htmlToText(rawContent)
+      : rawContent.replace(/\r\n?/g, '\n').trim();
   const withoutFooter = stripLegalFooter(plain);
   const stripped = stripQuotedHistory(withoutFooter);
   const limited = truncate(stripped.text, maxChars);

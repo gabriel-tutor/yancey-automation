@@ -299,8 +299,39 @@ touched a real mailbox or wrote a row:
   code actually shipped into each n8n Code node behaves identically to the module
   under test.
 
-Still unproven until credentials exist: the Graph calls themselves, the OpenAI
-calls, SMTP delivery, and OAuth. Those are steps 2–3 above.
+### Live run against the dev mailbox, 2026-08-26
+
+WF-A executed end to end against gtutor's real inbox with real Graph calls and
+real `gpt-5.6-luna` classification. Five messages in, five classified, and the
+categories are visible in Outlook:
+
+| Message | Label | Categories applied |
+|---|---|---|
+| PREFLIGHT — this must never arrive | flag_for_yancey | AI-Processed, AI-Review |
+| AI Agent Status Meeting | admin | AI-Processed, AI-Action |
+| There's more to explore in Microsoft 365 | noise | AI-Processed |
+| Power up your productivity with Microsoft 365 | noise | AI-Processed |
+| Email and Teams | admin | AI-Processed, AI-Action |
+
+Both Microsoft promotional mails were correctly called `noise` and marked
+`resolved` at insert, which is what keeps them out of the digest. Neither `admin`
+item was marked draftable — the model judged no reply was warranted, which is the
+right call on a meeting notice.
+
+Two defects that only a live call could have surfaced, both now fixed:
+
+- **`temperature` is not supported by gpt-5.6.** The run failed outright with
+  `Unsupported parameter: 'temperature' is not supported with this model`. The
+  spec's `temperatureClassify: 0` is gone; determinism comes from the strict
+  `json_schema` response format instead.
+- **CRLF line endings survived in text bodies.** Only the HTML path normalised
+  them, so `\r` characters were being shipped to the model. Fixed in
+  `normalizeGraphMessage` with a test.
+
+Still unproven: SMTP delivery (WF-C has never sent a real digest) and the
+drafting path (WF-B has not run live). And note `profileSource` came back
+`fallback` on every message — step 1 has not been done, so all of the above was
+classified on the reduced built-in profile, not Yancey's real one.
 
 ## Open items still owed by Yancey
 
