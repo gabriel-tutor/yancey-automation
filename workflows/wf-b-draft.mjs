@@ -61,12 +61,46 @@ return [{
 }];
 `;
 
-const VOICE_GUARD = `
+export const VOICE_GUARD = `
 const cfg = $('Config').first().json;
 const req = $('Draft Request').first().json;
 const composed = $('Compose Draft Prompt').first().json;
+const incoming = $input.first().json;
 
-const generated = extractModelText($input.first().json);
+// 'Generate Draft' continues on error after its retries, so a model failure
+// arrives here as an item carrying \`error\` instead of content. Treat it as a
+// block rather than letting it throw: createReply has already put an empty
+// reply in the mailbox, and only the blocked branch below deletes it. Every
+// identifier the branch needs comes from the trigger and the prompt node, both
+// of which have run by this point.
+if (incoming && incoming.error) {
+  const failed = describeDraftFailure({ item: incoming, request: req, draft: composed });
+  return [{
+    json: {
+      ok: false,
+      status: failed.status,
+      needsReview: false,
+      guardFlags: failed.guardFlags,
+      note: failed.note,
+      hard: [],
+      medium: [],
+      soft: [],
+      words: 0,
+      draftText: '',
+      finalHtml: '',
+      extraCategories: ['AI-Review'],
+      draftId: composed.draftId,
+      draftIdEnc: composed.draftIdEnc,
+      draftWebLink: composed.draftWebLink,
+      draftCreatedAt: new Date().toISOString(),
+      messageId: failed.messageId,
+      messageIdEnc: failed.messageIdEnc,
+      subject: String(req.subject || '')
+    }
+  }];
+}
+
+const generated = extractModelText(incoming);
 const maxWords = Number(cfg.maxDraftWords) || 150;
 
 const guard = voiceGuard(generated, String(req.subject || '') + '\\n' + String(req.cleanText || ''), {
@@ -81,6 +115,8 @@ const needsReview = guard.medium.length > 0;
 return [{
   json: {
     ok: guard.ok,
+    status: guard.ok ? 'drafted' : 'draft_blocked',
+    note: '',
     needsReview,
     guardFlags: flags.join(',').slice(0, 480),
     hard: guard.hard,
@@ -213,6 +249,7 @@ const generateDraft = node({
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 2000,
+    onError: 'continueRegularOutput',
     parameters: {
       resource: 'text',
       operation: 'response',
@@ -437,7 +474,7 @@ const updateLogBlocked = node({
       columns: {
         mappingMode: 'defineBelow',
         value: {
-          status: 'draft_blocked',
+          status: ${E("{{ $('Voice Guard').first().json.status || 'draft_blocked' }}")},
           guard_flags: ${E("{{ $('Voice Guard').first().json.guardFlags }}")}
         },
         schema: [

@@ -11,6 +11,11 @@ const CONFIG = {
   lookbackHours: 6,
   maxBodyChars: 6000,
   draftingEnabled: false,
+  // The mailbox drafting is authorised for. If the Outlook credential is ever
+  // re-pointed (at Yancey, say) while draftingEnabled is still true, messages
+  // stop matching this and the agent falls back to labelling only. Update it
+  // deliberately at handover — never leave it blank, which blocks all drafting.
+  draftingMailbox: 'gtutor@partnersperform.com',
   alwaysFlagSenders: [],
   ignoreSenders: [
     'onboarding@resend.dev',
@@ -62,7 +67,7 @@ for (const item of $input.all()) {
 return out;
 `;
 
-const APPLY_CLASSIFICATION = `
+export const APPLY_CLASSIFICATION = `
 const cfg = $('Config').first().json;
 
 // Pair this classification back to the message it came from. $().item is the
@@ -79,6 +84,14 @@ try {
 if (!src || !src.messageId) throw new Error('Apply Classification could not pair with Prepare Email');
 
 const nowIso = new Date().toISOString();
+
+// Interlock: only draft into the mailbox we were authorised for. Checked
+// against the message's own recipients, so no extra Graph call is needed.
+const authorised = addressedToMailbox(
+  src.toRecipients,
+  src.ccRecipients,
+  String(cfg.draftingMailbox || '')
+);
 
 const c = normalizeClassification($json, {
   cleanText: String(src.cleanText || ''),
@@ -109,8 +122,10 @@ return {
     urgency: c.urgency,
     reasoning: c.reasoning,
     asks: JSON.stringify(c.asks),
-    requiresDraft: c.requiresDraft,
-    guardFlags: c.guardFlags,
+    requiresDraft: c.requiresDraft && authorised,
+    guardFlags: c.requiresDraft && !authorised
+      ? (c.guardFlags ? c.guardFlags + ',mailbox_not_addressed' : 'mailbox_not_addressed')
+      : c.guardFlags,
     status: c.label === 'noise' ? 'resolved' : 'classified',
     followupDueAt: addBusinessDays(new Date(receivedAt), Number(cfg.followupDays) || 3).toISOString(),
     categories: decideCategories(src.categories, c.label),

@@ -675,6 +675,84 @@ camelCase; the columns are snake_case (`guard_flags`, `requires_draft`,
 Neither is a defect. Worth knowing before reading these tables in anger:
 follow-up on a Wednesday arrival correctly lands the following Monday.
 
+## Closing the remaining gaps (2026-08-27)
+
+Three things were still open. All three are now fixed in source, covered by
+tests, and deployed.
+
+### 1. An orphaned draft was left in the mailbox when the model failed
+
+`Create Reply Draft` puts an empty reply in the mailbox *before* the model is
+called. If `Generate Draft` failed after its three retries the workflow threw,
+and the only node that deletes that empty reply sits on the blocked branch —
+so the empty draft stayed in the mailbox. This had already happened once.
+
+The obvious fix — routing the error output to the cleanup branch — does not
+work, because every node on that branch reads `$('Voice Guard')`, and on the
+failure path the Voice Guard never ran. The expressions would throw and the
+draft would still be stranded.
+
+What works instead needs no rewiring at all. `Generate Draft` now continues on
+error, so the failure arrives at the Voice Guard as an item carrying `error`.
+The Voice Guard recognises it and returns `ok: false` along with every
+identifier the cleanup branch needs — and it already sourced those from the
+trigger and `Compose Draft Prompt`, both of which have run by that point. The
+existing `Draft Passed the Guard?` branch then does exactly the right thing.
+
+The log distinguishes the two cases: `draft_blocked` is a decision,
+`draft_failed` is a fault. `guard_flags` reads `draft_generation_failed`.
+
+### 2. No interlock on which mailbox gets drafted into
+
+`draftingEnabled` was the only thing standing between the agent and writing
+replies into a live client mailbox. Re-pointing the Outlook credential at
+Yancey — the whole plan at handover — would have started drafting immediately
+if that flag was still true.
+
+`Config.draftingMailbox` now names the mailbox drafting is authorised for, and
+`Apply Classification` checks the message's own to/cc against it. Mail for a
+different mailbox is still classified, labelled and logged; it just does not
+draft, and records `mailbox_not_addressed` so the reason is visible.
+
+No extra Graph call — the recipients are already on the message. The trade is
+that mail reaching Yancey only by bcc or a distribution list will not draft.
+That is deliberate: it fails towards labelling. Worth knowing that all twenty
+of the emails Yancey labelled himself have him on to or cc, so his real
+traffic is unaffected.
+
+**At handover, `draftingMailbox` must be changed at the same moment as the
+credential.** Leaving it blank blocks all drafting rather than allowing it.
+
+### 3. Source and live had drifted on the alert address
+
+`wf-e-errors.mjs` said `alertTo: gabdotcode01@gmail.com`. The Resend sandbox
+only delivers to the account owner, so that address is accepted and then
+dropped — a broken agent would have failed silently. The live instance already
+had the working address; only source was wrong, which meant a rebuild would
+have quietly broken alerting. Source now matches live.
+
+### The node bodies are tested now
+
+Both bugs deployed this week got in through the same gap: the Code node bodies
+were only ever strings, so nothing executed them. `src/nodes.test.js` runs them
+with stubbed n8n globals — `$`, `$input`, `$json`, `$itemIndex` — and asserts
+the failure paths directly, including the model-failure case that produced the
+orphan. `VOICE_GUARD` and `APPLY_CLASSIFICATION` are exported from the workflow
+modules for this.
+
+That change pulled `workflows/shared.mjs` into the typecheck graph for the
+first time and surfaced four implicit-`any` errors. Annotated rather than
+excluded.
+
+### Deployment
+
+Config first, then the interlock that reads it — deploying `Apply
+Classification` against a Config with no `draftingMailbox` would have stopped
+all drafting. Both node bodies came back byte-identical to the local build this
+time (no invisible characters in them), and the deployed code was pulled back
+out of SQLite and run through the same simulations before publishing. WF-B
+published before WF-A, since WF-A calls it.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

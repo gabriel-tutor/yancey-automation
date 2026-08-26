@@ -2,7 +2,11 @@ import { DEPLOY, E, GRAPH, S, SDK_IMPORT } from './shared.mjs';
 
 const CONFIG = {
   alertFrom: 'agent@partnersperform.com',
-  alertTo: 'gabdotcode01@gmail.com',
+  // Must be an address the SMTP sender will actually deliver to. The Resend
+  // sandbox only delivers to the account owner (gtutor@partnersperform.com);
+  // anything else is accepted by n8n and then dropped, so a broken agent would
+  // fail silently. Revisit when the verified sending domain is live.
+  alertTo: 'gtutor@partnersperform.com',
   graphBase: GRAPH,
 };
 

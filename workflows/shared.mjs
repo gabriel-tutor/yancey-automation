@@ -7,10 +7,18 @@ export const ROOT = join(here, '..');
 
 export const DEPLOY = JSON.parse(readFileSync(join(ROOT, 'config/deploy.json'), 'utf8'));
 
-/** JS string literal, safe for embedding in generated SDK source. */
+/**
+ * JS string literal, safe for embedding in generated SDK source.
+ * @param {unknown} value
+ * @returns {string}
+ */
 export const S = (value) => JSON.stringify(value);
 
-/** An n8n expression parameter. */
+/**
+ * An n8n expression parameter.
+ * @param {string} value
+ * @returns {string}
+ */
 export const E = (value) => 'expr(' + JSON.stringify(value) + ')';
 
 export const GRAPH = 'https://graph.microsoft.com/v1.0';
@@ -18,7 +26,11 @@ export const GRAPH = 'https://graph.microsoft.com/v1.0';
 export const SDK_IMPORT =
   "import { workflow, node, trigger, sticky, ifElse, splitOut, newCredential, expr } from '@n8n/workflow-sdk';";
 
-/** The three-node chain that loads the mounted business profile with a fallback. */
+/**
+ * The three-node chain that loads the mounted business profile with a fallback.
+ * @param {{ x: number, y: number }} position
+ * @returns {string}
+ */
 export function contextLoaderNodes({ x, y }) {
   return `
 const loadProfileFile = node({

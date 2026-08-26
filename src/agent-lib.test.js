@@ -10,6 +10,9 @@ import {
   injectReplyIntoDraftHtml,
   normalizeClassification,
   normalizeGraphMessage,
+  describeDraftFailure,
+  mailboxMatches,
+  addressedToMailbox,
   isPassThroughHead,
   parseModelJson,
   pricingGuard,
@@ -700,5 +703,123 @@ describe('extractModelText', () => {
   it('returns an empty string when there is no text', () => {
     expect(extractModelText({ usage: { tokens: 5 } })).toBe('');
     expect(extractModelText(null)).toBe('');
+  });
+});
+
+describe('describeDraftFailure — nothing is left stranded in the mailbox', () => {
+  const request = { messageId: 'AAMkMSG', messageIdEnc: 'AAMkMSG%3D' };
+  const draft = { draftIdEnc: 'AAMkDRAFT%3D' };
+
+  it('reports a voice-guard block and keeps its flags', () => {
+    const out = describeDraftFailure({
+      item: { ok: false, guardFlags: 'invented_fact,too_long', draftIdEnc: 'AAMkDRAFT%3D' },
+      request,
+      draft,
+    });
+    expect(out.status).toBe('draft_blocked');
+    expect(out.guardFlags).toBe('invented_fact,too_long');
+    expect(out.draftIdEnc).toBe('AAMkDRAFT%3D');
+    expect(out.hasDraftToDelete).toBe(true);
+  });
+
+  it('reports a model failure distinctly from a guard block', () => {
+    const out = describeDraftFailure({
+      item: { error: { message: 'OpenAI 500: upstream timeout' } },
+      request,
+      draft,
+    });
+    expect(out.status).toBe('draft_failed');
+    expect(out.guardFlags).toBe('draft_generation_failed');
+    // the empty draft still exists and must be reachable for deletion
+    expect(out.draftIdEnc).toBe('AAMkDRAFT%3D');
+    expect(out.hasDraftToDelete).toBe(true);
+  });
+
+  it('falls back to the trigger for identifiers when Voice Guard never ran', () => {
+    const out = describeDraftFailure({ item: { error: 'boom' }, request, draft });
+    expect(out.messageId).toBe('AAMkMSG');
+    expect(out.messageIdEnc).toBe('AAMkMSG%3D');
+  });
+
+  it('prefers the id on the item over the one from the prompt node', () => {
+    const out = describeDraftFailure({
+      item: { ok: false, guardFlags: 'x', draftIdEnc: 'FROM_ITEM' },
+      request,
+      draft,
+    });
+    expect(out.draftIdEnc).toBe('FROM_ITEM');
+  });
+
+  it('says plainly when there is no draft to delete', () => {
+    const out = describeDraftFailure({ item: { error: 'boom' }, request, draft: {} });
+    expect(out.draftIdEnc).toBe('');
+    expect(out.hasDraftToDelete).toBe(false);
+  });
+
+  it('carries a short error note without letting it run away', () => {
+    const out = describeDraftFailure({
+      item: { error: { message: 'x'.repeat(900) } },
+      request,
+      draft,
+    });
+    expect(out.note.length).toBeLessThanOrEqual(200);
+  });
+
+  it('never throws on a shape it has not seen', () => {
+    const out = describeDraftFailure({ item: null, request: null, draft: null });
+    expect(out.status).toBe('draft_failed');
+    expect(out.hasDraftToDelete).toBe(false);
+  });
+});
+
+describe('mailboxMatches — the drafting interlock', () => {
+  it('matches regardless of case and padding', () => {
+    expect(mailboxMatches('  YDawson@PartnersPerform.com ', 'ydawson@partnersperform.com')).toBe(true);
+  });
+
+  it('refuses a different mailbox', () => {
+    expect(mailboxMatches('ydawson@partnersperform.com', 'gtutor@partnersperform.com')).toBe(false);
+  });
+
+  it('fails closed when the mailbox could not be read', () => {
+    expect(mailboxMatches('', 'gtutor@partnersperform.com')).toBe(false);
+  });
+
+  it('fails closed when no mailbox is configured', () => {
+    // An unset interlock must not silently mean "draft into anything".
+    expect(mailboxMatches('gtutor@partnersperform.com', '')).toBe(false);
+    expect(mailboxMatches('gtutor@partnersperform.com', undefined)).toBe(false);
+  });
+});
+
+describe('addressedToMailbox — stops drafting if the credential moves', () => {
+  const BOX = 'gtutor@partnersperform.com';
+
+  it('accepts a message addressed directly to the mailbox', () => {
+    expect(addressedToMailbox(['gtutor@partnersperform.com'], [], BOX)).toBe(true);
+  });
+
+  it('accepts a message where the mailbox is only on cc', () => {
+    // Yancey is cc rather than to on several of his own OPPORTUNITY examples.
+    expect(addressedToMailbox(['kdunlap@partnersperform.com'], [BOX], BOX)).toBe(true);
+  });
+
+  it('ignores case and padding', () => {
+    expect(addressedToMailbox([' GTutor@PartnersPerform.com '], [], BOX)).toBe(true);
+  });
+
+  it('refuses when the mailbox is nowhere on the message', () => {
+    // This is the credential-swap case: mail for a different mailbox entirely.
+    expect(addressedToMailbox(['ydawson@partnersperform.com'], [], BOX)).toBe(false);
+  });
+
+  it('fails closed when no mailbox is configured', () => {
+    expect(addressedToMailbox([BOX], [], '')).toBe(false);
+  });
+
+  it('fails closed on missing or malformed recipient lists', () => {
+    expect(addressedToMailbox(null, null, BOX)).toBe(false);
+    expect(addressedToMailbox('not-an-array', undefined, BOX)).toBe(false);
+    expect(addressedToMailbox([null, 42, {}], [], BOX)).toBe(false);
   });
 });

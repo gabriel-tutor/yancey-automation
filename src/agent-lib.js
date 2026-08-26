@@ -517,6 +517,108 @@ function pricingGuard(text, subject) {
   };
 }
 
+/**
+ * Work out what to do after a draft attempt failed to produce a reply.
+ *
+ * Two different things land here. A draft the Voice Guard rejected is a
+ * *decision*. A draft the model or Graph never finished is a *fault*. Both
+ * leave the empty reply that `createReply` already put in the mailbox, and
+ * both have to clear it up — but they should not read the same in the log.
+ *
+ * Identifiers come from the trigger, never from the Voice Guard node. On the
+ * fault path the Voice Guard never executed, so an expression reaching for it
+ * throws — and the empty draft stays in the mailbox, which is the bug this
+ * exists to close.
+ *
+ * @param {{ item?: any, request?: any, draft?: any } | null} input
+ * @returns {{ status: string, guardFlags: string, note: string,
+ *             messageId: string, messageIdEnc: string, draftIdEnc: string,
+ *             hasDraftToDelete: boolean }}
+ */
+function describeDraftFailure(input) {
+  const src = input || {};
+  const item = src.item || {};
+  const request = src.request || {};
+  const draft = src.draft || {};
+
+  const blockedByGuard = item.ok === false;
+  const guardFlags = blockedByGuard
+    ? String(item.guardFlags || 'voice_guard')
+    : 'draft_generation_failed';
+
+  const draftIdEnc = String(item.draftIdEnc || draft.draftIdEnc || '');
+
+  let note = '';
+  if (!blockedByGuard) {
+    const err = item.error;
+    if (typeof err === 'string') note = err;
+    else if (err && err.message) note = String(err.message);
+    else note = 'draft step failed';
+  }
+
+  return {
+    status: blockedByGuard ? 'draft_blocked' : 'draft_failed',
+    guardFlags,
+    note: note.slice(0, 200),
+    messageId: String(request.messageId || item.messageId || ''),
+    messageIdEnc: String(request.messageIdEnc || item.messageIdEnc || ''),
+    draftIdEnc,
+    hasDraftToDelete: draftIdEnc.length > 0,
+  };
+}
+
+/**
+ * The drafting interlock: does the connected mailbox match the one drafting
+ * was authorised for?
+ *
+ * Fails closed on purpose. An unset or unreadable mailbox must never be taken
+ * to mean "write into whatever is connected" — the failure this guards against
+ * is a credential swapped to Yancey while drafting is still switched on, and
+ * the safe answer when we cannot tell is to label only.
+ *
+ * @param {unknown} actual
+ * @param {unknown} allowed
+ * @returns {boolean}
+ */
+function mailboxMatches(actual, allowed) {
+  const a = actual === undefined || actual === null ? '' : String(actual).trim().toLowerCase();
+  const b = allowed === undefined || allowed === null ? '' : String(allowed).trim().toLowerCase();
+  if (a.length === 0 || b.length === 0) return false;
+  return a === b;
+}
+
+/**
+ * Is this message actually addressed to the mailbox drafting was authorised
+ * for? The interlock against the one dangerous configuration mistake: the
+ * Outlook credential re-pointed at Yancey while `draftingEnabled` is still on,
+ * which would start writing replies into a live client mailbox mid-rollout.
+ *
+ * Checks to and cc, because Yancey is cc rather than to on several of the
+ * emails he labelled OPPORTUNITY himself. Mail that reaches him only via bcc
+ * or a distribution list will not draft — that is a deliberate,
+ * label-instead-of-draft failure, and it shows up as `mailbox_not_addressed`
+ * in guard_flags so it is never a silent one.
+ *
+ * @param {unknown} toRecipients
+ * @param {unknown} ccRecipients
+ * @param {unknown} mailbox
+ * @returns {boolean}
+ */
+function addressedToMailbox(toRecipients, ccRecipients, mailbox) {
+  const box = mailbox === undefined || mailbox === null ? '' : String(mailbox).trim().toLowerCase();
+  if (box.length === 0) return false;
+
+  const lists = [toRecipients, ccRecipients];
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const entry of list) {
+      if (typeof entry !== 'string') continue;
+      if (mailboxMatches(entry, box)) return true;
+    }
+  }
+  return false;
+}
+
 const SENSITIVE_TOPICS =
   /\b(lawsuit|litigation|subpoena|attorney|legal counsel|breach of contract|termination|severance|grievance|harassment|discrimination|press inquiry|journalist|reporter|defamation|non-?compete|indemnif|liability claim|settlement|arbitration|osha|whistleblow)\b/i;
 
@@ -1182,6 +1284,7 @@ function renderDigestText(buckets, options) {
 
 export {
   addBusinessDays,
+  addressedToMailbox,
   isPassThroughHead,
   addCategory,
   bucketDigestRows,
@@ -1190,12 +1293,14 @@ export {
   clampConfidence,
   decideCategories,
   decodeEntities,
+  describeDraftFailure,
   escapeHtml,
   extractModelText,
   findQuoteBoundaries,
   htmlToText,
   injectReplyIntoDraftHtml,
   inventedTokens,
+  mailboxMatches,
   normalizeClassification,
   normalizeGraphMessage,
   parseModelJson,
