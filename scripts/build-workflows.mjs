@@ -14,6 +14,7 @@ const targets = [
   ['wf-a-classify', '../workflows/wf-a-classify.mjs'],
   ['wf-c-digest', '../workflows/wf-c-digest.mjs'],
   ['wf-t-preflight', '../workflows/wf-t-preflight.mjs'],
+  ['wf-s-seed', '../workflows/wf-s-seed.mjs'],
 ];
 
 for (const [name, path] of targets) {

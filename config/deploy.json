@@ -10,7 +10,8 @@
     "wfB": "Rjpk5KuPopQCpCQL",
     "wfC": "vCbgJoNqfuVOqWGH",
     "wfE": "XSKk6eHTFGqftrUM",
-    "wfT": "1fCjIsw2JjVGkNJb"
+    "wfT": "1fCjIsw2JjVGkNJb",
+    "wfS": "CNttEItjnRC4RkZZ"
   },
   "n8nBaseUrl": "https://n8n-wevu.srv1921545.hstgr.cloud",
   "credentials": {
@@ -26,10 +27,9 @@
       "type": "smtp"
     },
     "openai": {
-      "id": null,
-      "name": null,
-      "type": "openAiApi",
-      "_status": "PENDING \u2014 two candidate keys on the instance, awaiting confirmation of which belongs to the Upperform account"
+      "id": "rAIYGuFHzE6oTea9",
+      "name": "OpenAI account",
+      "type": "openAiApi"
     }
   }
 }
