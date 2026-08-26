@@ -457,6 +457,12 @@ const noteHeader = sticky(
   { color: 4, width: 760, height: 260 },
 );
 
+const noteStandalone = sticky(
+  ${S('### Do not press "Execute workflow" on this one\n\nWF-B is a **sub-workflow**. Its trigger only receives data when WF-A calls it, so running it standalone leaves every input `null` and `Create Reply Draft` posts to a URL with an empty message id.\n\nGraph answers **405 — The OData request is not supported**, which reads like an HTTP method bug and is really a missing id.\n\n**To test drafting, run WF-A instead.** It fetches real mail, classifies it, and calls this workflow with all twelve inputs filled in.\n\nTo iterate on WF-B alone: run WF-A once, then pin the output of **Draft Request** from that execution.')},
+  [draftRequest],
+  { color: 3, width: 460, height: 250 },
+);
+
 const noteGuard = sticky(
   ${S('### Voice Guard = spec Gate 2, in code\n\n**hard** (invented currency or percentage) -> no draft is written and the empty Graph draft is deleted, so Yancey never sees a stray blank reply.\n**medium** (invented date or large number, over length) -> the draft is written *and* the message also gets `AI-Review`.\n**soft** (missing sign-off, "I hope this email finds you well") -> repaired silently.\n\nThe rules are unit-tested in `src/agent-lib.test.js`.')},
   [generateDraft, voiceGuardNode, draftPassedGuard],
@@ -483,6 +489,7 @@ export default workflow('upperform-wf-b-draft', ${S(NAME)})
     .onTrue(writeDraftBody.to(readCategories.to(tagDrafted.to(updateLogDrafted))))
     .onFalse(deleteEmptyDraft.to(readCategoriesBlocked.to(tagBlockedForReview.to(updateLogBlocked)))))
   .add(noteHeader)
+  .add(noteStandalone)
   .add(noteGuard)
   .add(noteBlocked);
 `;
