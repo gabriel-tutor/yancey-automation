@@ -618,6 +618,63 @@ for (const n of JSON.parse(row.nodes)) console.log(n.name, n.parameters.jsCode?.
 "
 ```
 
+## Live run of the demo set (2026-08-27)
+
+All five demo emails sent from Gmail into the dev mailbox and picked up
+automatically on the 2-minute schedule. Every outcome matched what
+`docs/demo-emails.md` predicted.
+
+| Subject | Label | Conf | Draft | guard_flags |
+|---|---|---|---|---|
+| RE: Northern district ILI extension | flag_for_yancey | 0.99 | no | **pricing_guard** |
+| RE: Integrating Gas Control into T-Week Planning | flag_for_yancey | 0.98 | no | *(none)* |
+| Introduction — business insurance review | noise | 0.99 | no | — |
+| Damage Prevention workbook — RACI follow-up | opportunity | 0.99 | **yes** | — |
+| Human reliability programme | opportunity | 0.97 | **yes** | — |
+
+Arrival to classification: 62–71 seconds. Drafts written 3–6 seconds after that.
+
+The first two rows are the ones worth showing. Both are held with no draft and
+look identical in Outlook, but they were caught by different mechanisms. The
+ILI thread tripped `pricing_guard` — its own reasoning field talks only about
+developing an approach and tone, because the model saw nothing about money in
+the newest message and the deterministic guard overruled it after reading the
+chain. The Gas Control thread has an empty guard column and reasoning that
+names "pricing and scope commitments" outright: the guard stood down because a
+figure already existed in-thread, and the model held it on its own judgement.
+
+Both drafts passed the Voice Guard with no hard, medium or soft flags.
+
+The RACI reply is the one to read closely. Jennifer asked whether cross bore
+remediation should sit with Construction or Integrity. The draft does not
+answer:
+
+> I'll take a look at the cross bore remediation RACI assignment with Adam's
+> input in mind, along with where the QA/QC process document should land
+> against the gap analysis.
+>
+> I'll come back to you before the working session on the 9th so we can get
+> those items squared away.
+
+It picked the date out of the inbound message, opened `Hi Jennifer,` rather than
+`Hey` because she is a client contact, and took no position on a question only
+Yancey can settle. 82 words.
+
+The human reliability reply describes the offering accurately — practical human
+performance tools, reducing error-likely situations, strengthening defenses —
+which is real upperform.com content, and correctly did **not** volunteer
+case-study numbers, per profile rule 10. 112 words, no fee mentioned.
+
+### Two false alarms while checking, both mine
+
+`guard_flags` first came back empty on every row because the query used
+camelCase; the columns are snake_case (`guard_flags`, `requires_draft`,
+`sender`, `received_at`). And latency first computed as ~18000s because
+`createdAt` and `followup_due_at` are stored without a timezone suffix, so
+`new Date()` parsed them as container-local (America/Chicago) rather than UTC.
+Neither is a defect. Worth knowing before reading these tables in anger:
+follow-up on a Wednesday arrival correctly lands the following Monday.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,
