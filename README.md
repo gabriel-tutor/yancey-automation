@@ -67,6 +67,7 @@ Next steps are in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 | Change the taxonomy or few-shots | `src/prompts.js`, then `npm run verify` and redeploy WF-A. |
 | Turn drafting on | `draftingEnabled: true` in WF-A's **Config** node. Nothing else. |
 | Change model, confidence floor, poll size, always-flag senders | WF-A **Config** node. |
+| Reconsider model choice | See "Model choice" below before switching — the naming is misleading. |
 | Change digest time, recipient, follow-up threshold | WF-C **Config** node + the Schedule Trigger. |
 | Change a guard rule | `src/agent-lib.js` + its test, then rebuild and redeploy. |
 
@@ -85,3 +86,30 @@ Next steps are in [`docs/DEPLOY.md`](docs/DEPLOY.md).
    the HTML-to-text conversion server-side, which is more reliable than regex
    stripping and costs fewer tokens. `htmlToText` is still in the library and
    still runs whenever Graph returns HTML anyway, so nothing is lost.
+
+## Model choice
+
+`gpt-5.6-luna` for classification, `gpt-5.6-terra` for drafting. Both are set in
+the **Config** node of WF-A and WF-B respectively, and both LLM nodes carry a
+stable `promptCacheKey` so the identical prompt prefix bills at the cached rate.
+
+Do not swap these for a `-mini` or `-nano` tier on the assumption it is cheaper.
+As of the July 30 repricing:
+
+| Model | Input /1M | Output /1M |
+|---|---|---|
+| gpt-5.6-luna | $0.20 | $1.20 |
+| gpt-5.4-mini | $0.75 | $4.50 |
+| gpt-5.6-terra | $2.00 | $12.00 |
+
+Luna undercuts the mini tier by nearly 4x on input. At this workload —
+roughly 1,300 classifications and 220 drafts a month — the split above costs
+about **$2.65/month**: ~$0.80 for classification, ~$1.85 for drafting.
+
+Classification is where the volume is, so it gets the cheap model. Drafting is
+low-volume and is the only client-visible output, so it gets the better one; the
+~$1.70/month premium over running luna there is not worth the voice quality.
+
+The real arbiter is `npm run gate1`. If a cheaper model still clears 90%
+agreement on Yancey's labelled set with zero flagged-and-drafted items, take it.
+Decide with the harness, not with the price list.

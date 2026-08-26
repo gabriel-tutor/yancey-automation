@@ -223,7 +223,8 @@ const generateDraft = node({
       options: {
         instructions: ${E("{{ $('Resolve Context').first().json.draftSystem }}")},
         temperature: ${E("{{ $('Config').first().json.temperatureDraft }}")},
-        store: false
+        store: false,
+        promptCacheKey: 'upperform-draft-v1'
       }
     },
     credentials: { openAiApi: newCredential('OpenAI – Upperform') },

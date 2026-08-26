@@ -279,6 +279,7 @@ const classifyEmail = node({
         instructions: ${E("{{ $('Resolve Context').first().json.classifySystem }}")},
         temperature: ${E("{{ $('Config').first().json.temperatureClassify }}")},
         store: false,
+        promptCacheKey: 'upperform-classify-v1',
         textFormat: {
           textOptions: {
             type: 'json_schema',
