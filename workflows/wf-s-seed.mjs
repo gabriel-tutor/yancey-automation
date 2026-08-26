@@ -47,7 +47,12 @@ return messages.map(m => ({
       from: { emailAddress: { name: m.fromName, address: m.fromAddress } },
       sender: { emailAddress: { name: m.fromName, address: m.fromAddress } },
       toRecipients: [{ emailAddress: { name: 'Yancey Dawson', address: 'YDawson@partnersperform.com' } }],
-      isRead: false
+      isRead: false,
+      // A message POSTed into a folder is created with isDraft: true, and Graph
+      // refuses createReply on a draft (ErrorInvalidReferenceItem). Writing
+      // PR_MESSAGE_FLAGS clears MSGFLAG_UNSENT so the fixture behaves like real
+      // received mail. Without this the fixture is untestable, not the workflow.
+      singleValueExtendedProperties: [{ id: 'Integer 0x0E07', value: '1' }]
     }
   }
 }));
