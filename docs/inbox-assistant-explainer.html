@@ -261,13 +261,13 @@
   <section>
     <div class="sec-head">
       <h2>Why it cannot send mail</h2>
-      <p>Not a setting we chose and could change by accident. The permission was never requested, so the path does not exist.</p>
+      <p>Not a promise about how it behaves. A missing wire. If Microsoft never hands over permission to send, then no instruction, no bug and no bad day can produce a sent email.</p>
     </div>
 
     <div class="figwrap">
       <figure>
         <div class="scroll">
-          <svg viewBox="0 0 760 300" role="img" aria-label="A one-line diagram. The assistant connects to the mailbox through three branches. Reading mail and saving a draft are closed circuits. The send branch is an open contact, because the sending permission was never granted.">
+          <svg viewBox="0 0 760 300" role="img" aria-label="A one-line diagram. The assistant connects to the mailbox through three branches. Reading mail and saving a draft are closed circuits. The send branch is an open contact, because the sending permission is withheld when the mailbox is connected.">
             <defs>
               <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                 <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor"/>
@@ -304,20 +304,22 @@
             <circle cx="400" cy="236" r="4" fill="none" stroke="#8A94A0" stroke-width="1.5"/>
             <line x1="400" y1="236" x2="560" y2="236" stroke="#8A94A0" stroke-width="1.5" stroke-dasharray="3 5"/>
             <text x="216" y="224" font-size="12.5" font-weight="600" fill="#8A94A0">Send mail</text>
-            <text x="392" y="258" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="#8A94A0">never granted &mdash; open circuit</text>
+            <text x="392" y="258" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="#8A94A0">withheld at sign-in &mdash; open circuit</text>
 
             <rect x="592" y="88" width="152" height="114" fill="none" stroke="currentColor" stroke-width="1.5" rx="2"/>
             <text x="668" y="138" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Your mailbox</text>
             <text x="668" y="156" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">Microsoft 365</text>
           </svg>
         </div>
-        <figcaption>Microsoft holds the switchgear, not us. On the permission screen you&rsquo;ll be shown, sending simply isn&rsquo;t on the list &mdash; so the contact stays open no matter what the software asks for afterwards.</figcaption>
+        <figcaption>Microsoft holds the switchgear, not us. We ask for a permission list with sending left off it, and you read that list before you approve it &mdash; so the contact stays open no matter what the software asks for afterwards.</figcaption>
       </figure>
     </div>
 
     <div class="callout" style="margin-top:20px">
-      <p>We tested this by trying to break it.</p>
-      <p>The assistant was pointed at a test mailbox and deliberately instructed to send an email. Microsoft refused it. That test now runs before the assistant is connected to any mailbox, and it has to fail &mdash; that&rsquo;s how we know the guarantee is real rather than assumed.</p>
+      <p>We test it by trying to break it.</p>
+      <p>Before the assistant goes near a mailbox, it is deliberately instructed to send an email. That attempt has to be refused. It is how we know the guarantee is real rather than assumed.</p>
+      <p><b>On my own development mailbox today, the attempt is not refused.</b> Microsoft&rsquo;s standard Outlook connector asks for permission to send by default, and I approved that list when I first signed in. The assistant has never used it and contains no step that could &mdash; but the permission is sitting there, and this check exists to be unforgiving about exactly that.</p>
+      <p>It clears by connecting the mailbox again with sending removed from the list. Until the attempt is refused, the assistant is not pointed at your inbox. That is a gate, not a to-do &mdash; and I would rather show you a check that caught something than one that has never found anything.</p>
     </div>
   </section>
 
@@ -341,6 +343,43 @@
       </div>
     </div>
     <p class="prose" style="margin-top:18px;color:var(--ink-soft)">Once you send a draft it disappears from the list on its own. There&rsquo;s nothing to tick off &mdash; pressing Send <em>is</em> how the assistant knows you&rsquo;ve dealt with it.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Tested against your own mail</h2>
+      <p>You sent twenty emails and labelled each one yourself. Those became the exam.</p>
+    </div>
+
+    <p class="prose" style="margin-bottom:20px;color:var(--ink-soft)">Fifteen of them were judgement calls &mdash; the ten you marked <b>opportunity</b> and the five you marked <b>junk</b>. The other five were emails you wrote yourself; those aren&rsquo;t a test, they&rsquo;re how it learned to sound like you.</p>
+
+    <div class="cards">
+      <div class="card">
+        <h3>15 of 15</h3>
+        <p>It reached the same verdict you did on every one.</p>
+      </div>
+      <div class="card">
+        <h3>Nothing lost</h3>
+        <p>Not one email you called real was dismissed as noise. That is the failure that would actually cost you something.</p>
+      </div>
+      <div class="card">
+        <h3>Nothing presumed</h3>
+        <p>Not one email you called junk had a reply written for it.</p>
+      </div>
+    </div>
+
+    <p class="prose" style="margin-top:20px;color:var(--ink-soft)">It doesn&rsquo;t draft a reply to all fifteen, and it shouldn&rsquo;t. Several were threads where you were copied rather than asked &mdash; a status update aimed at Chuck, a review addressed to Kathleen. Those are flagged for you to see, without words being put in your mouth.</p>
+
+    <div class="callout" style="margin-top:20px">
+      <p>The hardest one you sent was the Paychex thread.</p>
+      <p>A named person, introduced by your own accountant, proposing a specific meeting time &mdash; a thread you had already replied to twice yourself. Nothing on the surface of it says junk. You labelled it junk anyway, because retirement-plan sales isn&rsquo;t Upperform work. The assistant now reaches the same conclusion, and that one email is the reason it asks &ldquo;is this the business, or is this your admin?&rdquo; before anything else.</p>
+    </div>
+
+    <div class="callout" style="margin-top:12px">
+      <p>Your mail also found a real fault, which is the point of testing on it.</p>
+      <p>One of your threads ends with Chuck saying <i>&ldquo;let&rsquo;s put together what it would take.&rdquo;</i> Read on its own, that is ordinary project talk, and the assistant was ready to draft a reply to it. Two messages further down, NIPSCO had asked for <i>an estimate of timeline and cost</i>.</p>
+      <p>It was only reading the newest message. It now reads the whole thread before it will write anything near a fee &mdash; and on your emails, it holds that one. Invented tests never caught this. Yours did on the first run.</p>
+    </div>
   </section>
 
   <section>
