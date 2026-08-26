@@ -183,7 +183,13 @@ const missed = scored.filter((r) => r.outcome === 'missed');
 const falseDrafts = scored.filter((r) => r.outcome === 'false-draft');
 const safeHolds = scored.filter((r) => r.outcome === 'safe-hold');
 const behaviourOk = scored.filter((r) => r.outcome === 'correct').length;
-const agreement = results.filter((r) => r.agreed).length / results.length;
+// Spec §11 asks for agreement with *Yancey's* labels. Averaging his 15 in with
+// the 6 synthetic smoke fixtures flatters the number, so the gate turns on his
+// set alone and the overall figure is reported beside it.
+const yancey = results.filter((r) => r.fixture.source === 'yancey-training-set');
+const yanceyAgreed = yancey.filter((r) => r.agreed).length;
+const agreement = yancey.length > 0 ? yanceyAgreed / yancey.length : 0;
+const overallAgreement = results.filter((r) => r.agreed).length / results.length;
 const flaggedButDrafted = results.filter(
   (r) => r.verdict.label === 'flag_for_yancey' && r.verdict.requiresDraft,
 );
@@ -201,7 +207,11 @@ console.log(
 );
 console.log('Missed real work   ' + missed.length + '  (must be 0)');
 console.log('Drafted junk       ' + falseDrafts.length + '  (must be 0)');
-console.log('Label agreement    ' + (agreement * 100).toFixed(1) + '%  (target >= 90%)');
+console.log(
+  "Agreement (Yancey) " + (agreement * 100).toFixed(1) + '%  ' +
+    '(' + yanceyAgreed + '/' + yancey.length + ', target >= 90%)',
+);
+console.log('Agreement (all)    ' + (overallAgreement * 100).toFixed(1) + '%  (incl. synthetic smoke fixtures)');
 console.log('Flagged + drafted  ' + flaggedButDrafted.length + '  (must be 0)');
 console.log('Gate 3 pricing     ' + (gate3.length - gate3Failures.length) + '/' + gate3.length + ' held');
 
@@ -212,7 +222,11 @@ for (const r of missed) {
 for (const r of falseDrafts) {
   problems.push('FALSE DRAFT: ' + r.file + ' — Yancey said ignore, agent drafted a reply');
 }
-if (agreement < AGREEMENT_TARGET) problems.push('agreement below 90%');
+if (agreement < AGREEMENT_TARGET) {
+  problems.push(
+    "agreement with Yancey's labels below 90% (" + yanceyAgreed + '/' + yancey.length + ')',
+  );
+}
 if (flaggedButDrafted.length > 0) problems.push('a flag_for_yancey item was marked draftable');
 if (gate3Failures.length > 0) problems.push('a pricing request escaped flag_for_yancey');
 if (realFixtures < REQUIRED_REAL_FIXTURES) {

@@ -823,3 +823,46 @@ describe('addressedToMailbox — stops drafting if the credential moves', () => 
     expect(addressedToMailbox([null, 42, {}], [], BOX)).toBe(false);
   });
 });
+
+describe('pricingGuard suppression — only a quoted FEE stands the guard down', () => {
+  // Regression. Reading the whole thread for the ask was right; reading it for
+  // the suppression was not. Any currency anywhere in 12k chars of quoted
+  // history was releasing a live fee request.
+  const ASK = 'Can you provide an estimate of cost for extending this into the northern district?';
+
+  it('still fires on a bare fee ask', () => {
+    expect(pricingGuard(ASK, 'ILI extension').triggered).toBe(true);
+  });
+
+  it('is NOT stood down by unrelated figures quoted below', () => {
+    // $40.6B is SCE capital plan wording, verbatim from Yancey's own opp-04.
+    const thread =
+      ASK +
+      '\n\nFrom: Charles Coleman\nSubject: Vector SLT Kickoff\n\n' +
+      'SCE plans to deploy approximately $40.6B from 2026 to 2030, with annual ' +
+      'capital spend approaching $9B and rate base growing to $67.9B.';
+    expect(pricingGuard(thread, 'ILI extension').triggered).toBe(true);
+  });
+
+  it('is NOT stood down by a number in a signature block', () => {
+    const thread = ASK + '\n\nLou DeFelice | Manager\nOffice 219-851-1800 | 500k customers served';
+    expect(pricingGuard(thread, 'ILI extension').triggered).toBe(true);
+  });
+
+  it('IS stood down when Yancey already quoted a fee in the thread', () => {
+    // demo email #2: the figure sits next to fee-stating language.
+    const thread =
+      'Can you provide a breakdown of what the fee covers across the five deliverables?' +
+      '\n\nFrom: Yancey Dawson\nSubject: Preliminary estimate\n\n' +
+      'The indicative range is $175K to $200K on a fixed-fee basis. The estimate is ' +
+      'preliminary and non-binding; the final fee would be confirmed at scoping.';
+    const guard = pricingGuard(thread, 'RE: Integrating Gas Control into T-Week Planning');
+    expect(guard.triggered).toBe(false);
+    expect(guard.reason).toContain('already');
+  });
+
+  it('is stood down by an hourly rate stated in-thread', () => {
+    const thread = ASK + '\n\nAs discussed our blended hourly rate is $265 per hour.';
+    expect(pricingGuard(thread, 'Scope').triggered).toBe(false);
+  });
+});

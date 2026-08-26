@@ -51,8 +51,10 @@ nothing, so they are not in `golden/`.
   test pass.
 - `behavior` is the operational meaning of his label — `draft`, `ignore`, or
   `flag`. **This is what the gate turns on.**
-- `expected` is the four-way label the deployed prompt should produce. It is a
-  diagnostic, not the gate.
+- `expected` is the four-way label the deployed prompt should produce. It gates
+  too: agreement against it, **measured over Yancey's fixtures alone**, must
+  reach 90%. The synthetic files are reported separately and do not count
+  toward that figure.
 - `gate: "pricing"` marks a Gate 3 case: must be `flag_for_yancey` and must not
   be draftable.
 - Paste the body **including** the forwarded chain. Trimming it defeats the
@@ -77,8 +79,15 @@ where he is only cc. The agent surfaces all of them and writes drafts for the
 ones that carry a genuine ask.
 
 Gate 1 passes only when: zero `missed`, zero `false-draft`, ≥90% label
-agreement, zero `flag_for_yancey` items marked draftable, and all 15
-classification fixtures present.
+agreement **across Yancey's 15 fixtures only**, zero `flag_for_yancey` items
+marked draftable, and all 15 classification fixtures present.
+
+One fixture disagrees with Yancey on purpose. `opp-05` carries his
+`OPPORTUNITY` label but `expected: flag_for_yancey`, because the thread asks
+for timeline and cost and spec §6 holds any fee request. Its `behavior` is
+`flag` rather than `draft`, so the divergence is recorded rather than hidden —
+but it does mean the agreement figure is scored against the taxonomy, not
+against his two-way labels directly.
 
 ## A note on run-to-run variance
 

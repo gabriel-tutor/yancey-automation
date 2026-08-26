@@ -753,6 +753,68 @@ time (no invisible characters in them), and the deployed code was pulled back
 out of SQLite and run through the same simulations before publishing. WF-B
 published before WF-A, since WF-A calls it.
 
+## Code review findings, and the regression it caught (2026-08-27)
+
+A two-axis review (standards + spec) was run against `0db8db8...HEAD`. The spec
+axis found a real regression in the change that had just been deployed.
+
+### The pricing guard got weaker in the commit that strengthened it
+
+Reading the whole thread for the fee **ask** was right. Reading it the same way
+for the **suppression** was not. `pricingGuard` stands down when a figure
+already exists in-thread, and that check was matching any currency anywhere in
+12,000 characters of quoted history:
+
+```
+bare fee ask                     -> held        (correct)
+same ask + quoted "$40.6B"       -> RELEASED    (wrong)
+same ask + "500k" in a signature -> RELEASED    (wrong)
+```
+
+`$40.6B` is SCE capital-plan wording, verbatim in Yancey's own `opp-04`
+training email. So a genuine fee request arriving in any Vector thread would
+have been let through — Gate 3 briefly weaker than before it read threads at
+all.
+
+Fixed by making the stand-down narrower than the ask. `feeAlreadyQuoted`
+requires a money figure (digits with a currency marker — `500k` alone no longer
+counts) with fee-*stating* language within 200 characters: `fixed-fee`,
+`indicative range`, `retainer`, `per hour`, `the fee covers`, and so on.
+Yancey's own quote reads "$175K to $200K on a fixed-fee basis" — figure and
+phrase inches apart. A capital plan has no such words near its numbers.
+
+Five regression tests cover it, including both false-suppression cases.
+
+### The reported agreement figure was flattering itself
+
+Gate 1 printed one agreement number averaged across all 21 fixtures, six of
+which are synthetic smoke tests written in-house. Spec §11 asks for agreement
+with *Yancey's* labels. The gate now turns on his 15 alone and reports the
+overall figure separately:
+
+```
+Agreement (Yancey) 93.3%  (14/15, target >= 90%)
+Agreement (all)    95.2%  (incl. synthetic smoke fixtures)
+```
+
+The headline number previously quoted as 100% was the diluted one. The honest
+figure for his set moves between roughly 93% and 100% run to run, because
+`gpt-5.6` rejects `temperature` and sampling cannot be pinned.
+
+### Documentation contradicted the code
+
+`fixtures/README.md` described `expected` as "a diagnostic, not the gate" while
+`golden-set.mjs` failed the run below 90% agreement against it. The README now
+says what the code does, and states plainly that `opp-05` disagrees with
+Yancey's own label on purpose.
+
+### Accepted, not fixed
+
+The drafting interlock is **scope creep** against spec §5, which conditions
+drafting only on label and confidence. It is kept because it fails closed and
+guards a real handover hazard, but it is recorded here as an addition to the
+spec rather than an implementation of it.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

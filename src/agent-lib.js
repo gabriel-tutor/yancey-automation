@@ -501,19 +501,95 @@ const CURRENCY_IN_TEXT = /(?:[$€£]\s?\d|\b\d[\d,]*\s?(?:k|m)\b|\busd\b|\bdoll
  * @param {string} subject
  * @returns {{ triggered: boolean, reason: string }}
  */
+/** A figure that is unambiguously money: digits with a currency marker. */
+const FEE_FIGURE =
+  /[$\u20AC\u00A3]\s?\d[\d,]*(?:\.\d+)?(?:\s?(?:k|m|mm))?|\b\d[\d,]*(?:\.\d+)?\s?(?:usd|dollars?)\b/gi;
+
+/** Language that means someone *stated* a price, as opposed to asking for one. */
+const FEE_STATEMENT =
+  /\b(fixed[- ]fee|indicative range|retainer|not to exceed|nte|per hour|hourly rate|day rate|our fee|the fee|fee is|fee of|fee covers|fee would be|quoted at|budget of)\b/gi;
+
+const FEE_PROXIMITY = 200;
+
+/**
+ * Has a fee already been quoted in this thread?
+ *
+ * Not "does a number appear". Reading the whole thread for the *ask* is right;
+ * reading it the same way for the suppression was not, and briefly made Gate 3
+ * weaker than before it read threads at all — a live fee request was released
+ * by any currency anywhere in the quoted history. SCE capital-plan figures
+ * ($40.6B) sit in Yancey's own training mail, and "500k" turns up in
+ * signatures.
+ *
+ * So a figure only stands the guard down when fee-stating language sits beside
+ * it. Yancey's own quote reads "$175K to $200K on a fixed-fee basis" — the
+ * figure and the word are inches apart. A capital plan has no such words near
+ * its numbers.
+ *
+ * @param {string} text
+ * @returns {boolean}
+ */
+function feeAlreadyQuoted(text) {
+  const source = String(text || '');
+  const figures = matchIndexes(source, FEE_FIGURE);
+  if (figures.length === 0) return false;
+  const statements = matchIndexes(source, FEE_STATEMENT);
+  if (statements.length === 0) return false;
+  for (const figure of figures) {
+    for (const statement of statements) {
+      if (Math.abs(figure - statement) <= FEE_PROXIMITY) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * @param {string} text
+ * @param {RegExp} pattern
+ * @returns {number[]}
+ */
+function matchIndexes(text, pattern) {
+  const re = new RegExp(pattern.source, pattern.flags.indexOf('g') === -1 ? pattern.flags + 'g' : pattern.flags);
+  /** @type {number[]} */
+  const out = [];
+  let m = re.exec(text);
+  while (m !== null) {
+    out.push(m.index);
+    if (m.index === re.lastIndex) re.lastIndex += 1;
+    m = re.exec(text);
+  }
+  return out;
+}
+
+/**
+ * Deterministic backstop for the one failure mode that costs real money: the
+ * agent originating or estimating a fee. Spec §11 Gate 3.
+ *
+ * Pass the WHOLE thread. Found by Gate 1 on Yancey's own mail: NIPSCO asked
+ * "can you provide an estimate of timeline and cost?", and by the time Chuck
+ * replied "let's write a proposal" the ask was one level down the quoted
+ * chain. Scanning only the newest message let it through and the agent drafted
+ * a reply about a proposal.
+ *
+ * The stand-down is deliberately narrower than the ask — see feeAlreadyQuoted.
+ *
+ * @param {string} text
+ * @param {string} subject
+ * @returns {{ triggered: boolean, reason: string }}
+ */
 function pricingGuard(text, subject) {
   const haystack = String(subject || '') + '\n' + String(text || '');
   const asksPrice = PRICING_ASK.test(haystack) && PRICING_QUESTION.test(haystack);
   if (!asksPrice) return { triggered: false, reason: '' };
-  if (CURRENCY_IN_TEXT.test(haystack)) {
+  if (feeAlreadyQuoted(haystack)) {
     return {
       triggered: false,
-      reason: 'pricing discussed but a figure already exists in-thread',
+      reason: 'pricing discussed but a fee has already been quoted in-thread',
     };
   }
   return {
     triggered: true,
-    reason: 'asks for a fee/estimate and no figure exists in-thread',
+    reason: 'asks for a fee/estimate and no fee has been quoted in-thread',
   };
 }
 
@@ -1296,6 +1372,7 @@ export {
   describeDraftFailure,
   escapeHtml,
   extractModelText,
+  feeAlreadyQuoted,
   findQuoteBoundaries,
   htmlToText,
   injectReplyIntoDraftHtml,
