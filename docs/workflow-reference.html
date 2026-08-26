@@ -1,0 +1,468 @@
+<title>Upperform Agent Internals</title>
+<style>
+  :root {
+    --ground:    #F7F8F9;
+    --panel:     #FFFFFF;
+    --sunk:      #F1F3F5;
+    --ink:       #131C24;
+    --ink-soft:  #58646F;
+    --ink-faint: #8B95A0;
+    --rule:      #DBE0E5;
+    --rule-soft: #EBEEF1;
+    --flow:      #2E5F8A;
+    --flow-wash: #EDF3F8;
+    --guard:     #B5610C;
+    --guard-wash:#FBF2E6;
+    --pass:      #2E7D4F;
+    --block:     #B3261E;
+    --inert:     #8B95A0;
+    --shadow:    0 1px 2px rgba(19,28,36,.05), 0 10px 28px -22px rgba(19,28,36,.4);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:    #0D1217;
+      --panel:     #151D25;
+      --sunk:      #111820;
+      --ink:       #E3E9ED;
+      --ink-soft:  #98A4AF;
+      --ink-faint: #6B7783;
+      --rule:      #29333D;
+      --rule-soft: #1E262F;
+      --flow:      #6FA8D6;
+      --flow-wash: #131E28;
+      --guard:     #E39B4E;
+      --guard-wash:#231A10;
+      --pass:      #6BBF8E;
+      --block:     #E8776E;
+      --inert:     #6B7783;
+      --shadow:    0 1px 2px rgba(0,0,0,.45), 0 10px 28px -22px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:    #0D1217;
+    --panel:     #151D25;
+    --sunk:      #111820;
+    --ink:       #E3E9ED;
+    --ink-soft:  #98A4AF;
+    --ink-faint: #6B7783;
+    --rule:      #29333D;
+    --rule-soft: #1E262F;
+    --flow:      #6FA8D6;
+    --flow-wash: #131E28;
+    --guard:     #E39B4E;
+    --guard-wash:#231A10;
+    --pass:      #6BBF8E;
+    --block:     #E8776E;
+    --inert:     #6B7783;
+    --shadow:    0 1px 2px rgba(0,0,0,.45), 0 10px 28px -22px rgba(0,0,0,.9);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 1120px; margin: 0 auto; padding: 52px 26px 90px; }
+  .prose { max-width: 68ch; }
+
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code {
+    font-size: .875em; background: var(--sunk); border: 1px solid var(--rule-soft);
+    border-radius: 2px; padding: 1px 5px;
+  }
+
+  .eyebrow { font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(28px,4.2vw,42px); line-height: 1.1; font-weight: 400; letter-spacing: -.01em; margin: 12px 0 0; text-wrap: balance; }
+  .standfirst { font-size: 18px; color: var(--ink-soft); margin: 14px 0 0; max-width: 62ch; }
+  h2 { font-family: Georgia, "Times New Roman", serif; font-size: 24px; font-weight: 400; margin: 0; text-wrap: balance; }
+  h3 { font-size: 14.5px; font-weight: 650; margin: 0 0 5px; }
+  p { margin: 0 0 13px; } p:last-child { margin-bottom: 0; }
+
+  section { margin-top: 52px; }
+  .sec-head { display: flex; flex-direction: column; gap: 7px; padding-top: 20px; border-top: 1px solid var(--rule); margin-bottom: 24px; }
+  .sec-head p { color: var(--ink-soft); margin: 0; max-width: 64ch; }
+
+  .board { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); }
+  .unit { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 14px 15px; display: flex; flex-direction: column; gap: 7px; }
+  .unit .id { font: 600 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; color: var(--flow); }
+  .unit .nm { font-weight: 650; font-size: 14.5px; }
+  .unit .mt { font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-faint); }
+  .pill { align-self: flex-start; font: 600 10px/1 ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 2px; border: 1px solid currentColor; }
+  .p-live { color: var(--pass); } .p-hold { color: var(--guard); } .p-util { color: var(--inert); }
+
+  .figwrap { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 24px 20px 16px; box-shadow: var(--shadow); }
+  .scroll { overflow-x: auto; }
+  figure { margin: 0; } svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+  figcaption { font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-faint); margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule-soft); }
+
+  .chain { border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); overflow: hidden; }
+  .link { display: grid; grid-template-columns: 34px 1fr; border-bottom: 1px solid var(--rule-soft); }
+  .link:last-child { border-bottom: 0; }
+  .link .n { background: var(--sunk); border-right: 1px solid var(--rule-soft); font: 600 11px/1 ui-monospace, Menlo, monospace; color: var(--ink-faint); display: flex; align-items: center; justify-content: center; }
+  .link .b { padding: 13px 16px; }
+  .link .nd { font: 600 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
+  .link .ds { font-size: 13.5px; color: var(--ink-soft); margin-top: 3px; }
+  .link.gate { background: var(--guard-wash); }
+  .link.gate .nd { color: var(--guard); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .tblwrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  th { font: 600 10.5px/1 ui-monospace, Menlo, monospace; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-faint); background: var(--sunk); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.k { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; white-space: nowrap; color: var(--flow); }
+  td.v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  .callout { background: var(--guard-wash); border: 1px solid var(--rule); border-left: 3px solid var(--guard); border-radius: 3px; padding: 16px 18px; }
+  .callout p:first-child { font-weight: 650; }
+  .note { background: var(--flow-wash); border: 1px solid var(--rule); border-left: 3px solid var(--flow); border-radius: 3px; padding: 16px 18px; }
+  .note p:first-child { font-weight: 650; }
+
+  footer { margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 12.5px; color: var(--ink-faint); }
+  @media (max-width: 560px) { .page { padding: 34px 16px 60px; } }
+</style>
+
+<div class="page">
+
+<header class="prose">
+  <div class="eyebrow">Upperform inbox assistant &middot; builder reference</div>
+  <h1>How the workflows actually run</h1>
+  <p class="standfirst">Six workflows, two data tables, and eight places a draft can die before it reaches the Drafts folder. This is the map for whoever is debugging it at 11pm.</p>
+</header>
+
+<section>
+  <div class="sec-head">
+    <h2>The six units</h2>
+    <p>Only WF&#8209;A and WF&#8209;C hold schedules. WF&#8209;B is called, WF&#8209;E is invoked on failure, and the last two are hand-run diagnostics that never belong on a client mailbox unattended.</p>
+  </div>
+  <div class="board">
+    <div class="unit"><span class="id">WF-A</span><span class="nm">Poll &amp; Classify</span><span class="mt">schedule &middot; every 2 min<br>dSGzw1yk46JTHD3Z</span><span class="pill p-hold">shadow</span></div>
+    <div class="unit"><span class="id">WF-B</span><span class="nm">Draft Reply</span><span class="mt">called by WF-A<br>Rjpk5KuPopQCpCQL</span><span class="pill p-hold">on demand</span></div>
+    <div class="unit"><span class="id">WF-C</span><span class="nm">Digest &amp; Follow-ups</span><span class="mt">weekdays 07:30 CT<br>vCbgJoNqfuVOqWGH</span><span class="pill p-hold">shadow</span></div>
+    <div class="unit"><span class="id">WF-E</span><span class="nm">Error Handler</span><span class="mt">on failure of A/B/C<br>XSKk6eHTFGqftrUM</span><span class="pill p-live">published</span></div>
+    <div class="unit"><span class="id">WF-T</span><span class="nm">Preflight</span><span class="mt">manual &middot; scope proof<br>1fCjIsw2JjVGkNJb</span><span class="pill p-util">diagnostic</span></div>
+    <div class="unit"><span class="id">WF-S</span><span class="nm">Seed Test Inbox</span><span class="mt">manual &middot; dev only<br>CNttEItjnRC4RkZZ</span><span class="pill p-util">diagnostic</span></div>
+  </div>
+
+  <div class="figwrap" style="margin-top:20px">
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 1040 340" role="img" aria-label="System map. A two-minute schedule drives WF-A, which calls WF-B per draftable message. A weekday schedule drives WF-C. Both read and write two shared data tables. Failures in A, B and C route to WF-E.">
+          <defs>
+            <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="currentColor"/></marker>
+            <marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#2E5F8A"/></marker>
+            <marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#B3261E"/></marker>
+          </defs>
+
+          <text x="16" y="26" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".5">TRIGGERS</text>
+          <rect x="16" y="40" width="128" height="46" rx="2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-dasharray="4 3"/>
+          <text x="80" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">every 2 min</text>
+          <text x="80" y="76" text-anchor="middle" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".55">schedule</text>
+
+          <rect x="16" y="212" width="128" height="46" rx="2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-dasharray="4 3"/>
+          <text x="80" y="232" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Mon&ndash;Fri 07:30</text>
+          <text x="80" y="248" text-anchor="middle" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".55">America/Chicago</text>
+
+          <line x1="144" y1="63" x2="192" y2="63" stroke="#2E5F8A" stroke-width="1.5" marker-end="url(#m2)"/>
+          <line x1="144" y1="235" x2="192" y2="235" stroke="#2E5F8A" stroke-width="1.5" marker-end="url(#m2)"/>
+
+          <rect x="192" y="34" width="176" height="58" rx="2" fill="none" stroke="#2E5F8A" stroke-width="1.75"/>
+          <text x="280" y="57" text-anchor="middle" font-size="13" font-weight="700" fill="#2E5F8A">WF-A</text>
+          <text x="280" y="76" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".7">Poll &amp; Classify</text>
+
+          <rect x="192" y="206" width="176" height="58" rx="2" fill="none" stroke="#2E5F8A" stroke-width="1.75"/>
+          <text x="280" y="229" text-anchor="middle" font-size="13" font-weight="700" fill="#2E5F8A">WF-C</text>
+          <text x="280" y="248" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".7">Digest &amp; Follow-ups</text>
+
+          <line x1="368" y1="63" x2="440" y2="63" stroke="#2E5F8A" stroke-width="1.5" marker-end="url(#m2)"/>
+          <text x="404" y="54" text-anchor="middle" font-size="10" font-family="ui-monospace, Menlo, monospace" fill="#2E5F8A">per msg</text>
+
+          <rect x="440" y="34" width="176" height="58" rx="2" fill="none" stroke="#2E5F8A" stroke-width="1.75"/>
+          <text x="528" y="57" text-anchor="middle" font-size="13" font-weight="700" fill="#2E5F8A">WF-B</text>
+          <text x="528" y="76" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".7">Draft Reply</text>
+
+          <text x="700" y="26" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".5">SHARED STATE</text>
+          <rect x="700" y="40" width="180" height="50" rx="2" fill="none" stroke="currentColor" stroke-width="1.25"/>
+          <text x="790" y="62" text-anchor="middle" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" fill="currentColor">agent_email_log</text>
+          <text x="790" y="78" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".55">22 columns</text>
+
+          <rect x="700" y="106" width="180" height="50" rx="2" fill="none" stroke="currentColor" stroke-width="1.25"/>
+          <text x="790" y="128" text-anchor="middle" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" fill="currentColor">agent_error_log</text>
+          <text x="790" y="144" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".55">8 columns</text>
+
+          <g fill="none" stroke="currentColor" stroke-width="1.1" opacity=".45">
+            <path d="M368 78 L640 78 L640 62 L700 62" marker-end="url(#m1)"/>
+            <path d="M616 63 L660 63 L660 55 L700 55" marker-end="url(#m1)"/>
+            <path d="M368 250 L660 250 L660 90 L700 90" marker-end="url(#m1)"/>
+          </g>
+
+          <rect x="440" y="206" width="176" height="58" rx="2" fill="none" stroke="#B3261E" stroke-width="1.5"/>
+          <text x="528" y="229" text-anchor="middle" font-size="13" font-weight="700" fill="#B3261E">WF-E</text>
+          <text x="528" y="248" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".7">Error Handler</text>
+
+          <g fill="none" stroke="#B3261E" stroke-width="1.25" stroke-dasharray="4 4">
+            <path d="M280 92 L280 168 L500 168 L500 206" marker-end="url(#m3)"/>
+            <path d="M528 92 L528 140 L540 140 L540 206" marker-end="url(#m3)"/>
+            <path d="M330 264 L330 290 L556 290 L556 264" marker-end="url(#m3)"/>
+          </g>
+          <text x="352" y="162" font-size="10" font-family="ui-monospace, Menlo, monospace" fill="#B3261E">on failure</text>
+
+          <path d="M616 235 L700 176" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".45" marker-end="url(#m1)"/>
+
+          <text x="700" y="196" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".5">EXTERNAL</text>
+          <rect x="700" y="210" width="180" height="46" rx="2" fill="none" stroke="currentColor" stroke-width="1.25"/>
+          <text x="790" y="230" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Graph &middot; OpenAI</text>
+          <text x="790" y="246" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".55">SMTP (Resend)</text>
+        </svg>
+      </div>
+      <figcaption>Solid blue is the happy path, dashed red is failure routing. WF&#8209;B is the only workflow with no trigger of its own &mdash; if WF&#8209;A never calls it, it never runs.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>WF&#8209;A &mdash; the polling sequence</h2>
+    <p>Sixteen nodes. The two amber rows are the idempotency gates: without both, a restart would reclassify the whole inbox and bill you for it.</p>
+  </div>
+  <div class="chain">
+    <div class="link"><div class="n">1</div><div class="b"><div class="nd">Every 2 Minutes</div><div class="ds">Schedule trigger, pinned to <code>America/Chicago</code> so date maths matches Yancey&rsquo;s day, not the datacenter&rsquo;s.</div></div></div>
+    <div class="link"><div class="n">2</div><div class="b"><div class="nd">Config</div><div class="ds">Every tunable in one Set node. Nothing else in the workflow should need editing.</div></div></div>
+    <div class="link"><div class="n">3</div><div class="b"><div class="nd">Load Business Profile &rarr; Extract Profile Text</div><div class="ds">Reads <code>/data/context/business-profile.md</code> from the read-only mount. Both continue on error, so a broken mount degrades to a built-in fallback rather than halting the poll.</div></div></div>
+    <div class="link"><div class="n">4</div><div class="b"><div class="nd">Resolve Context</div><div class="ds">Builds the classifier system prompt from the profile and computes the Graph <code>$filter</code> window. Emits <code>profileSource</code> &mdash; if that reads <code>fallback</code>, the mount is broken.</div></div></div>
+    <div class="link"><div class="n">5</div><div class="b"><div class="nd">Fetch Inbox</div><div class="ds"><code>GET /me/mailFolders/inbox/messages</code> with <code>receivedDateTime ge</code> the lookback window. Sends <code>Prefer: outlook.body-content-type="text"</code> so Graph does HTML&rarr;text server-side. Retries 3&times; on 5xx and 429.</div></div></div>
+    <div class="link gate"><div class="n">6</div><div class="b"><div class="nd">Skip Already Labelled</div><div class="ds"><b>Gate 1.</b> Drops anything already carrying <code>AI-Processed</code>, and anything from <code>ignoreSenders</code> &mdash; otherwise the agent triages its own digest and each one compounds into the next.</div></div></div>
+    <div class="link gate"><div class="n">7</div><div class="b"><div class="nd">Skip Already Logged</div><div class="ds"><b>Gate 2.</b> <code>rowNotExists</code> on <code>message_id</code>. Catches the window between tagging in Outlook and the log write, where a crash would otherwise duplicate.</div></div></div>
+    <div class="link"><div class="n">8</div><div class="b"><div class="nd">Prepare Email</div><div class="ds">Strips quoted history, trims legal footers, truncates to 6,000 chars, builds the classifier payload. A bare <code>FYI</code> over a deep forward chain extends past the boundary &mdash; the meaning is below the fold.</div></div></div>
+    <div class="link"><div class="n">9</div><div class="b"><div class="nd">Classify Email</div><div class="ds"><code>gpt-5.6-luna</code> with a strict <code>json_schema</code> response format and a stable <code>promptCacheKey</code>. No <code>temperature</code> &mdash; the 5.6 family rejects it.</div></div></div>
+    <div class="link"><div class="n">10</div><div class="b"><div class="nd">Apply Classification</div><div class="ds">Where the model&rsquo;s answer gets audited. Runs the guard chain below, clamps confidence, decides the Outlook categories, computes the follow-up due date.</div></div></div>
+    <div class="link"><div class="n">11</div><div class="b"><div class="nd">Tag in Outlook &rarr; Log Classification</div><div class="ds"><code>PATCH /me/messages/{id}</code> replaces the whole category array, so existing user categories are preserved and re-merged. Then one row into <code>agent_email_log</code>.</div></div></div>
+    <div class="link gate"><div class="n">12</div><div class="b"><div class="nd">Draft This One?</div><div class="ds"><b>The shadow-mode switch.</b> Requires <code>requiresDraft</code> <em>and</em> <code>draftingEnabled</code>. Flip the second to <code>true</code> in Config when Yancey signs off on the labels &mdash; nothing else changes.</div></div></div>
+    <div class="link"><div class="n">13</div><div class="b"><div class="nd">Draft Reply (WF-B)</div><div class="ds">Sub-workflow, once per message, <code>waitForSubWorkflow</code> on. Carries <code>onError: continueRegularOutput</code> &mdash; one message failing to draft must not take down the batch.</div></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>The guard chain</h2>
+    <p>A message has to survive seven checks to become a draft, and an eighth to leave the mailbox. Five of the seven can overrule the model outright.</p>
+  </div>
+
+  <div class="figwrap">
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 720 620" role="img" aria-label="A vertical gauntlet. A classified message drops through seven gates; each can divert it to a stopped state. Only survivors become a draft, and an eighth barrier at the bottom means even a written draft cannot be sent by the agent.">
+          <defs>
+            <marker id="g1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#2E5F8A"/></marker>
+            <marker id="g2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#B3261E"/></marker>
+          </defs>
+
+          <rect x="250" y="12" width="220" height="42" rx="2" fill="none" stroke="#2E5F8A" stroke-width="1.75"/>
+          <text x="360" y="38" text-anchor="middle" font-size="12.5" font-weight="650" fill="#2E5F8A">model returns a label</text>
+
+          <g font-size="11.5" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+            <g fill="none" stroke="#2E5F8A" stroke-width="1.75" marker-end="url(#g1)">
+              <line x1="360" y1="54" x2="360" y2="76"/>
+              <line x1="360" y1="112" x2="360" y2="134"/>
+              <line x1="360" y1="170" x2="360" y2="192"/>
+              <line x1="360" y1="228" x2="360" y2="250"/>
+              <line x1="360" y1="286" x2="360" y2="308"/>
+              <line x1="360" y1="344" x2="360" y2="366"/>
+              <line x1="360" y1="402" x2="360" y2="424"/>
+              <line x1="360" y1="460" x2="360" y2="482"/>
+            </g>
+
+            <g fill="none" stroke="#B3261E" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#g2)">
+              <path d="M250 95 L150 95"/>
+              <path d="M250 153 L150 153"/>
+              <path d="M250 211 L150 211"/>
+              <path d="M250 269 L150 269"/>
+              <path d="M250 327 L150 327"/>
+              <path d="M250 385 L150 385"/>
+              <path d="M250 443 L150 443"/>
+            </g>
+
+            <g fill="#B3261E" text-anchor="end" font-size="10.5">
+              <text x="146" y="92">no draft</text>
+              <text x="146" y="150">&rarr; flag_for_yancey</text>
+              <text x="146" y="208">&rarr; flag_for_yancey</text>
+              <text x="146" y="266">no draft</text>
+              <text x="146" y="324">below_confidence_min</text>
+              <text x="146" y="382">shadow mode</text>
+              <text x="146" y="441">draft deleted, AI-Review</text>
+            </g>
+
+            <g fill="none" stroke="currentColor" stroke-width="1.25">
+              <rect x="250" y="76" width="220" height="36" rx="2"/>
+              <rect x="250" y="192" width="220" height="36" rx="2"/>
+              <rect x="250" y="308" width="220" height="36" rx="2"/>
+            </g>
+            <g fill="none" stroke="#B5610C" stroke-width="1.75">
+              <rect x="250" y="134" width="220" height="36" rx="2"/>
+              <rect x="250" y="250" width="220" height="36" rx="2"/>
+              <rect x="250" y="366" width="220" height="36" rx="2"/>
+              <rect x="250" y="424" width="220" height="36" rx="2"/>
+            </g>
+
+            <text x="360" y="99"  text-anchor="middle" fill="currentColor">requires_draft ?</text>
+            <text x="360" y="157" text-anchor="middle" fill="#B5610C" font-weight="650">pricingGuard</text>
+            <text x="360" y="215" text-anchor="middle" fill="currentColor">label draftable ?</text>
+            <text x="360" y="273" text-anchor="middle" fill="#B5610C" font-weight="650">sensitivityGuard</text>
+            <text x="360" y="331" text-anchor="middle" fill="currentColor">confidence &ge; 0.6 ?</text>
+            <text x="360" y="389" text-anchor="middle" fill="#B5610C" font-weight="650">draftingEnabled</text>
+            <text x="360" y="447" text-anchor="middle" fill="#B5610C" font-weight="650">voiceGuard</text>
+
+            <g fill="#B5610C" font-size="10" text-anchor="start">
+              <text x="486" y="157">overrules the model</text>
+              <text x="486" y="273">overrules the model</text>
+              <text x="486" y="389">the rollout switch</text>
+              <text x="486" y="447">invented figures</text>
+            </g>
+          </g>
+
+          <rect x="250" y="482" width="220" height="42" rx="2" fill="none" stroke="#2E7D4F" stroke-width="1.75"/>
+          <text x="360" y="508" text-anchor="middle" font-size="12.5" font-weight="650" fill="#2E7D4F">draft written to Drafts</text>
+
+          <line x1="360" y1="524" x2="360" y2="548" stroke="#2E5F8A" stroke-width="1.75" marker-end="url(#g1)"/>
+          <rect x="180" y="548" width="360" height="52" rx="2" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="360" y="572" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">Microsoft: no Mail.Send scope</text>
+          <text x="360" y="590" text-anchor="middle" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".6">holds regardless of every gate above</text>
+        </svg>
+      </div>
+      <figcaption>Amber gates are ours and live in code; the dashed barrier at the bottom is Microsoft&rsquo;s and is the only one that would still hold if every line above it were deleted.</figcaption>
+    </figure>
+  </div>
+
+  <div class="callout" style="margin-top:20px">
+    <p>Two of these overrule a confident model, by design.</p>
+    <p>In the live test, <code>gpt-5.6-luna</code> classified a client&rsquo;s <em>&ldquo;can you provide an estimate of timeline and cost?&rdquo;</em> as <code>opportunity</code> at <b>0.99 confidence</b> with <code>requires_draft: true</code>. <code>pricingGuard</code> forced it to <code>flag_for_yancey</code> and it never reached WF&#8209;B. A prompt instruction would have been a suggestion; a regex over the cleaned body is a rule.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>WF&#8209;B &mdash; drafting, and the two exits</h2>
+    <p>Runs once per draftable message. The blocked path matters as much as the happy one: a failed guard must leave no trace in the Drafts folder.</p>
+  </div>
+  <div class="chain">
+    <div class="link"><div class="n">1</div><div class="b"><div class="nd">Draft Request</div><div class="ds">Twelve declared inputs from WF&#8209;A, including the pre-encoded <code>messageIdEnc</code> &mdash; Graph ids are not URL-safe.</div></div></div>
+    <div class="link"><div class="n">2</div><div class="b"><div class="nd">Create Reply Draft</div><div class="ds"><code>POST /me/messages/{id}/createReply</code>. Returns a real draft, correctly threaded, recipients pre-filled, original quoted. <b>Not</b> the n8n Outlook &ldquo;reply&rdquo; operation, which sends.</div></div></div>
+    <div class="link"><div class="n">3</div><div class="b"><div class="nd">Compose Draft Prompt &rarr; Generate Draft</div><div class="ds"><code>gpt-5.6-terra</code>, plain text out. The profile&rsquo;s voice section is in the system prompt; the classifier&rsquo;s reasoning and <code>asks</code> go in the user turn so the reply answers the actual question.</div></div></div>
+    <div class="link gate"><div class="n">4</div><div class="b"><div class="nd">Voice Guard</div><div class="ds">Three tiers. <b>Hard</b> &mdash; invented currency or percentage &rarr; block. <b>Medium</b> &mdash; invented date or large number &rarr; write it, but also tag <code>AI-Review</code>. <b>Soft</b> &mdash; missing sign-off, forbidden opener &rarr; repaired silently.</div></div></div>
+    <div class="link"><div class="n">5a</div><div class="b"><div class="nd">Passed &rarr; Write Draft Body</div><div class="ds">Reply HTML is injected <em>above</em> the quoted history, not replacing it. Then re-read categories, add <code>AI-Drafted</code>, update the log row with the draft id and web link.</div></div></div>
+    <div class="link"><div class="n">5b</div><div class="b"><div class="nd">Blocked &rarr; Delete the Empty Draft</div><div class="ds">The draft <code>createReply</code> already made is deleted, the message is tagged <code>AI-Review</code>, and the reason is written to <code>guard_flags</code>. Yancey never finds a blank reply waiting.</div></div></div>
+  </div>
+  <div class="note" style="margin-top:16px">
+    <p>Known gap.</p>
+    <p>If <code>Generate Draft</code> throws outright &mdash; a 400 or a timeout &mdash; the error propagates instead of routing to 5b, so the cleanup never fires and an empty draft is orphaned. Seen once during testing. Worth hardening before the credential points at Yancey.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>WF&#8209;C &mdash; reconciliation without polling</h2>
+    <p>The digest has to know which drafts Yancey has dealt with. It never asks him, and it never polls each draft individually.</p>
+  </div>
+  <div class="figwrap">
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 780 250" role="img" aria-label="One Graph call lists the whole Drafts folder. Logged draft ids are compared against that set; ids present are still waiting, ids absent were sent or discarded and their rows are closed.">
+          <defs><marker id="c1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#2E5F8A"/></marker></defs>
+          <rect x="16" y="40" width="180" height="52" rx="2" fill="none" stroke="currentColor" stroke-width="1.25"/>
+          <text x="106" y="62" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Drafts folder</text>
+          <text x="106" y="79" text-anchor="middle" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".6">1 Graph call, $top=500</text>
+
+          <rect x="16" y="150" width="180" height="52" rx="2" fill="none" stroke="currentColor" stroke-width="1.25"/>
+          <text x="106" y="172" text-anchor="middle" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" fill="currentColor">agent_email_log</text>
+          <text x="106" y="189" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">rows with a draft_id</text>
+
+          <line x1="196" y1="66" x2="286" y2="106" stroke="#2E5F8A" stroke-width="1.5" marker-end="url(#c1)"/>
+          <line x1="196" y1="176" x2="286" y2="136" stroke="#2E5F8A" stroke-width="1.5" marker-end="url(#c1)"/>
+
+          <rect x="286" y="96" width="164" height="50" rx="2" fill="none" stroke="#2E5F8A" stroke-width="1.75"/>
+          <text x="368" y="118" text-anchor="middle" font-size="12" font-weight="650" fill="#2E5F8A">set difference</text>
+          <text x="368" y="134" text-anchor="middle" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="#2E5F8A" opacity=".8">in memory</text>
+
+          <line x1="450" y1="110" x2="530" y2="72" stroke="#2E5F8A" stroke-width="1.5" marker-end="url(#c1)"/>
+          <line x1="450" y1="132" x2="530" y2="170" stroke="#2E5F8A" stroke-width="1.5" marker-end="url(#c1)"/>
+
+          <rect x="530" y="46" width="230" height="52" rx="2" fill="none" stroke="#B5610C" stroke-width="1.5"/>
+          <text x="545" y="68" font-size="12" font-weight="600" fill="#B5610C">still present</text>
+          <text x="545" y="85" font-size="10.5" fill="currentColor" opacity=".65">&rarr; &ldquo;Drafts waiting&rdquo;, day counter ticks</text>
+
+          <rect x="530" y="144" width="230" height="52" rx="2" fill="none" stroke="#2E7D4F" stroke-width="1.5"/>
+          <text x="545" y="166" font-size="12" font-weight="600" fill="#2E7D4F">gone</text>
+          <text x="545" y="183" font-size="10.5" fill="currentColor" opacity=".65">&rarr; sent or binned, row closed</text>
+        </svg>
+      </div>
+      <figcaption>Pressing Send <em>is</em> the approval signal &mdash; there is nothing to tick off. If Graph paginates the listing, absence stops being provable, so the code treats every logged draft as still present rather than closing rows it cannot verify.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>Config reference</h2>
+    <p>Every knob, and which workflow&rsquo;s Config node holds it. Changing behaviour should never mean editing a node other than these.</p>
+  </div>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>Key</th><th>Where</th><th>Now</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td class="k">draftingEnabled</td><td>WF-A</td><td class="v">true</td><td>The shadow-mode switch. Must be <code>false</code> before the credential points at Yancey.</td></tr>
+        <tr><td class="k">confidenceMin</td><td>WF-A</td><td class="v">0.6</td><td>Below this the item is surfaced rather than drafted, flagged <code>below_confidence_min</code>.</td></tr>
+        <tr><td class="k">lookbackHours</td><td>WF-A</td><td class="v">6</td><td>Graph <code>$filter</code> window. Wider means re-reading mail the gates will drop anyway.</td></tr>
+        <tr><td class="k">pollBatch</td><td>WF-A</td><td class="v">25</td><td><code>$top</code> on the inbox read.</td></tr>
+        <tr><td class="k">ignoreSenders</td><td>WF-A</td><td class="v">3 entries</td><td>Never classified at all. Holds the digest sender so the agent doesn&rsquo;t triage itself.</td></tr>
+        <tr><td class="k">alwaysFlagSenders</td><td>WF-A</td><td class="v">[]</td><td>Forced to <code>flag_for_yancey</code>. Accepts full addresses or <code>@domain.com</code>.</td></tr>
+        <tr><td class="k">modelClassify</td><td>WF-A</td><td class="v">gpt-5.6-luna</td><td>$0.20/1M in. Cheaper than the mini tier &mdash; don&rsquo;t &ldquo;optimise&rdquo; this without checking the price list.</td></tr>
+        <tr><td class="k">modelDraft</td><td>WF-B</td><td class="v">gpt-5.6-terra</td><td>$2/1M in, but only ~220 calls a month. The premium buys voice quality where it&rsquo;s client-visible.</td></tr>
+        <tr><td class="k">signOff / signature</td><td>WF-B</td><td class="v">Thanks, / Yancey</td><td>What the Voice Guard enforces and repairs.</td></tr>
+        <tr><td class="k">bookingLink</td><td>WF-B</td><td class="v">empty</td><td>Offered when a draft proposes a call. Awaiting Yancey.</td></tr>
+        <tr><td class="k">followupDays</td><td>WF-A / C</td><td class="v">3</td><td>Business days of silence before a thread appears under Follow-ups Due.</td></tr>
+        <tr><td class="k">autoCloseDays</td><td>WF-C</td><td class="v">21</td><td>Undrafted rows older than this close themselves, so the digest doesn&rsquo;t silt up.</td></tr>
+        <tr><td class="k">mode</td><td>WF-C</td><td class="v">shadow</td><td>Drives the banner at the top of the digest. Set to <code>live</code> when drafting is on.</td></tr>
+        <tr><td class="k">digestTo / alertTo</td><td>WF-C / E</td><td class="v">sandbox</td><td>Both still point at the Resend sandbox address. <b>Error alerts will not reach you until this changes.</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>When it breaks</h2>
+    <p>Symptoms seen for real during the build, and what each one actually meant.</p>
+  </div>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>Symptom</th><th>Cause</th></tr></thead>
+      <tbody>
+        <tr><td><code>profileSource: fallback</code></td><td>The mount or, more likely, <code>N8N_RESTRICT_FILE_ACCESS_TO</code>. Since n8n v1.123.5 it defaults to <code>/home/node/.n8n-files</code>, so <code>/data/context</code> is refused even though <code>cat</code> works inside the container.</td></tr>
+        <tr><td><code>Unsupported parameter: 'temperature'</code></td><td>The 5.6 family rejects it outright. Determinism comes from the strict <code>json_schema</code> instead.</td></tr>
+        <tr><td><code>ErrorInvalidReferenceItem</code> on createReply</td><td>The target message has <code>isDraft: true</code>. Only ever seen with seeded fixtures &mdash; real inbound mail cannot be a draft.</td></tr>
+        <tr><td><code>550 You can only send testing emails&hellip;</code></td><td>Resend sandbox. Verify a sending subdomain; the 550 names the one address that will work in the meantime.</td></tr>
+        <tr><td>Digest appears in its own next digest</td><td>Sender missing from <code>ignoreSenders</code>. Compounds daily if left.</td></tr>
+        <tr><td>Everything classifies as <code>flag_for_yancey</code></td><td>Model output unparseable, so <code>normalizeClassification</code> fails safe. Check <code>guard_flags</code> for <code>unparseable_label</code>.</td></tr>
+        <tr><td>Silence &mdash; no rows, no errors</td><td>Both gates doing their job, or <code>lookbackHours</code> too narrow after downtime. Widen it once and set it back.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>Changing it safely</h2>
+    <p>The workflows are generated from the repo, not authored in the n8n editor.</p>
+  </div>
+  <div class="prose">
+    <p>Hand-editing a Code node in n8n works until the next <code>npm run build</code> overwrites it. The chain is <code>src/agent-lib.js</code> &rarr; tree-shaken per node by esbuild &rarr; inlined into the generated SDK source &rarr; deployed. Ninety-five unit tests cover the library, and a parity suite proves the tree-shaken subset that actually ships behaves the same as the module under test.</p>
+    <p>Three things change without touching code at all: the business profile (edit on the VPS, picked up on the next 2-minute poll &mdash; no restart), anything in a Config node, and the Outlook categories themselves.</p>
+  </div>
+</section>
+
+<footer>
+  Upperform inbox assistant &middot; Phase&nbsp;1 builder reference &middot; n8n 2.35.7 on srv1921545
+</footer>
+
+</div>
