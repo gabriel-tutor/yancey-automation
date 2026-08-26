@@ -547,6 +547,77 @@ digest; the agent simply declined to put words in his mouth where no question
 was aimed at him. Both the harness and `fixtures/README.md` score these as
 passing.
 
+## Deploying the guard fix to the live instance (2026-08-27)
+
+Profile v3 went to `/root/context/business-profile.md` on the VPS (v2 backed up
+alongside as `.bak-v2`) and is visible inside the container at
+`/data/context/business-profile.md`. No restart needed — WF-A reads it fresh on
+every run.
+
+The code fix needed WF-A's `Prepare Email` and `Apply Classification` nodes
+replaced. There is no n8n API key on this instance, so the MCP `update_workflow`
+tool was the only route, and it takes the node body inline.
+
+**Verify before publishing.** `update_workflow` edits the draft; the published
+version keeps serving until `publish_workflow` is called. That gap is the safety
+margin — use it.
+
+The first paste of `Prepare Email` was wrong. Hashing the deployed node against
+the local build caught it:
+
+```
+Prepare Email          411a8e74...  <- deployed
+Prepare Email          2f186ecd...  <- local build
+```
+
+The cause was a **literal non-breaking space** inside `htmlToText`:
+
+```
+local:     out.replace(/\xc2\xa0/g, " ")   <- U+00A0, normalises NBSP
+deployed:  out.replace(/\x20/g, " ")       <- plain space, a silent no-op
+```
+
+The invisible character did not survive being retyped, and nothing would have
+flagged it: the code is valid JS, n8n reported no validation warnings, and a
+test execution passed because the idempotency gate skipped every already-labelled
+message so the node never ran. HTML mail would simply have kept its
+non-breaking spaces, quietly degrading quote-boundary detection.
+
+Re-sent with `\u00A0` written as an explicit escape so the character cannot be
+dropped again.
+
+**Hashes are the wrong check here** — esbuild emits `"\u2019"` while a paste
+round-trips to `"’"`, which is the same string. Verify behaviour instead. The
+deployed helpers were pulled back out of the SQLite database, `eval`'d, and run
+against `src/agent-lib.js` on the same inputs:
+
+```
+PASS  htmlToText normalizes &nbsp; (the regression)
+PASS  entity table parity
+PASS  normalizeGraphMessage full parity
+PASS  threadText keeps the fee ask / cleanText does not
+PASS  pricingGuard: newest message alone -> false, whole thread -> true
+PASS  deployed guard chain holds opp-05
+PASS  deployed == local classification
+DEPLOYED CODE MATCHES LOCAL BEHAVIOUR
+```
+
+Only then published. `workflow_entity` now shows `active: 1` with
+`versionId 4c415e4e-2ced-40d1-bed7-385306d7da6a`, matching the `activeVersionId`
+returned by `publish_workflow`. Note `workflow_published_version` is empty on
+this instance — `workflow_entity` is the live row.
+
+Reading the node code back out for comparison:
+
+```
+docker exec n8n-wevu-n8n-1 node -e "
+const {DatabaseSync}=require('node:sqlite');
+const db=new DatabaseSync('/home/node/.n8n/database.sqlite',{readOnly:true});
+const row=db.prepare('select nodes from workflow_entity where id=?').get('<id>');
+for (const n of JSON.parse(row.nodes)) console.log(n.name, n.parameters.jsCode?.length);
+"
+```
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,
