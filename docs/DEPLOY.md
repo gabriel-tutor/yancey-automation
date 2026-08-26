@@ -143,6 +143,52 @@ could not auto-assign them at creation. Open each and pick the credential:
 - **WF-C:** Fetch Open Drafts · Send Digest (SMTP)
 - **WF-E:** Read Message Categories · Tag Message AI-Error · Alert the Builder
 
+## 3b. Prove the no-send invariant — mandatory gate
+
+Run **WF-T · Preflight (scope proof)** (`1fCjIsw2JjVGkNJb`) before pointing the
+agent at any mailbox, and again after every credential change.
+
+Set `expectedMailbox` in its **Config**, then Execute. Four checks confirm the
+credential can read the inbox, list drafts, create a draft and delete one. The
+fifth deliberately calls `POST /me/sendMail` at the mailbox itself and requires
+Microsoft to refuse it.
+
+**Do not proceed unless `sendCheck` reads `PASS`.**
+
+| `sendCheck` | Meaning |
+|---|---|
+| `PASS` (401/403) | Sending is genuinely denied. The invariant holds. |
+| `CRITICAL` (2xx) | The credential holds `Mail.Send`. Stop and remediate below. |
+| `INCONCLUSIVE` | Graph rejected the request shape before checking permissions. Proves nothing. |
+
+Screenshot the Verdict output for the handover doc. A consent screenshot shows
+what was *asked for*; this shows what was actually *granted*.
+
+### If it comes back CRITICAL
+
+This happened on the first real run against the dev mailbox on 2026-08-26, and
+it is the expected failure mode, so treat it as likely rather than exotic.
+
+**Trimming the scope string does not retract a grant that already exists.** If
+the app was ever connected once with n8n's defaults — a single exploratory
+connect is enough — Entra records `Mail.Send` on the service principal, and the
+token endpoint can keep handing it back no matter what the new authorize request
+asks for.
+
+1. Entra -> **Enterprise applications** -> the app -> **Permissions** -> revoke
+   the consented permissions. Deleting the enterprise application (the service
+   principal) also works and is cleaner; the app *registration* is unaffected.
+2. In n8n, confirm **Custom Scopes** is on and **Enabled Scopes** is exactly
+   `openid offline_access User.Read Mail.Read Mail.ReadWrite`. **Save.**
+3. Reconnect. With the grant revoked you get a fresh consent screen — read it.
+4. Re-run WF-T and require `PASS`.
+5. Delete the `PREFLIGHT — this must never arrive` message from the inbox.
+
+Note that the agent's own code never calls `sendMail`, so a `CRITICAL` result
+does not mean anything was sent by the assistant. It means the *permission*
+exists, which makes "it could not send even if it tried" untrue — and that
+sentence is the product.
+
 ## 4. Check the model IDs
 
 `modelClassify` and `modelDraft` in each **Config** node carry the values from

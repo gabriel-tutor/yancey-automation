@@ -52,6 +52,7 @@ OPENAI_API_KEY=sk-... npm run gate1
 | WF-B · Draft Reply | `Rjpk5KuPopQCpCQL` | called by WF-A | credentials attached |
 | WF-C · Daily Digest & Follow-ups | `vCbgJoNqfuVOqWGH` | weekdays 07:30 CT | after shadow mode |
 | WF-E · Error Handler | `XSKk6eHTFGqftrUM` | on failure | before the others |
+| WF-T · Preflight (scope proof) | `1fCjIsw2JjVGkNJb` | manual | never — diagnostic only |
 
 Base URL: `https://n8n-wevu.srv1921545.hstgr.cloud`
 Data tables: `agent_email_log` (`zGcPKOA90SMVEenJ`), `agent_error_log` (`Q6j7VEadubVstttP`)
