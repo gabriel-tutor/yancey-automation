@@ -31,5 +31,14 @@
       "name": "OpenAI account",
       "type": "openAiApi"
     }
+  },
+  "published": {
+    "_note": "Live state as of 2026-08-26. A sub-workflow must be published before any workflow referencing it can be.",
+    "wfA": true,
+    "wfB": true,
+    "wfE": true,
+    "wfC": false,
+    "wfT": false,
+    "wfS": false
   }
 }

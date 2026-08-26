@@ -134,12 +134,12 @@
 <section>
   <div class="sec-head">
     <h2>The six units</h2>
-    <p>Only WF&#8209;A and WF&#8209;C hold schedules. WF&#8209;B is called, WF&#8209;E is invoked on failure, and the last two are hand-run diagnostics that never belong on a client mailbox unattended.</p>
+    <p>Only WF&#8209;A and WF&#8209;C hold schedules. WF&#8209;B is called, WF&#8209;E is invoked on failure, and the last two are hand-run diagnostics that never belong on a client mailbox unattended. <b>WF&#8209;A, WF&#8209;B and WF&#8209;E are published and running against the dev mailbox now</b> &mdash; a sub-workflow must be published before anything referencing it can be, which is why WF&#8209;B went first.</p>
   </div>
   <div class="board">
-    <div class="unit"><span class="id">WF-A</span><span class="nm">Poll &amp; Classify</span><span class="mt">schedule &middot; every 2 min<br>dSGzw1yk46JTHD3Z</span><span class="pill p-hold">shadow</span></div>
-    <div class="unit"><span class="id">WF-B</span><span class="nm">Draft Reply</span><span class="mt">called by WF-A<br>Rjpk5KuPopQCpCQL</span><span class="pill p-hold">on demand</span></div>
-    <div class="unit"><span class="id">WF-C</span><span class="nm">Digest &amp; Follow-ups</span><span class="mt">weekdays 07:30 CT<br>vCbgJoNqfuVOqWGH</span><span class="pill p-hold">shadow</span></div>
+    <div class="unit"><span class="id">WF-A</span><span class="nm">Poll &amp; Classify</span><span class="mt">schedule &middot; every 2 min<br>dSGzw1yk46JTHD3Z</span><span class="pill p-live">live &middot; drafting on</span></div>
+    <div class="unit"><span class="id">WF-B</span><span class="nm">Draft Reply</span><span class="mt">called by WF-A<br>Rjpk5KuPopQCpCQL</span><span class="pill p-live">published</span></div>
+    <div class="unit"><span class="id">WF-C</span><span class="nm">Digest &amp; Follow-ups</span><span class="mt">weekdays 07:30 CT<br>vCbgJoNqfuVOqWGH</span><span class="pill p-hold">not published</span></div>
     <div class="unit"><span class="id">WF-E</span><span class="nm">Error Handler</span><span class="mt">on failure of A/B/C<br>XSKk6eHTFGqftrUM</span><span class="pill p-live">published</span></div>
     <div class="unit"><span class="id">WF-T</span><span class="nm">Preflight</span><span class="mt">manual &middot; scope proof<br>1fCjIsw2JjVGkNJb</span><span class="pill p-util">diagnostic</span></div>
     <div class="unit"><span class="id">WF-S</span><span class="nm">Seed Test Inbox</span><span class="mt">manual &middot; dev only<br>CNttEItjnRC4RkZZ</span><span class="pill p-util">diagnostic</span></div>
@@ -410,7 +410,7 @@
     <table>
       <thead><tr><th>Key</th><th>Where</th><th>Now</th><th>What it does</th></tr></thead>
       <tbody>
-        <tr><td class="k">draftingEnabled</td><td>WF-A</td><td class="v">true</td><td>The shadow-mode switch. Must be <code>false</code> before the credential points at Yancey.</td></tr>
+        <tr><td class="k">draftingEnabled</td><td>WF-A</td><td class="v">true</td><td>The shadow-mode switch, and it is <b>on</b> &mdash; drafts are being written unattended every 2 minutes. Must be <code>false</code> before the credential points at Yancey.</td></tr>
         <tr><td class="k">confidenceMin</td><td>WF-A</td><td class="v">0.6</td><td>Below this the item is surfaced rather than drafted, flagged <code>below_confidence_min</code>.</td></tr>
         <tr><td class="k">lookbackHours</td><td>WF-A</td><td class="v">6</td><td>Graph <code>$filter</code> window. Wider means re-reading mail the gates will drop anyway.</td></tr>
         <tr><td class="k">pollBatch</td><td>WF-A</td><td class="v">25</td><td><code>$top</code> on the inbox read.</td></tr>
