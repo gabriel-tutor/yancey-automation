@@ -23,6 +23,7 @@ import {
   textToHtmlParagraphs,
   truncate,
   voiceGuard,
+  voicePreChecks,
 } from './agent-lib.js';
 import {
   BARE_FORWARD,
@@ -890,5 +891,81 @@ describe('normalizeClassification owns the interlock flag', () => {
   it('treats an absent mailbox context as no restriction', () => {
     // The golden-set harness scores prompts, not deployments.
     expect(normalizeClassification(raw, base).requiresDraft).toBe(true);
+  });
+});
+
+describe('voicePreChecks — spec §11 Gate 2 automated pre-checks', () => {
+  /**
+   * @param {{ checks: { name: string, pass: boolean, detail: string }[] }} result
+   * @param {string} name
+   */
+  const check = (result, name) => {
+    const hit = result.checks.find((c) => c.name === name);
+    if (!hit) throw new Error('no check named ' + name);
+    return hit;
+  };
+
+  const SOURCE = 'Can you pull the crossarm workbook together before Thursday? We saved $6.4M last year.';
+  const GOOD = [
+    'Hey Chuck,',
+    '',
+    'I will pull the crossarm workbook together and send it before the Momentum Room.',
+    '',
+    'Thanks,',
+    '',
+    'Yancey',
+  ].join('\n');
+
+  it('passes a draft in voice', () => {
+    const r = voicePreChecks(GOOD, SOURCE, {});
+    expect(r.pass).toBe(true);
+    expect(r.checks.every((c) => c.pass)).toBe(true);
+  });
+
+  it('names all four checks the spec lists', () => {
+    const names = voicePreChecks(GOOD, SOURCE, {}).checks.map((c) => c.name);
+    expect(names).toEqual(['sign_off', 'no_forbidden_opener', 'no_invented_digits', 'under_word_cap']);
+  });
+
+  it('fails a missing sign-off', () => {
+    const r = voicePreChecks('Hey Chuck,\n\nWill do.', SOURCE, {});
+    expect(r.pass).toBe(false);
+    expect(check(r, 'sign_off').pass).toBe(false);
+  });
+
+  it('fails the forbidden opener', () => {
+    const r = voicePreChecks('Hi Chuck,\n\nI hope this email finds you well.\n\nThanks,\n\nYancey', SOURCE, {});
+    expect(check(r, 'no_forbidden_opener').pass).toBe(false);
+  });
+
+  it('fails a currency figure the source never mentioned', () => {
+    const r = voicePreChecks(
+      'Hey Chuck,\n\nThat should land around $250K.\n\nThanks,\n\nYancey',
+      SOURCE,
+      {},
+    );
+    expect(check(r, 'no_invented_digits').pass).toBe(false);
+    expect(check(r, 'no_invented_digits').detail).toContain('$250K');
+  });
+
+  it('allows a figure that IS in the source', () => {
+    const r = voicePreChecks(
+      'Hey Chuck,\n\nThe $6.4M number is the one to use.\n\nThanks,\n\nYancey',
+      SOURCE,
+      {},
+    );
+    expect(check(r, 'no_invented_digits').pass).toBe(true);
+  });
+
+  it('fails a percentage the source never mentioned', () => {
+    const r = voicePreChecks('Hey Chuck,\n\nAbout 68% of them.\n\nThanks,\n\nYancey', SOURCE, {});
+    expect(check(r, 'no_invented_digits').pass).toBe(false);
+  });
+
+  it('enforces the spec cap of 150 words, not the guard\'s looser 220', () => {
+    const long = 'Hey Chuck,\n\n' + 'word '.repeat(160) + '\n\nThanks,\n\nYancey';
+    const r = voicePreChecks(long, SOURCE, {});
+    expect(check(r, 'under_word_cap').pass).toBe(false);
+    expect(check(r, 'under_word_cap').detail).toContain('150');
   });
 });

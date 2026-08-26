@@ -1,0 +1,38 @@
+{
+  "_instructions": "Score each draft 1-5 on whether it sounds like Yancey. Read fixtures/voice/gate2-drafts.md, fill in every \"score\", then run npm run gate2.",
+  "ratedBy": "",
+  "generatedAt": "2026-08-26T23:53:56.111Z",
+  "model": "gpt-5.6-terra",
+  "ratings": [
+    {
+      "id": "opp-06",
+      "subject": "Re: NIPSCO Deliverables: Status Update",
+      "score": null,
+      "comment": ""
+    },
+    {
+      "id": "opp-03",
+      "subject": "Re: (External):Re: Vector Sync-Up",
+      "score": null,
+      "comment": ""
+    },
+    {
+      "id": "opp-08",
+      "subject": "Re: Follow-up from Upperform and PG&E Support",
+      "score": null,
+      "comment": ""
+    },
+    {
+      "id": "opp-09",
+      "subject": "Re: Coaching Summary from 3/20/24",
+      "score": null,
+      "comment": ""
+    },
+    {
+      "id": "opp-10",
+      "subject": "Re: T+1 Project Plan",
+      "score": null,
+      "comment": ""
+    }
+  ]
+}

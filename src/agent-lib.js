@@ -600,6 +600,76 @@ function pricingGuard(text, subject) {
 }
 
 /**
+ * The automated half of spec §11 Gate 2, stated as the spec states it:
+ *
+ *   "contains 'Thanks,' + 'Yancey'; no 'I hope this email finds you well';
+ *    no invented digits (regex for currency/percent not present in the
+ *    source); under 150 words."
+ *
+ * Deliberately separate from voiceGuard, which both judges *and repairs*, and
+ * whose length flag sits at a looser 220 words. This one only reports, at the
+ * spec's own 150. Run it on the text that would actually reach the mailbox —
+ * the human rating that decides Gate 2 is of that text, not the raw model
+ * output.
+ *
+ * @param {string} draftText
+ * @param {string} sourceText
+ * @param {{ signOff?: string, signature?: string, maxWords?: number }} [options]
+ * @returns {{ pass: boolean, checks: { name: string, pass: boolean, detail: string }[] }}
+ */
+function voicePreChecks(draftText, sourceText, options) {
+  const opts = options || {};
+  const signOff = opts.signOff === undefined ? 'Thanks,' : opts.signOff;
+  const signature = opts.signature === undefined ? 'Yancey' : opts.signature;
+  const maxWords = opts.maxWords === undefined ? 150 : opts.maxWords;
+  const body = String(draftText || '');
+
+  const hasSignOff = body.toLowerCase().indexOf(signOff.toLowerCase()) !== -1;
+  const hasSignature = body.toLowerCase().indexOf(signature.toLowerCase()) !== -1;
+
+  /** @type {string[]} */
+  const openers = [];
+  for (const opener of FORBIDDEN_OPENERS) {
+    const re = new RegExp(opener.source, opener.flags.replace('g', ''));
+    const hit = re.exec(body);
+    if (hit) openers.push(hit[0]);
+  }
+
+  const invented = inventedTokens(body, sourceText, CURRENCY_TOKEN).concat(
+    inventedTokens(body, sourceText, PERCENT_TOKEN),
+  );
+
+  const words = wordCount(body);
+
+  const checks = [
+    {
+      name: 'sign_off',
+      pass: hasSignOff && hasSignature,
+      detail: hasSignOff && hasSignature
+        ? 'signs off "' + signOff + '" / "' + signature + '"'
+        : 'missing ' + (hasSignOff ? '"' + signature + '"' : '"' + signOff + '"'),
+    },
+    {
+      name: 'no_forbidden_opener',
+      pass: openers.length === 0,
+      detail: openers.length === 0 ? 'none' : openers.join(' | '),
+    },
+    {
+      name: 'no_invented_digits',
+      pass: invented.length === 0,
+      detail: invented.length === 0 ? 'none' : invented.join(' | '),
+    },
+    {
+      name: 'under_word_cap',
+      pass: words <= maxWords,
+      detail: words + ' words (cap ' + maxWords + ')',
+    },
+  ];
+
+  return { pass: checks.every((c) => c.pass), checks };
+}
+
+/**
  * Describe a draft attempt that failed outright — the model erroring after its
  * retries, not the Voice Guard rejecting a reply. A rejection is a decision and
  * carries its own flags; this is a fault and should read as one in the log.
@@ -1385,5 +1455,6 @@ export {
   textToHtmlParagraphs,
   truncate,
   voiceGuard,
+  voicePreChecks,
   wordCount,
 };

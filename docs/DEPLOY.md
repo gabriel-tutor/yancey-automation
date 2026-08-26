@@ -862,6 +862,61 @@ Re-verified after the refactor: 132 tests, typecheck clean, both deployed node
 bodies simulated against the local build, and a live email through the whole
 chain came back `opportunity` 0.98, drafted, no guard flags.
 
+## Gate 2 — voice (2026-08-27)
+
+The spec's third gate, and the one that was missing. §11:
+
+> **Gate 2 — voice:** draft replies to 5 opportunity samples; Yancey rates
+> voice fit 1–5; average ≥ 4. Automated pre-checks: contains "Thanks," +
+> "Yancey"; no "I hope this email finds you well"; no invented digits (regex
+> for currency/percent not present in the source); under 150 words.
+
+Half of that is a human judgement and cannot be automated away, so
+`npm run gate2` runs in two phases.
+
+**Phase 1** drafts replies to five of Yancey's own OPPORTUNITY emails through
+the exact prompt, model (`gpt-5.6-terra`) and voice guard WF-B uses, runs the
+four named pre-checks, and writes `fixtures/voice/gate2-drafts.md` — a rating
+sheet showing what each person wrote and what the assistant replied.
+
+**Phase 2** reads the scores from `fixtures/voice/gate2-ratings.json` and gates
+at an average of 4.
+
+The five samples are chosen to spread the registers his voice has to cover,
+not to be easy: Chuck asking his opinion (colleague, "Hey"), an SCE contact on
+a live deck (client, "Hi"), PG&E business development (where salesmanship is
+the failure mode), a thread where he is only cc, and a plan review with an
+open question he cannot answer from the thread.
+
+`voicePreChecks` is deliberately separate from `voiceGuard`. The guard both
+judges *and repairs*, and its length flag sits at a looser 220 words; the gate
+only reports, at the spec's own 150. Eight unit tests cover it.
+
+First run, all five drafted, **0 pre-check failures and no guard repairs
+needed** — the model produced the sign-off and avoided the forbidden opener
+unaided.
+
+### One thing to watch when rating
+
+Draft 4 (`opp-09`) replies as though Yancey owns the task — "I'll download the
+Teams version, remove all comments, and send it over to Ashley". In the real
+thread that is Kathleen's job and Yancey is only cc. The reply is in his voice
+and reads well, which is exactly why it needs a human score: an automated check
+cannot tell that the right reply here is a shorter one that does not take over
+someone else's action. That is the sort of thing a 2 or 3 is for, and the fix
+would be a line in the profile about replying from cc.
+
+### Running it
+
+```
+OPENAI_API_KEY=sk-... npm run gate2      # phase 1: draft + pre-check
+# Yancey fills in fixtures/voice/gate2-ratings.json
+npm run gate2                            # phase 2: score the gate
+```
+
+Drafts regenerate on each run unless `--keep` is passed, so a score always
+refers to text somebody actually read.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,
