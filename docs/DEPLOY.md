@@ -444,7 +444,35 @@ the no-send promise in the footer. Timestamps rendered in Central.
 The digest content was correct on the first attempt; only the recipient was
 wrong, and Resend's 550 named the right one.
 
-Still unproven: the drafting path (WF-B has not run live). And note `profileSource` came back
+### End-to-end validation on genuinely delivered mail, 2026-08-26
+
+Four emails sent from an external Gmail account to the dev mailbox, with WF-A
+published and running on its 2-minute schedule. No manual runs, nothing pinned.
+
+| Email | Label | Conf | Draft | guard_flags |
+|---|---|---|---|---|
+| Following up on the T&D reliability conversation | opportunity | 0.97 | written | — |
+| Scoping the damage prevention review | flag_for_yancey | 0.98 | none | `pricing_guard` |
+| Reduce your software spend in 2027 | noise | 0.99 | none | — |
+| MSA amendment — indemnification language | flag_for_yancey | 0.99 | none | `sensitivity_guard` |
+
+The first two are the same email; the second merely asks what he charges. One
+drafted, one refused. Both safety rails fired independently — `pricing_guard` on
+the fee request, `sensitivity_guard` on the attorney and breach-of-contract
+language — on mail that genuinely arrived over SMTP rather than seeded fixtures.
+
+Latency from arrival to classification was 43s, 112s and 39s.
+
+The written draft cleared the Voice Guard with no hard, medium or soft flags, and
+opened `Hi Gabriel,` rather than `Hey` — the profile reserves `Hey` for known
+colleagues and the sender was external, which is the greeting rule working
+without being prompted for it.
+
+Two design choices were validated incidentally. Gmail delivered HTML, but
+`Fetch Inbox` received clean text, so the `Prefer: outlook.body-content-type`
+header does the conversion server-side on third-party mail. And runs where
+nothing was new finished in ~0.3s with no model call, because both idempotency
+gates dropped everything before it reached the classifier. And note `profileSource` came back
 `fallback` on every message — step 1 has not been done, so all of the above was
 classified on the reduced built-in profile, not Yancey's real one.
 
