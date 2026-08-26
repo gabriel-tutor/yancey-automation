@@ -110,6 +110,13 @@ Classification is where the volume is, so it gets the cheap model. Drafting is
 low-volume and is the only client-visible output, so it gets the better one; the
 ~$1.70/month premium over running luna there is not worth the voice quality.
 
+Neither node sets `temperature`. The 5.6 family rejects it outright —
+`Unsupported parameter: 'temperature' is not supported with this model` — so the
+spec's `temperatureClassify: 0` had to go. Determinism for classification comes
+from the strict `json_schema` response format instead, which constrains the
+output shape regardless of sampling. If you ever move to an older model that does
+accept `temperature`, add it back deliberately.
+
 The real arbiter is `npm run gate1`. If a cheaper model still clears 90%
 agreement on Yancey's labelled set with zero flagged-and-drafted items, take it.
 Decide with the harness, not with the price list.

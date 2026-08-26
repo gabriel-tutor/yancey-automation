@@ -5,7 +5,6 @@ import { DEPLOY, E, GRAPH, S, SDK_IMPORT, contextLoaderNodes } from './shared.mj
 
 const CONFIG = {
   modelClassify: 'gpt-5.6-luna',
-  temperatureClassify: 0,
   confidenceMin: 0.6,
   followupDays: 3,
   pollBatch: 25,
@@ -277,7 +276,6 @@ const classifyEmail = node({
       simplify: true,
       options: {
         instructions: ${E("{{ $('Resolve Context').first().json.classifySystem }}")},
-        temperature: ${E("{{ $('Config').first().json.temperatureClassify }}")},
         store: false,
         promptCacheKey: 'upperform-classify-v1',
         textFormat: {

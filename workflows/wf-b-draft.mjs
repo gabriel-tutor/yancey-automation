@@ -4,7 +4,6 @@ import { DEPLOY, E, GRAPH, S, SDK_IMPORT, contextLoaderNodes } from './shared.mj
 
 const CONFIG = {
   modelDraft: 'gpt-5.6-terra',
-  temperatureDraft: 0.4,
   maxDraftWords: 150,
   signOff: 'Thanks,',
   signature: 'Yancey',
@@ -222,7 +221,6 @@ const generateDraft = node({
       simplify: true,
       options: {
         instructions: ${E("{{ $('Resolve Context').first().json.draftSystem }}")},
-        temperature: ${E("{{ $('Config').first().json.temperatureDraft }}")},
         store: false,
         promptCacheKey: 'upperform-draft-v1'
       }
