@@ -12,6 +12,11 @@ const CONFIG = {
   maxBodyChars: 6000,
   draftingEnabled: false,
   alwaysFlagSenders: [],
+  ignoreSenders: [
+    'onboarding@resend.dev',
+    'agent@partnersperform.com',
+    'assistant@agent.partnersperform.com',
+  ],
   graphBase: GRAPH,
 };
 
@@ -222,7 +227,10 @@ const skipProcessed = node({
     parameters: {
       conditions: {
         options: { caseSensitive: true, leftValue: '', typeValidation: 'loose', version: 2 },
-        conditions: [{ id: 'not-processed', leftValue: ${E("{{ ($json.categories || []).includes('AI-Processed') }}")}, operator: { type: 'boolean', operation: 'false', singleValue: true } }],
+        conditions: [
+          { id: 'not-processed', leftValue: ${E("{{ ($json.categories || []).includes('AI-Processed') }}")}, operator: { type: 'boolean', operation: 'false', singleValue: true } },
+          { id: 'not-self', leftValue: ${E("{{ ($('Config').first().json.ignoreSenders || []).includes((($json.from || {}).emailAddress || {}).address ? $json.from.emailAddress.address.toLowerCase() : '') }}")}, operator: { type: 'boolean', operation: 'false', singleValue: true } }
+        ],
         combinator: 'and'
       },
       looseTypeValidation: true
@@ -467,7 +475,7 @@ const noteHeader = sticky(
 );
 
 const noteIdempotency = sticky(
-  ${S('### Two independent idempotency guards\n\n1. **Outlook categories** — anything already carrying `AI-Processed` is dropped. This is also the UI: Yancey sees the coloured flags in the inbox he already uses.\n2. **The log table** — `rowNotExists` on `message_id` catches the window between tagging and a crash.\n\nThe `$filter` only asks Graph for mail newer than `lookbackHours`, so a normal run reads a handful of messages, not the whole inbox.')},
+  ${S('### Two independent idempotency guards\n\n1. **Outlook categories** — anything already carrying `AI-Processed` is dropped, and mail from the agent\'s own senders (`ignoreSenders`) never enters the pipeline at all — otherwise every digest becomes a needs-you item in the next digest. This is also the UI: Yancey sees the coloured flags in the inbox he already uses.\n2. **The log table** — `rowNotExists` on `message_id` catches the window between tagging and a crash.\n\nThe `$filter` only asks Graph for mail newer than `lookbackHours`, so a normal run reads a handful of messages, not the whole inbox.')},
   [fetchInbox, splitMessages, skipProcessed, skipLogged],
   { color: 5, width: 800, height: 300 },
 );
