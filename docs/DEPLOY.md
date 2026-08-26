@@ -109,6 +109,51 @@ by name, and the dash in the Outlook names is an en-dash (–), not a hyphen.
 The SMTP sender must be the dedicated `agent@` mailbox, **not** Yancey's. A
 separate sender is what lets the Graph app stay read-and-draft only.
 
+### 2b. SMTP via Resend — verified working
+
+Do not point this at a Microsoft 365 mailbox. n8n's SMTP credential only speaks
+basic auth, and Exchange Online disables SMTP AUTH basic auth by default from the
+end of December 2026 — it would work at go-live and die around New Year, months
+after handover, with no migration path available in the node.
+
+Resend, confirmed sending on 2026-08-26:
+
+| Field | Value |
+|---|---|
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| SSL/TLS | on |
+| User | `resend` (literally that word) |
+| Password | the API key, `re_...` |
+
+Ports 465/2465 are implicit TLS; 25/587/2587 are STARTTLS. 465 has the fewest
+failure modes.
+
+**Until a domain is verified**, Resend sends only from `onboarding@resend.dev`
+and only *to* the account owner's own address. Anything else is refused with a
+550 that helpfully names the permitted address:
+
+```
+550 You can only send testing emails to your own email address
+    (gtutor@partnersperform.com).
+```
+
+That constraint is useful rather than annoying: it proves rendering, SMTP auth
+and delivery end to end without touching DNS, which is how the first digest was
+tested.
+
+**Before go-live**, verify a **subdomain** — `agent.partnersperform.com`, sending
+as `assistant@agent.partnersperform.com`. Not the root domain.
+`partnersperform.com` already carries an SPF record for Microsoft 365, and SPF
+permits exactly one record per domain; adding a second produces a permerror that
+can degrade the firm's entire mail flow. A subdomain has its own SPF and DKIM and
+cannot affect M365. Those DNS records are a client dependency — raise them early,
+not on the day.
+
+Then restore the real values: WF-C Config `digestFrom` / `digestTo`, and WF-E
+Config `alertFrom` / `alertTo`. Both currently hold the sandbox address, so error
+alerts would not reach you as things stand.
+
 ### 2a. The Outlook credential — the scope trap
 
 **Read this before clicking Connect.** n8n's Microsoft Outlook credential ships
@@ -388,8 +433,18 @@ Two defects that only a live call could have surfaced, both now fixed:
   them, so `\r` characters were being shipped to the model. Fixed in
   `normalizeGraphMessage` with a test.
 
-Still unproven: SMTP delivery (WF-C has never sent a real digest) and the
-drafting path (WF-B has not run live). And note `profileSource` came back
+### Digest delivered, 2026-08-26
+
+WF-C ran end to end and a real digest arrived: Drafts folder read from Graph,
+log rows bucketed, HTML rendered, delivered over Resend SMTP. Subject read
+`Inbox digest — 2 need you, 0 drafts waiting`, with the shadow-mode banner, the
+two flagged items, empty-state copy under Drafts Waiting and Follow-ups Due, and
+the no-send promise in the footer. Timestamps rendered in Central.
+
+The digest content was correct on the first attempt; only the recipient was
+wrong, and Resend's 550 named the right one.
+
+Still unproven: the drafting path (WF-B has not run live). And note `profileSource` came back
 `fallback` on every message — step 1 has not been done, so all of the above was
 classified on the reduced built-in profile, not Yancey's real one.
 
