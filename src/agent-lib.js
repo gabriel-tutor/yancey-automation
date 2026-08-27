@@ -494,7 +494,6 @@ function clampConfidence(value, fallback) {
 const PRICING_ASK =
   /\b(fee|fees|price|pricing|quote|quotation|cost|costs|estimate|budget|rate card|rates|retainer|proposal amount|ballpark|order of magnitude|not to exceed|nte|scope of work|statement of work|sow|level of effort|loe|time and materials|fixed[- ]fee|day rate|bid)\b/i;
 const PRICING_QUESTION = /\b(what would|what will|what does|how much|can you (provide|give|share)|could you (provide|give|share)|send (us|me) (a|your)|provide an? (estimate|indication))\b/i;
-const CURRENCY_IN_TEXT = /(?:[$€£]\s?\d|\b\d[\d,]*\s?(?:k|m)\b|\busd\b|\bdollars?\b|\bper hour\b|\bhourly rate\b)/i;
 
 /**
  * Deterministic backstop for the one failure mode that costs real money:
@@ -1429,7 +1428,20 @@ function renderDigestText(buckets, options) {
   return lines.join('\n');
 }
 
+/**
+ * The guard vocabularies, exported so src/guards.test.js can walk every term
+ * in them. Three defects shipped in one day because nothing asserted that a
+ * term in these lists actually matches the word it was written for.
+ */
+const GUARD_PATTERNS = {
+  PRICING_ASK,
+  PRICING_QUESTION,
+  FEE_STATEMENT,
+  SENSITIVE_TOPICS,
+};
+
 export {
+  GUARD_PATTERNS,
   addBusinessDays,
   addressedToMailbox,
   isPassThroughHead,
