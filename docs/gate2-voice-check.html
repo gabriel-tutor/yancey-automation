@@ -1,0 +1,516 @@
+<title>Does This Sound Like You</title>
+<style>
+  :root {
+    --ground: #F6F8FA;
+    --panel: #FFFFFF;
+    --panel-sunk: #F1F4F8;
+    --ink: #14181D;
+    --ink-soft: #58616E;
+    --ink-faint: #8892A0;
+    --rule: #DEE3EA;
+    --accent: #1B5A87;
+    --accent-wash: #E8F0F6;
+    --good: #1F7A4D;
+    --short: #A8641A;
+    --shadow: 0 1px 2px rgba(20, 24, 29, .05), 0 8px 24px -12px rgba(20, 24, 29, .12);
+
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --serif: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0D1013;
+      --panel: #151A1F;
+      --panel-sunk: #11161A;
+      --ink: #E4E8ED;
+      --ink-soft: #949DAA;
+      --ink-faint: #6D7783;
+      --rule: #242A32;
+      --accent: #62A9DD;
+      --accent-wash: #16242F;
+      --good: #4FB07C;
+      --short: #D19A4E;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0D1013;
+    --panel: #151A1F;
+    --panel-sunk: #11161A;
+    --ink: #E4E8ED;
+    --ink-soft: #949DAA;
+    --ink-faint: #6D7783;
+    --rule: #242A32;
+    --accent: #62A9DD;
+    --accent-wash: #16242F;
+    --good: #4FB07C;
+    --short: #D19A4E;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 96px;
+  }
+
+  .wrap { max-width: 42rem; margin: 0 auto; padding: 40px 20px 24px; }
+
+  header { border-bottom: 1px solid var(--rule); padding-bottom: 22px; margin-bottom: 8px; }
+  h1 {
+    font-size: clamp(26px, 5vw, 34px);
+    line-height: 1.15;
+    margin: 0 0 12px;
+    letter-spacing: -.018em;
+    text-wrap: balance;
+  }
+  .lede { color: var(--ink-soft); margin: 0 0 14px; max-width: 34rem; }
+  .lede strong { color: var(--ink); font-weight: 620; }
+  .meta {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    letter-spacing: .01em;
+  }
+
+  .scale {
+    display: grid;
+    gap: 3px;
+    margin: 18px 0 0;
+    padding: 14px 16px;
+    background: var(--accent-wash);
+    border-radius: 3px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .scale b { color: var(--ink); font-weight: 620; }
+
+  article {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 22px 22px 18px;
+    margin-top: 22px;
+    box-shadow: var(--shadow);
+  }
+
+  .register {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  h2 { font-size: 17.5px; line-height: 1.3; margin: 0 0 6px; letter-spacing: -.01em; text-wrap: balance; }
+  .why { color: var(--ink-soft); font-size: 13.5px; margin: 0 0 18px; }
+
+  .label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: var(--ink-faint);
+    margin-bottom: 7px;
+  }
+
+  blockquote {
+    margin: 0 0 20px;
+    padding-left: 15px;
+    border-left: 2px solid var(--rule);
+    font-family: var(--serif);
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    white-space: pre-wrap;
+  }
+
+  .reply {
+    background: var(--panel-sunk);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 16px 18px;
+    font-family: var(--serif);
+    font-size: 15.5px;
+    line-height: 1.62;
+    white-space: pre-wrap;
+    margin-bottom: 18px;
+  }
+
+  fieldset { border: 0; margin: 0; padding: 0; }
+  legend {
+    font-size: 13.5px;
+    font-weight: 620;
+    padding: 0 0 9px;
+    color: var(--ink);
+  }
+  .rating { display: flex; gap: 7px; flex-wrap: wrap; }
+  .rating input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .rating label {
+    flex: 1 1 0;
+    min-width: 52px;
+    text-align: center;
+    padding: 11px 4px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    user-select: none;
+    background: var(--panel);
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+  }
+  .rating label:hover { border-color: var(--accent); color: var(--ink); }
+  .rating input:checked + label {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 650;
+  }
+  .rating input:focus-visible + label {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .checks {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin-top: 14px;
+    letter-spacing: .01em;
+  }
+
+  .flag {
+    margin-top: 14px;
+    padding: 13px 15px;
+    border-left: 3px solid var(--short);
+    background: var(--panel-sunk);
+    border-radius: 0 3px 3px 0;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .flag b { color: var(--ink); font-weight: 620; }
+
+  .bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--rule);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 -6px 20px -12px rgba(0,0,0,.3);
+  }
+  .bar-inner {
+    max-width: 42rem;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .avg { font-family: var(--mono); font-size: 13px; color: var(--ink-soft); }
+  .avg b { font-size: 19px; color: var(--ink); font-weight: 650; }
+  .avg.pass b { color: var(--good); }
+  .avg.under b { color: var(--short); }
+  .verdict { font-size: 12.5px; color: var(--ink-faint); }
+
+  button {
+    margin-left: auto;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 3px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:disabled { opacity: .4; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .out {
+    max-width: 42rem;
+    margin: 22px auto 0;
+    padding: 0 20px;
+  }
+  .out textarea {
+    width: 100%;
+    min-height: 150px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 14px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--panel-sunk);
+    color: var(--ink);
+    resize: vertical;
+  }
+  .out p { font-size: 13px; color: var(--ink-soft); margin: 0 0 9px; }
+  .hidden { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Does this sound like you?</h1>
+    <p class="lede">
+      Five replies the assistant wrote to real emails from your own inbox.
+      Score each one on <strong>one question only</strong> — not whether it is
+      a good reply, but whether it is <em>your</em> reply.
+    </p>
+    <p class="meta" id="meta"></p>
+  </header>
+
+  <div class="scale">
+    <div><b>5</b> — I would send this as it is.</div>
+    <div><b>4</b> — Close. A word or two.</div>
+    <div><b>3</b> — I would send it after edits.</div>
+    <div><b>2</b> — The shape is wrong, not just the wording.</div>
+    <div><b>1</b> — I would not send this.</div>
+  </div>
+
+  <main id="cards"></main>
+</div>
+
+<div class="out hidden" id="out">
+  <p>Send this to Gabriel — it goes straight into <code>gate2-ratings.json</code>.</p>
+  <textarea id="json" readonly></textarea>
+</div>
+
+<div class="bar">
+  <div class="bar-inner">
+    <span class="avg" id="avg"><b>—</b> / 5</span>
+    <span class="verdict" id="verdict">0 of 5 scored</span>
+    <button id="copy" disabled>Copy scores</button>
+  </div>
+</div>
+
+<script type="application/json" id="data">
+[
+  {
+    "id": "opp-06",
+    "register": "Colleague",
+    "subject": "Re: NIPSCO Deliverables: Status Update",
+    "why": "Chuck asks your opinion directly. This is the register you use with the people you work beside every day.",
+    "from": "Charles Coleman",
+    "inbound": "This looks good. You probably have this, but just to remind. Be sure to get copies of closed initiatives from Kris. We need to review as a team so we know which ones we are depending on to be solid when we execute the 18 month plan. Jaren is helping me with a closure review process we can use to determine whether these closed actions are solid. I have a feeling most of them won't be. So when the time feels natural, make sure Phii knows we will need to review closed actions for quality as a part of this effort.\n\nTo be honest, I am thinking we probably need to do a class on how to properly close actions to action owners know what is expected. I would be interested in knowing what you think about that",
+    "reply": "Hey Chuck,\n\nI have it. I’ll get copies of the closed initiatives from Kris and make sure we review them as a team before we depend on them in the 18-month plan.\n\nI’ll also work it in with Phil that reviewing closed actions for quality will need to be part of this effort.\n\nI agree on the class for action owners. If the closure standard is not clear, we’ll keep finding actions marked closed that do not really resolve the issue. Let’s look at what Jaren is putting together for the closure review process and use that to help shape the training.\n\nI’ll get the initiatives moving and we can regroup once we see what the closure reviews are showing.\n\nThanks,\n\nYancey",
+    "words": 122
+  },
+  {
+    "id": "opp-03",
+    "register": "Client",
+    "subject": "Re: (External):Re: Vector Sync-Up",
+    "why": "An SCE contact on a live deck. Warmer distance than a colleague, and every word is read by the client.",
+    "from": "Jessica Doucette, SCE",
+    "inbound": "Good morning -\n\nThank you for the review, I am supportive of the content and flow. Thank you for taking me back to my finance days, I just spent a couple minutes fact checking the credit ratings on our investor site. Slide 2 might be susceptible to poking holes and getting stuck, but I will help push us forward. Irrespective of our GRC view, the T&D buy-in is the largest, and we have work to do.\n\nI will look for the revised deck with the additions you mention.\n\nSee you all at 2pm",
+    "reply": "Hi Jessica,\n\nThank you for the feedback and for fact checking the credit ratings. I understand the concern with Slide 2, and we’ll make sure we do not get stuck there while still recognizing the work ahead around T&D buy-in.\n\nI’ll review the attachments and get the revised deck back out with the additions we discussed. We can talk through any remaining concerns at 2pm.\n\nThanks,\n\nYancey",
+    "words": 67
+  },
+  {
+    "id": "opp-08",
+    "register": "Business development",
+    "subject": "Re: Follow-up from Upperform and PG&E Support",
+    "why": "Chuck rewrote your PG&E note to be less salesy and asked what you think. Salesmanship is the failure mode here.",
+    "from": "Charles Coleman",
+    "inbound": "I made some suggestions. My key advice is to be more authentic and genuine. Subtly, it builds trust in people who are reading your words without the benefit of your body language and voice inflection. Also, I toned down the salesmanship a little. Take a look at let me know what you think.",
+    "reply": "Hey Chuck,\n\nI agree with you. Your changes make it feel more genuine and less like we are trying too hard to sell something before we understand where they are.\n\nI’ll use this approach for the follow-up and keep it focused on learning more about what they are doing first.\n\nThanks,\n\nYancey",
+    "words": 52
+  },
+  {
+    "id": "opp-09",
+    "register": "Copied in",
+    "subject": "Re: Coaching Summary from 3/20/24",
+    "why": "You are cc, not to. The work Chuck is assigning belongs to Kathleen. Watch whether the reply takes it over.",
+    "from": "Charles Coleman",
+    "inbound": "The coaching descriptions are much more thorough and engaging. Shows we are adding value and not just reporting the news.\n\nThere were remaining issues with spacing. I repaired them. But it is important that you pay attention to that in the future.\n\nOverall - this is good and shows engagement and value additions. The tracking of open issues meets our WOW factor.\n\nIMPORTANT - The teams version still has our comments. Download and remove the comments before sending over to Ashley. Double check that the comments are gone. Consider it a critical task :)\n\nALSO IMPORTANT - Let me know how she responds. I am also still trying to learn how she interprets things.",
+    "reply": "Hey Chuck,\n\nThanks for the review and for cleaning up the spacing. I’ll pay closer attention to that going forward.\n\nI’ll download the Teams version, remove all comments, and double check it before sending it over to Ashley. I’ll also let you know how she responds so we can keep learning how she is interpreting the coaching.\n\nI’ll get this cleaned up and sent shortly. Let me know if you see anything else before then.",
+    "words": 77,
+    "flag": "This one is worth a hard look. Chuck addressed that task to Kathleen — you were only copied in. The reply is in your voice and reads well, which is exactly why an automated check cannot catch it. If the right answer here is a shorter note that does not take over her action, score it low and say so."
+  },
+  {
+    "id": "opp-10",
+    "register": "Plan review",
+    "subject": "Re: T+1 Project Plan",
+    "why": "Chuck raises an open question the thread does not answer. Watch that the reply does not invent one.",
+    "from": "Charles Coleman",
+    "inbound": "I like it. Wondering if some of the deadlines should be adjusted. For example, setting a standard for uploading the files or changing columns seem like more immediate issues.\n\nAlso, did we get to the bottom of how many workbooks should be uploaded? I am fearing that's a Joe misunderstanding. Tracking that down should be on the plan",
+    "reply": "Hey Chuck,\n\nGood point on the deadlines. I’ll move the file upload standard and the column changes up, since those are the ones holding people up day to day.\n\nOn the workbook count, I have not run that down yet. I’ll go back to Joe and confirm what the actual expectation is, and I’ll add tracking that down to the plan so it does not get lost.\n\nI’ll get the revised plan over to you in the next day or so.\n\nThanks,\n\nYancey",
+    "words": 70
+  }
+]
+</script>
+
+<script>
+  const SAMPLES = JSON.parse(document.getElementById('data').textContent);
+  const TARGET = 4;
+  const scores = {};
+
+  document.getElementById('meta').textContent =
+    SAMPLES.length + ' drafts · written by the assistant, unedited · all four automated checks passed';
+
+  const cards = document.getElementById('cards');
+
+  for (const s of SAMPLES) {
+    const art = document.createElement('article');
+
+    const reg = document.createElement('div');
+    reg.className = 'register';
+    reg.textContent = s.register;
+    art.appendChild(reg);
+
+    const h2 = document.createElement('h2');
+    h2.textContent = s.subject;
+    art.appendChild(h2);
+
+    const why = document.createElement('p');
+    why.className = 'why';
+    why.textContent = s.why;
+    art.appendChild(why);
+
+    const inLabel = document.createElement('div');
+    inLabel.className = 'label';
+    inLabel.textContent = s.from + ' wrote';
+    art.appendChild(inLabel);
+
+    const bq = document.createElement('blockquote');
+    bq.textContent = s.inbound;
+    art.appendChild(bq);
+
+    const outLabel = document.createElement('div');
+    outLabel.className = 'label';
+    outLabel.textContent = 'The assistant replied';
+    art.appendChild(outLabel);
+
+    const rep = document.createElement('div');
+    rep.className = 'reply';
+    rep.textContent = s.reply;
+    art.appendChild(rep);
+
+    if (s.flag) {
+      const f = document.createElement('div');
+      f.className = 'flag';
+      const b = document.createElement('b');
+      b.textContent = 'Look closely at this one. ';
+      f.appendChild(b);
+      f.appendChild(document.createTextNode(s.flag));
+      art.appendChild(f);
+    }
+
+    const fs = document.createElement('fieldset');
+    const lg = document.createElement('legend');
+    lg.textContent = 'Does this sound like you?';
+    fs.appendChild(lg);
+
+    const row = document.createElement('div');
+    row.className = 'rating';
+    for (let n = 1; n <= 5; n += 1) {
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = s.id;
+      input.id = s.id + '-' + n;
+      input.value = String(n);
+      input.addEventListener('change', () => {
+        scores[s.id] = n;
+        refresh();
+      });
+      const lab = document.createElement('label');
+      lab.setAttribute('for', s.id + '-' + n);
+      lab.textContent = String(n);
+      row.appendChild(input);
+      row.appendChild(lab);
+    }
+    fs.appendChild(row);
+    art.appendChild(fs);
+
+    const checks = document.createElement('div');
+    checks.className = 'checks';
+    checks.textContent =
+      s.words + ' words · signs off ✓ · no stock opener ✓ · no invented figures ✓';
+    art.appendChild(checks);
+
+    cards.appendChild(art);
+  }
+
+  const avgEl = document.getElementById('avg');
+  const verdictEl = document.getElementById('verdict');
+  const copyBtn = document.getElementById('copy');
+  const out = document.getElementById('out');
+  const jsonEl = document.getElementById('json');
+
+  function refresh() {
+    const vals = SAMPLES.map((s) => scores[s.id]).filter((v) => typeof v === 'number');
+    verdictEl.textContent = vals.length + ' of ' + SAMPLES.length + ' scored';
+
+    if (vals.length === 0) {
+      avgEl.innerHTML = '<b>—</b> / 5';
+      avgEl.className = 'avg';
+      copyBtn.disabled = true;
+      out.classList.add('hidden');
+      return;
+    }
+
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    avgEl.innerHTML = '<b>' + avg.toFixed(1) + '</b> / 5';
+
+    if (vals.length < SAMPLES.length) {
+      avgEl.className = 'avg';
+      copyBtn.disabled = true;
+      out.classList.add('hidden');
+      return;
+    }
+
+    avgEl.className = avg >= TARGET ? 'avg pass' : 'avg under';
+    verdictEl.textContent =
+      avg >= TARGET ? 'Clears the bar of 4' : 'Below the bar of 4 — worth saying why';
+    copyBtn.disabled = false;
+
+    jsonEl.value = JSON.stringify(
+      {
+        ratedBy: 'Yancey Dawson',
+        ratings: SAMPLES.map((s) => ({
+          id: s.id,
+          subject: s.subject,
+          score: scores[s.id],
+          comment: '',
+        })),
+      },
+      null,
+      2,
+    );
+    out.classList.remove('hidden');
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(jsonEl.value);
+      copyBtn.textContent = 'Copied';
+      setTimeout(() => { copyBtn.textContent = 'Copy scores'; }, 1600);
+    } catch (err) {
+      jsonEl.select();
+      copyBtn.textContent = 'Select and copy';
+      setTimeout(() => { copyBtn.textContent = 'Copy scores'; }, 2400);
+    }
+  });
+
+  refresh();
+</script>

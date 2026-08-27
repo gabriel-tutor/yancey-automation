@@ -914,6 +914,19 @@ OPENAI_API_KEY=sk-... npm run gate2      # phase 1: draft + pre-check
 npm run gate2                            # phase 2: score the gate
 ```
 
+The rating sheet is also published as an artifact he can use on a phone:
+**https://claude.ai/code/artifact/efd87e6e-1fd6-4bb6-8947-65c2ae9a4c46**
+
+It shows each inbound email beside the reply, takes a 1–5 tap per draft, runs
+a live average against the bar of 4, and emits the exact JSON body of
+`fixtures/voice/gate2-ratings.json` to paste back. Regenerate the artifact
+whenever the drafts are regenerated — a score has to refer to text the person
+actually read.
+
+The `opp-09` card carries a deliberate warning rather than presenting all five
+as equally sound. Nudging the rater toward a defect the automated checks
+cannot see is the point of having a human in this gate at all.
+
 Drafts regenerate on each run unless `--keep` is passed, so a score always
 refers to text somebody actually read.
 
