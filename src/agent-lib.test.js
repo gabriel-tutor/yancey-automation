@@ -17,6 +17,7 @@ import {
   parseModelJson,
   pricingGuard,
   renderDigestHtml,
+  normalizeErrorPayload,
   sensitivityGuard,
   stripLegalFooter,
   stripQuotedHistory,
@@ -1020,5 +1021,96 @@ describe('sensitivityGuard — word stems that never matched', () => {
     expect(
       sensitivityGuard('a@b.com', 'The crossarm workbook is attached for review.', 'Deck', []).triggered,
     ).toBe(false);
+  });
+});
+
+describe('digest never claims shadow mode while drafts are sitting there', () => {
+  const shell = {
+    resolvedIds: [],
+    resolvedMessageIds: [],
+    stats: { needsYou: 0, draftsWaiting: 0, followupsDue: 0, resolved: 0, autoClosed: 0, scanned: 0 },
+  };
+  const buckets = {
+    ...shell,
+    needsYou: [],
+    draftsWaiting: [
+      { subject: 'Vector CI working session', sender: 'Charles Coleman', urgency: 'today', webLink: 'https://o/1' },
+    ],
+    followupsDue: [],
+  };
+  const empty = { ...shell, needsYou: [], draftsWaiting: [], followupsDue: [] };
+
+  it('shows the shadow banner when nothing has been drafted', () => {
+    const html = renderDigestHtml(empty, { mode: 'shadow', mailboxLabel: 'dev', dateLabel: 'Thursday' });
+    expect(html).toContain('No replies are being drafted');
+  });
+
+  // The live digest printed "No replies are being drafted" directly above a
+  // list of six drafts, because the banner came from a hand-set config string
+  // rather than from what actually happened.
+  it('drops the banner once a draft exists, whatever the config says', () => {
+    const html = renderDigestHtml(buckets, { mode: 'shadow', mailboxLabel: 'dev', dateLabel: 'Thursday' });
+    expect(html).not.toContain('No replies are being drafted');
+    expect(html).toContain('Vector CI working session');
+  });
+
+  it('shows no banner in live mode', () => {
+    const html = renderDigestHtml(empty, { mode: 'live', mailboxLabel: 'dev', dateLabel: 'Thursday' });
+    expect(html).not.toContain('No replies are being drafted');
+  });
+});
+
+describe('normalizeErrorPayload — the alert has to say what broke', () => {
+  // Every error row ever written said "unknown workflow" / "Unknown error",
+  // because the Code node read $input (the Config node) instead of the Error
+  // Trigger. Two real failures were captured and both were useless.
+  const REAL = {
+    execution: {
+      id: '18',
+      url: 'https://n8n/execution/18',
+      lastNodeExecuted: 'Generate Draft',
+      mode: 'integrated',
+      error: { message: 'OpenAI 500: upstream timeout', stack: 'Error: OpenAI 500\n  at draft' },
+    },
+    workflow: { id: 'Rjpk5KuPopQCpCQL', name: 'WF-B · Draft Reply' },
+  };
+
+  it('pulls the workflow, node and message out of a real payload', () => {
+    const e = normalizeErrorPayload(REAL, '2026-08-27T10:00:00Z');
+    expect(e.workflowName).toBe('WF-B · Draft Reply');
+    expect(e.workflowId).toBe('Rjpk5KuPopQCpCQL');
+    expect(e.executionId).toBe('18');
+    expect(e.nodeName).toBe('Generate Draft');
+    expect(e.errorMessage).toBe('OpenAI 500: upstream timeout');
+    expect(e.stack).toContain('at draft');
+  });
+
+  it('finds a message id anywhere in the payload', () => {
+    const withMsg = { ...REAL, execution: { ...REAL.execution, data: { messageId: 'AAMkMSG123456' } } };
+    const e = normalizeErrorPayload(withMsg, '2026-08-27T10:00:00Z');
+    expect(e.messageId).toBe('AAMkMSG123456');
+    expect(e.hasMessage).toBe(true);
+    expect(e.messageIdEnc).toBe(encodeURIComponent('AAMkMSG123456'));
+  });
+
+  it('says the payload was empty rather than inventing "Unknown error"', () => {
+    const e = normalizeErrorPayload({}, '2026-08-27T10:00:00Z');
+    // "Unknown error" reads like a real message. This has to read like a fault
+    // in the reporting, because that is what it is.
+    expect(e.errorMessage).toContain('empty');
+    expect(e.workflowName).toContain('unreported');
+    expect(e.hasMessage).toBe(false);
+  });
+
+  it('never throws on a shape it has not seen', () => {
+    expect(() => normalizeErrorPayload(null, '2026-08-27T10:00:00Z')).not.toThrow();
+    expect(() => normalizeErrorPayload('nonsense', '2026-08-27T10:00:00Z')).not.toThrow();
+  });
+
+  it('truncates a runaway message and stack', () => {
+    const huge = { execution: { error: { message: 'x'.repeat(3000), stack: 'y'.repeat(9000) } } };
+    const e = normalizeErrorPayload(huge, '2026-08-27T10:00:00Z');
+    expect(e.errorMessage.length).toBeLessThanOrEqual(1000);
+    expect(e.stack.length).toBeLessThanOrEqual(2000);
   });
 });

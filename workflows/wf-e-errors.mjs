@@ -1,3 +1,5 @@
+import { codeNode } from '../scripts/bundle.mjs';
+import { HELPERS } from './helpers-manifest.mjs';
 import { DEPLOY, E, GRAPH, S, SDK_IMPORT } from './shared.mjs';
 
 const CONFIG = {
@@ -10,42 +12,34 @@ const CONFIG = {
   graphBase: GRAPH,
 };
 
-const NORMALIZE_ERROR = `
-const items = $input.all();
+export const NORMALIZE_ERROR = `
+// Read the trigger, not $input. 'Config' sits between the Error Trigger and
+// this node, so $input.all() returns the config object and every field fell
+// back to "unknown workflow" / "Unknown error". Two real failures were logged
+// that way and neither said what broke.
+const payloads = $('On Workflow Error').all();
+const nowIso = new Date().toISOString();
 const out = [];
-for (const item of items) {
-  const j = item.json || {};
-  const ex = j.execution || {};
-  const wf = j.workflow || {};
-  const err = ex.error || j.error || {};
 
-  let messageId = '';
-  const probe = JSON.stringify(j).match(/"message(?:Id|_id)"\\s*:\\s*"([^"]{6,})"/);
-  if (probe && probe[1]) messageId = probe[1];
-
-  out.push({
-    json: {
-      occurredAt: new Date().toISOString(),
-      workflowName: String(wf.name || 'unknown workflow'),
-      workflowId: String(wf.id || ''),
-      executionId: String(ex.id || ''),
-      executionUrl: String(ex.url || ''),
-      nodeName: String(ex.lastNodeExecuted || err.node || ''),
-      mode: String(ex.mode || ''),
-      messageId,
-      messageIdEnc: messageId ? encodeURIComponent(messageId) : '',
-      hasMessage: messageId.length > 0,
-      errorMessage: String(err.message || 'Unknown error').slice(0, 1000),
-      stack: String(err.stack || '').slice(0, 2000)
-    }
-  });
+for (const item of payloads) {
+  out.push({ json: normalizeErrorPayload(item.json, nowIso) });
 }
+
+if (out.length === 0) {
+  out.push({ json: normalizeErrorPayload({}, nowIso) });
+}
+
 return out;
 `;
 
 export const NAME = 'WF-E · Error Handler';
 
 export async function build() {
+  const normalizeErrorCode = await codeNode(
+    HELPERS['wf-e/Normalize Error'],
+    NORMALIZE_ERROR,
+  );
+
   return `${SDK_IMPORT}
 
 const onWorkflowError = trigger({
@@ -71,7 +65,7 @@ const normalizeError = node({
   version: 2,
   config: {
     name: 'Normalize Error',
-    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(NORMALIZE_ERROR)} },
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(normalizeErrorCode)} },
     position: [400, 0]
   },
   output: [{ occurredAt: '2026-08-26T12:00:00.000Z', workflowName: 'WF-A · Poll & Classify', workflowId: 'abc', executionId: '1042', executionUrl: 'https://n8n.example/execution/1042', nodeName: 'Fetch Inbox', mode: 'trigger', messageId: '', messageIdEnc: '', hasMessage: false, errorMessage: 'Graph 429', stack: '' }]

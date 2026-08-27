@@ -672,6 +672,60 @@ function voicePreChecks(draftText, sourceText, options) {
 }
 
 /**
+ * Turn an n8n Error Trigger payload into the row WF-E logs and the alert it
+ * sends.
+ *
+ * Every error row ever written said "unknown workflow" / "Unknown error",
+ * because the Code node read `$input` — which is the Config node sitting
+ * between the trigger and the normaliser — instead of the trigger itself. Two
+ * real failures were captured and both were useless. The node now reads
+ * `$('On Workflow Error')` explicitly.
+ *
+ * When the payload really is empty the wording says so, rather than
+ * "Unknown error", which reads like a message the workflow produced.
+ *
+ * @param {any} payload
+ * @param {string} occurredAt
+ * @returns {{ occurredAt: string, workflowName: string, workflowId: string,
+ *             executionId: string, executionUrl: string, nodeName: string,
+ *             mode: string, messageId: string, messageIdEnc: string,
+ *             hasMessage: boolean, errorMessage: string, stack: string }}
+ */
+function normalizeErrorPayload(payload, occurredAt) {
+  const j = payload && typeof payload === 'object' ? payload : {};
+  const ex = j.execution && typeof j.execution === 'object' ? j.execution : {};
+  const wf = j.workflow && typeof j.workflow === 'object' ? j.workflow : {};
+  const err = (ex.error && typeof ex.error === 'object' ? ex.error : null) ||
+    (j.error && typeof j.error === 'object' ? j.error : {});
+
+  let messageId = '';
+  try {
+    const probe = JSON.stringify(j).match(/"message(?:Id|_id)"\s*:\s*"([^"]{6,})"/);
+    if (probe && probe[1]) messageId = probe[1];
+  } catch (e) {
+    messageId = '';
+  }
+
+  const rawMessage = String(err.message || '');
+  const anything = Boolean(wf.name || ex.id || rawMessage);
+
+  return {
+    occurredAt: String(occurredAt || ''),
+    workflowName: String(wf.name || (anything ? 'workflow' : 'unreported — the error payload was empty')),
+    workflowId: String(wf.id || ''),
+    executionId: String(ex.id || ''),
+    executionUrl: String(ex.url || ''),
+    nodeName: String(ex.lastNodeExecuted || err.node || ''),
+    mode: String(ex.mode || ''),
+    messageId,
+    messageIdEnc: messageId ? encodeURIComponent(messageId) : '',
+    hasMessage: messageId.length > 0,
+    errorMessage: (rawMessage || 'the error payload was empty — open the n8n execution list to see what failed').slice(0, 1000),
+    stack: String(err.stack || '').slice(0, 2000),
+  };
+}
+
+/**
  * Describe a draft attempt that failed outright — the model erroring after its
  * retries, not the Voice Guard rejecting a reply. A rejection is a decision and
  * carries its own flags; this is a fault and should read as one in the log.
@@ -1356,8 +1410,12 @@ function renderDigestHtml(buckets, options) {
     ),
   );
 
+  // Only claim shadow mode if nothing was actually drafted. The live digest
+  // printed "No replies are being drafted" directly above a list of six
+  // drafts, because this read a hand-set config string rather than the run.
+  const nothingDrafted = buckets.draftsWaiting.length === 0;
   const modeBanner =
-    options.mode && options.mode !== 'live'
+    options.mode && options.mode !== 'live' && nothingDrafted
       ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin:0 0 18px;font-size:13px;color:#92400e;">Shadow mode: the assistant is labelling only. No replies are being drafted.</div>'
       : '';
 
@@ -1462,6 +1520,7 @@ export {
   inventedTokens,
   sameAddress,
   normalizeClassification,
+  normalizeErrorPayload,
   normalizeGraphMessage,
   parseModelJson,
   pricingGuard,

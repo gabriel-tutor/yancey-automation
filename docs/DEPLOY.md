@@ -958,6 +958,79 @@ indemnification clause the email was named for.
 Gate 1 re-run after both fixes: PASS, no regression. Deployed and verified
 against seven behavioural cases on the live node.
 
+## Exercising the paths nothing had ever run (2026-08-27)
+
+Two more defects, both in code that had never been run against real data.
+
+### The digest contradicted itself
+
+Running WF-C end to end for the first time produced a digest that said, in a
+banner at the top:
+
+> Shadow mode: the assistant is labelling only. No replies are being drafted.
+
+and then, two sections below:
+
+> **DRAFTS WAITING (6)**
+
+The banner came from a hand-set `mode: shadow` string in Config that no longer
+matched reality once `draftingEnabled` was turned on. Yancey would have read
+that every morning. It now derives from the run: no banner is printed if any
+draft exists, whatever the config claims.
+
+### Every error alert ever written was blank
+
+`agent_email_log`'s sibling table held two real failures. Both read:
+
+```
+workflow_name: "unknown workflow"
+error_message: "Unknown error"
+execution_id:  ""   node_name: ""   stack: ""
+```
+
+`Normalize Error` called `$input.all()` — but `Config` sits between the Error
+Trigger and the normaliser, so `$input` was the config object and every field
+fell back. The same class of mistake as the Voice Guard one: reading the wrong
+node. It now reads `$('On Workflow Error')` through a tested
+`normalizeErrorPayload`, and an empty payload says so rather than "Unknown
+error", which reads like something the workflow actually produced.
+
+### Proving it, rather than assuming
+
+WF-E cannot be run manually — it only accepts an Error Trigger — and n8n fires
+error workflows on production executions only. So a throwaway workflow was
+created that throws on purpose, pointed at WF-E, published, run in production
+mode, then unpublished and archived.
+
+The result, where before every field was blank:
+
+```
+workflow_name: WF-X · Fire Drill (safe to delete)
+execution_id:  463
+node_name:     Fail On Purpose
+error_message: deliberate failure to prove WF-E captures what broke [line 1]
+stack:         Error: FIRE DRILL: ... at VmCodeWrapper ...
+```
+
+And the alert email was accepted by SMTP:
+
+```
+accepted: ["gtutor@partnersperform.com"]   rejected: []
+response: 250 9ad843db-d08c-46e1-bc7c-60e745823fcd
+```
+
+That is the first time the safety net has been shown to work. If the agent
+breaks in Yancey's mailbox, somebody now finds out, and the message says what
+broke and where.
+
+### WF-C is one commit behind live, deliberately
+
+The digest fix is in source and tested, but WF-C's node in n8n still has the
+old banner. WF-C is inactive, so nothing is affected — and go-live already
+requires rebuilding and redeploying it, because `digestTo` has to change from
+the dev mailbox to Yancey at the same moment. **Rebuild and redeploy WF-C as
+part of that step; do not publish the node currently sitting there.**
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

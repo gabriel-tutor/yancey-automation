@@ -23,4 +23,5 @@ export const HELPERS = {
     ],
   },
   'wf-c/Build Digest': { lib: ['bucketDigestRows', 'renderDigestHtml', 'renderDigestText'] },
+  'wf-e/Normalize Error': { lib: ['normalizeErrorPayload'] },
 };
