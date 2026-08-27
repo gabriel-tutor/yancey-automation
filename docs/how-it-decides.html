@@ -1,0 +1,500 @@
+<title>How It Decides</title>
+<style>
+  :root {
+    --ground:    #F4F6F6;
+    --panel:     #FFFFFF;
+    --sunk:      #EDF0F1;
+    --ink:       #131A1C;
+    --ink-soft:  #55636A;
+    --ink-faint: #869299;
+    --rule:      #DCE2E3;
+    --rule-soft: #E9EDEE;
+    --accent:    #1F5560;
+    --accent-wash: #E6EEEF;
+
+    --lab-opp:   #B06A10;
+    --lab-admin: #8A7327;
+    --lab-noise: #6E7A82;
+    --lab-flag:  #A8271F;
+    --lab-opp-wash:   #FAF1E4;
+    --lab-admin-wash: #F7F4E6;
+    --lab-noise-wash: #EFF1F3;
+    --lab-flag-wash:  #FAEAE8;
+
+    --shadow: 0 1px 2px rgba(19,26,28,.05), 0 10px 28px -20px rgba(19,26,28,.45);
+
+    --sans:  ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --serif: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:    #0C1113;
+      --panel:     #141B1E;
+      --sunk:      #101619;
+      --ink:       #E3E9EA;
+      --ink-soft:  #96A3AA;
+      --ink-faint: #6B777E;
+      --rule:      #232D31;
+      --rule-soft: #1B2427;
+      --accent:    #5FA3B0;
+      --accent-wash: #12262A;
+
+      --lab-opp:   #DFA255;
+      --lab-admin: #C9B45E;
+      --lab-noise: #93A0A8;
+      --lab-flag:  #E0796E;
+      --lab-opp-wash:   #241A0F;
+      --lab-admin-wash: #221F11;
+      --lab-noise-wash: #191F22;
+      --lab-flag-wash:  #26140F;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px -20px rgba(0,0,0,.9);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:    #0C1113;
+    --panel:     #141B1E;
+    --sunk:      #101619;
+    --ink:       #E3E9EA;
+    --ink-soft:  #96A3AA;
+    --ink-faint: #6B777E;
+    --rule:      #232D31;
+    --rule-soft: #1B2427;
+    --accent:    #5FA3B0;
+    --accent-wash: #12262A;
+
+    --lab-opp:   #DFA255;
+    --lab-admin: #C9B45E;
+    --lab-noise: #93A0A8;
+    --lab-flag:  #E0796E;
+    --lab-opp-wash:   #241A0F;
+    --lab-admin-wash: #221F11;
+    --lab-noise-wash: #191F22;
+    --lab-flag-wash:  #26140F;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px -20px rgba(0,0,0,.9);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page { max-width: 46rem; margin: 0 auto; padding: 52px 22px 90px; }
+  .prose { max-width: 64ch; }
+
+  .eyebrow {
+    font: 500 11px/1 var(--mono);
+    letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 40px);
+    line-height: 1.1; letter-spacing: -.022em;
+    margin: 14px 0 0; text-wrap: balance;
+  }
+  .standfirst { font-size: 18.5px; line-height: 1.55; color: var(--ink-soft); margin: 15px 0 0; max-width: 56ch; }
+
+  section { margin-top: 52px; }
+  .sec-head { padding-top: 22px; border-top: 1px solid var(--rule); margin-bottom: 22px; }
+  h2 { font-size: 23px; line-height: 1.22; letter-spacing: -.015em; margin: 0 0 8px; text-wrap: balance; }
+  .sec-head p { color: var(--ink-soft); margin: 0; max-width: 60ch; }
+  h3 { font-size: 15.5px; font-weight: 660; margin: 0 0 5px; letter-spacing: -.005em; }
+  p { margin: 0 0 14px; }
+  p:last-child { margin-bottom: 0; }
+
+  .keyq {
+    background: var(--accent-wash);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 20px 22px;
+  }
+  .keyq .q {
+    font-family: var(--serif);
+    font-size: 20px;
+    line-height: 1.4;
+    color: var(--ink);
+    margin: 0 0 12px;
+  }
+  .keyq p { font-size: 14.5px; color: var(--ink-soft); }
+
+  .labels { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); }
+  .lab {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--c);
+    border-radius: 3px;
+    padding: 16px 18px 18px;
+    box-shadow: var(--shadow);
+  }
+  .lab .name {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--c);
+    margin-bottom: 8px;
+  }
+  .lab p { font-size: 14px; color: var(--ink-soft); margin: 0 0 10px; }
+  .lab .outcome {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .03em;
+    color: var(--ink-faint);
+    padding-top: 10px;
+    border-top: 1px solid var(--rule-soft);
+  }
+  .lab .outcome b { color: var(--c); font-weight: 600; }
+  .l-opp   { --c: var(--lab-opp); }
+  .l-admin { --c: var(--lab-admin); }
+  .l-noise { --c: var(--lab-noise); }
+  .l-flag  { --c: var(--lab-flag); }
+
+  .gates { border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); overflow: hidden; }
+  .gate { display: grid; grid-template-columns: 34px 1fr; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--rule-soft); }
+  .gate:last-child { border-bottom: 0; }
+  .gate .n {
+    font: 600 12px/1.5 var(--mono);
+    color: var(--accent);
+    padding-top: 2px;
+  }
+  .gate .body h3 { margin-bottom: 4px; }
+  .gate .body p { font-size: 14px; color: var(--ink-soft); margin: 0; }
+  .gate code, .flagname {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--sunk);
+    border: 1px solid var(--rule-soft);
+    border-radius: 2px;
+    padding: 1px 5px;
+  }
+
+  .tblwrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 640px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  th {
+    font: 600 10.5px/1.4 var(--mono);
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-faint); background: var(--sunk);
+    border-bottom: 1px solid var(--rule);
+  }
+  tr:last-child td { border-bottom: 0; }
+  td.q { color: var(--ink-soft); }
+  .verdict { font-family: var(--mono); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .v-opp { color: var(--lab-opp); }
+  .v-noise { color: var(--lab-noise); }
+  .v-flag { color: var(--lab-flag); }
+
+  .ex { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 18px 20px; margin-top: 12px; box-shadow: var(--shadow); }
+  .ex .quote {
+    font-family: var(--serif);
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    border-left: 2px solid var(--rule);
+    padding-left: 14px;
+    margin: 0 0 14px;
+  }
+  .ex .trace { display: grid; gap: 7px; margin: 0 0 12px; }
+  .ex .row { display: grid; grid-template-columns: 96px 1fr; gap: 12px; font-size: 13.5px; }
+  .ex .row .k { font: 600 10.5px/1.7 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); }
+  .ex .row .v { color: var(--ink-soft); }
+  .ex .why { font-size: 14px; color: var(--ink-soft); border-top: 1px solid var(--rule-soft); padding-top: 12px; margin: 0; }
+  .ex .why b { color: var(--ink); font-weight: 640; }
+
+  .note { background: var(--sunk); border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 0 3px 3px 0; padding: 16px 18px; margin-top: 16px; }
+  .note p { font-size: 14.5px; color: var(--ink-soft); }
+  .note p:first-child { font-weight: 650; color: var(--ink); }
+
+  .measure { font-family: var(--mono); font-size: 12.5px; line-height: 1.85; background: var(--sunk); border: 1px solid var(--rule); border-radius: 3px; padding: 14px 16px; overflow-x: auto; color: var(--ink-soft); margin: 0; }
+  .measure b { color: var(--ink); font-weight: 600; }
+
+  footer { margin-top: 60px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-faint); }
+
+  @media (max-width: 560px) {
+    .page { padding: 34px 16px 60px; }
+    .gate { grid-template-columns: 26px 1fr; gap: 10px; }
+    .ex .row { grid-template-columns: 1fr; gap: 1px; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="prose">
+    <div class="eyebrow">Upperform inbox assistant &middot; how the sorting works</div>
+    <h1>How it decides</h1>
+    <p class="standfirst">Every email that arrives gets exactly one of four verdicts. Two things decide it &mdash; a model that reads, and a set of rules that can overrule the model. This is both, and what happens after.</p>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2>The question it asks first</h2>
+      <p>Before any of the four labels, before anything else, there is one distinction that decides most of the inbox.</p>
+    </div>
+
+    <div class="keyq">
+      <p class="q">Is this about Upperform&rsquo;s utility consulting work, or about Yancey&rsquo;s own personal and business administration?</p>
+      <p>Consulting work is real even when the message is one casual line. Personal admin &mdash; tax prep, retirement plans, payroll vendors, insurance, banking, contractor invoices &mdash; is noise <em>even when it is a named human being, warmly introduced, proposing a specific meeting time</em>. Even when Yancey has already replied in that thread himself.</p>
+      <p>Politeness, a real name and a real calendar ask are not evidence of relevance. That sentence exists because of one email in Yancey&rsquo;s own training set, and it is the hardest case in the whole system.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>The four verdicts</h2>
+      <p>Exactly one per email. The colour of each card is the colour of the Outlook category it produces, so this page and his inbox use the same language.</p>
+    </div>
+
+    <div class="labels">
+      <div class="lab l-opp">
+        <div class="name">opportunity</div>
+        <p>Live engagement work needing his awareness or response. Deliverables sent for review, status updates, client replies on decks and plans, direction from Chuck, peer-review threads, business-development follow-ups.</p>
+        <div class="outcome">Category <b>AI-Action</b> &middot; a draft is written</div>
+      </div>
+
+      <div class="lab l-admin">
+        <div class="name">admin</div>
+        <p>Scheduling logistics, calendar invites, Teams meeting notices, routine confirmations. Things that need at most a one-line reply.</p>
+        <div class="outcome">Category <b>AI-Action</b> &middot; a draft is written</div>
+      </div>
+
+      <div class="lab l-noise">
+        <div class="name">noise</div>
+        <p>No reply needed. Vendor and channel sales outreach, payment and invoice notifications, courtesy acknowledgements that close a thread, newsletters and automated alerts.</p>
+        <div class="outcome">Category <b>AI-Processed</b> only &middot; nothing written</div>
+      </div>
+
+      <div class="lab l-flag">
+        <div class="name">flag_for_yancey</div>
+        <p>Surface it, never draft. Legal, contractual, HR, press, disputes &mdash; anything where a wrong word costs money. And anything asking a price he has not already quoted.</p>
+        <div class="outcome">Category <b>AI-Review</b> &middot; deliberately no draft</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <p>Two of the four produce a draft, and two do not.</p>
+      <p><span class="flagname">opportunity</span> and <span class="flagname">admin</span> are the draftable pair. <span class="flagname">noise</span> and <span class="flagname">flag_for_yancey</span> never produce one &mdash; but for opposite reasons. Noise is ignored because nothing is owed. A flag is held back precisely <em>because</em> something is owed, and it is the kind of thing an assistant should not attempt.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Who actually decides</h2>
+      <p>The model proposes. The rules dispose. That order matters, and it is the whole safety design.</p>
+    </div>
+
+    <div class="prose">
+      <p>The classifier (<span class="flagname">gpt-5.6-luna</span>) reads the newest message in the thread and returns four things: a label, a confidence from 0 to 1, whether a reply is genuinely warranted, and a one-sentence reason. It never sees the quoted history &mdash; only the newest message, because that is the part being answered.</p>
+      <p>Then a chain of deterministic rules runs over the result. Several of them can overrule the model outright, and they read the <em>whole</em> thread, quoted history included, up to 12,000 characters. None of that extra text is ever sent to the model. It exists only so the rules can see what the model was not shown.</p>
+    </div>
+
+    <div class="note">
+      <p>This is why the model getting it wrong is survivable.</p>
+      <p>A model can be talked into things. A regular expression cannot. The rules below are the part of the system that does not have a bad day &mdash; and every one of them can only make the outcome <em>more</em> cautious, never less.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>The rules, in the order they run</h2>
+      <p>Each one can add a flag. Flags are recorded against the email so any decision can be explained after the fact.</p>
+    </div>
+
+    <div class="gates">
+      <div class="gate">
+        <div class="n">1</div>
+        <div class="body">
+          <h3>Could the answer be read at all?</h3>
+          <p>If the model returns something unparseable, the label becomes <code>flag_for_yancey</code> rather than a guess. Flag: <span class="flagname">unparseable_label</span>.</p>
+        </div>
+      </div>
+      <div class="gate">
+        <div class="n">2</div>
+        <div class="body">
+          <h3>Is anyone asking a price?</h3>
+          <p>Scans the whole thread. If somebody is asking what something costs and no fee has already been quoted, the label is forced to <code>flag_for_yancey</code>. Flag: <span class="flagname">pricing_guard</span>.</p>
+        </div>
+      </div>
+      <div class="gate">
+        <div class="n">3</div>
+        <div class="body">
+          <h3>Is this legal, contractual or personnel?</h3>
+          <p>Lawsuits, subpoenas, attorneys, breach of contract, indemnities, severance, harassment, press. Any of them forces <code>flag_for_yancey</code>. Flag: <span class="flagname">sensitivity_guard</span>.</p>
+        </div>
+      </div>
+      <div class="gate">
+        <div class="n">4</div>
+        <div class="body">
+          <h3>Was the model sure enough?</h3>
+          <p>Below 0.6 confidence the email is surfaced rather than drafted. The label stands; the draft does not happen. Flag: <span class="flagname">below_confidence_min</span>.</p>
+        </div>
+      </div>
+      <div class="gate">
+        <div class="n">5</div>
+        <div class="body">
+          <h3>Is this even the right mailbox?</h3>
+          <p>A draft is only written if the mailbox it was authorised for is on the message&rsquo;s To or Cc. Re-point the mail account at somebody else and drafting stops rather than following it. Flag: <span class="flagname">mailbox_not_addressed</span>.</p>
+        </div>
+      </div>
+      <div class="gate">
+        <div class="n">6</div>
+        <div class="body">
+          <h3>Then, and only then, a draft</h3>
+          <p>Written by a second model, checked against the source for invented figures, given his sign-off, and left in the Drafts folder. It cannot be sent. That is a separate guarantee, covered in the other note.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>The money rule, in detail</h2>
+      <p>It is the one that costs real money to get wrong, so it is the one built most carefully &mdash; and the one that has been wrong twice.</p>
+    </div>
+
+    <div class="prose">
+      <p>A na&iuml;ve version would flag any email containing the word &ldquo;cost&rdquo;. That is useless in a consulting inbox where half the mail discusses budgets. So the rule has two halves, and <em>both</em> require two things to sit near each other rather than merely appear somewhere.</p>
+      <p><b>To fire</b>, a money word (<span class="flagname">fee</span>, <span class="flagname">cost</span>, <span class="flagname">estimate</span>, <span class="flagname">scope of work</span>&hellip;) must sit within <b>60 characters</b> of a question form (<span class="flagname">can you provide</span>, <span class="flagname">how much</span>&hellip;). About one clause.</p>
+      <p><b>To stand down</b>, a real figure must sit within <b>200 characters</b> of fee-stating language &mdash; &ldquo;$175K to $200K <em>on a fixed-fee basis</em>&rdquo;. A capital-plan number with no such words near it does not count as a quote.</p>
+    </div>
+
+    <p class="measure" style="margin-top:16px">Both windows were measured against real mail, not guessed:<br><br>
+<b>MUST FIRE</b>&nbsp;&nbsp; one sentence&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;19 chars apart&nbsp;&nbsp; can you provide &harr; estimate<br>
+<b>MUST FIRE</b>&nbsp;&nbsp; buried in a chain&nbsp;&nbsp;19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; can you provide &harr; estimate<br>
+<b>MUST NOT</b>&nbsp;&nbsp;&nbsp; status request&nbsp;&nbsp;&nbsp;107&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; send me your&nbsp;&nbsp;&nbsp; &harr; cost<br>
+<b>MUST NOT</b>&nbsp;&nbsp;&nbsp; share the deck&nbsp;&nbsp;&nbsp;122&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; can you share&nbsp;&nbsp; &harr; budget</p>
+
+    <div class="note">
+      <p>Both times it was wrong, Yancey&rsquo;s own mail found it.</p>
+      <p>First it read <em>too little</em> &mdash; only the newest message &mdash; and missed a fee request sitting two replies down a quoted chain. Then, reading whole threads, it read <em>too much</em>: &ldquo;please send me your updates&rdquo; in one message and the word &ldquo;cost&rdquo; in another, a paragraph apart, looked together like somebody asking a price. The proximity windows are what closed the gap between those two failures.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Six real emails, walked through</h2>
+      <p>All from Yancey&rsquo;s own inbox. This is the part worth reading twice.</p>
+    </div>
+
+    <div class="ex">
+      <p class="quote">&ldquo;I met with Angela earlier today &hellip; 12pm absolutely works for me. If that time is still good for you, just let me know, and I will send over the calendar invite.&rdquo;</p>
+      <div class="trace">
+        <div class="row"><div class="k">From</div><div class="v">A named Paychex representative, introduced by Yancey&rsquo;s own accountant</div></div>
+        <div class="row"><div class="k">Model</div><div class="v">noise &mdash; &ldquo;a vendor sales conversation about personal finances, not Upperform work&rdquo;</div></div>
+        <div class="row"><div class="k">Rules</div><div class="v">none fired</div></div>
+        <div class="row"><div class="k">Verdict</div><div class="v"><span class="verdict v-noise">noise</span> &middot; AI-Processed only</div></div>
+      </div>
+      <p class="why"><b>The hardest email in the set.</b> A real person, warmly introduced, coordinating a real meeting &mdash; in a thread Yancey had already replied to twice himself. Nothing on its surface says junk. He labelled it junk anyway, and that single email is why the system asks its opening question before anything else.</p>
+    </div>
+
+    <div class="ex">
+      <p class="quote">&ldquo;Let&rsquo;s write a proposal of what it would take, including NIPSCO responsibility and access requirements.&rdquo;</p>
+      <div class="trace">
+        <div class="row"><div class="k">From</div><div class="v">Chuck Coleman &mdash; and two replies below, NIPSCO had asked for <em>an estimate of timeline and cost</em></div></div>
+        <div class="row"><div class="k">Model</div><div class="v">opportunity, 0.98 &mdash; it only saw the newest message, which is ordinary project talk</div></div>
+        <div class="row"><div class="k">Rules</div><div class="v"><span class="flagname">pricing_guard</span> read the whole thread and overruled it</div></div>
+        <div class="row"><div class="k">Verdict</div><div class="v"><span class="verdict v-flag">flag_for_yancey</span> &middot; AI-Review, no draft</div></div>
+      </div>
+      <p class="why"><b>The model wanted to draft this and was overruled.</b> This is the clearest example of why the rules run after the model rather than instead of it. Nothing in the message being answered mentions money at all.</p>
+    </div>
+
+    <div class="ex">
+      <p class="quote">&ldquo;Please send me your updates for the items you are working on &hellip; total annual idling cost of $4M &hellip; a low to medium confidence estimate.&rdquo;</p>
+      <div class="trace">
+        <div class="row"><div class="k">From</div><div class="v">Shawn Corkran &mdash; a status update on crossarm capitalization</div></div>
+        <div class="row"><div class="k">Model</div><div class="v">opportunity &mdash; live engagement work</div></div>
+        <div class="row"><div class="k">Rules</div><div class="v">none now. <em>Previously</em> <span class="flagname">pricing_guard</span> fired wrongly here</div></div>
+        <div class="row"><div class="k">Verdict</div><div class="v"><span class="verdict v-opp">opportunity</span> &middot; AI-Action</div></div>
+      </div>
+      <p class="why"><b>This one used to be wrong.</b> &ldquo;send me your&rdquo; and &ldquo;cost&rdquo; sat 107 characters apart in different messages, and the rule read them as one person asking a price. Fixing it is what took agreement with Yancey&rsquo;s own labels from 93% to 100%.</p>
+    </div>
+
+    <div class="ex">
+      <p class="quote">&ldquo;The limitation of liability cap has been reduced &hellip; they have added an indemnification obligation covering third-party claims.&rdquo;</p>
+      <div class="trace">
+        <div class="row"><div class="k">Model</div><div class="v">flag_for_yancey &mdash; it recognised the contract exposure on its own</div></div>
+        <div class="row"><div class="k">Rules</div><div class="v"><span class="flagname">sensitivity_guard</span> fired as well, on <em>indemnification</em></div></div>
+        <div class="row"><div class="k">Verdict</div><div class="v"><span class="verdict v-flag">flag_for_yancey</span> &middot; AI-Review, no draft</div></div>
+      </div>
+      <p class="why"><b>Belt and braces, and both were needed.</b> Until recently the rule could not match the word <em>indemnification</em> at all &mdash; a pattern written to catch it had a flaw that meant it had never once fired. The model was carrying that case alone without anyone knowing.</p>
+    </div>
+
+    <div class="ex">
+      <p class="quote">&ldquo;Given how much Upperform has grown since you took Suite 1170, it might be worth a look before we go to market.&rdquo;</p>
+      <div class="trace">
+        <div class="row"><div class="k">From</div><div class="v">A local commercial property agent who knows his floor number</div></div>
+        <div class="row"><div class="k">Model</div><div class="v">noise &mdash; &ldquo;business administration, unrelated to Upperform&rsquo;s consulting work&rdquo;</div></div>
+        <div class="row"><div class="k">Rules</div><div class="v">none now. <em>Previously</em> <span class="flagname">pricing_guard</span> fired on &ldquo;how much&rdquo;</div></div>
+        <div class="row"><div class="k">Verdict</div><div class="v"><span class="verdict v-noise">noise</span> &middot; AI-Processed only</div></div>
+      </div>
+      <p class="why"><b>Also used to be wrong, in a subtler way.</b> &ldquo;how much&rdquo; had been listed both as a money word and as a question form, so one innocuous phrase satisfied a rule designed to need two independent signals. It is a question form, not a money word.</p>
+    </div>
+
+    <div class="ex">
+      <p class="quote">&ldquo;To be honest, I am thinking we probably need to do a class on how to properly close actions &hellip; I would be interested in knowing what you think about that.&rdquo;</p>
+      <div class="trace">
+        <div class="row"><div class="k">From</div><div class="v">Chuck Coleman, replying directly to Yancey</div></div>
+        <div class="row"><div class="k">Model</div><div class="v">opportunity, 0.99 &mdash; a direct question is being asked of him</div></div>
+        <div class="row"><div class="k">Rules</div><div class="v">none fired</div></div>
+        <div class="row"><div class="k">Verdict</div><div class="v"><span class="verdict v-opp">opportunity</span> &middot; AI-Action, draft written</div></div>
+      </div>
+      <p class="why"><b>The ordinary case, which is most of them.</b> Someone he works with asks him something, and a reply appears in his Drafts folder opening &ldquo;Hey Chuck,&rdquo; &mdash; the register he uses with colleagues, as opposed to &ldquo;Hi Jessica,&rdquo; for a client.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>What he actually sees</h2>
+      <p>All of the above surfaces as three colours on his existing inbox. There is nothing new to log into.</p>
+    </div>
+
+    <div class="tblwrap">
+      <table>
+        <thead>
+          <tr><th>In Outlook</th><th>Means</th><th>What to do</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="verdict v-noise">AI-Processed</span></td>
+            <td class="q">Seen, logged, judged not to need him.</td>
+            <td class="q">Nothing. It stays out of the morning summary.</td>
+          </tr>
+          <tr>
+            <td><span class="verdict v-opp">AI-Action</span></td>
+            <td class="q">Needs him, and a reply has been written.</td>
+            <td class="q">Read the draft, change what he wants, press Send &mdash; or bin it.</td>
+          </tr>
+          <tr>
+            <td><span class="verdict v-flag">AI-Review</span></td>
+            <td class="q">Needs him, and the assistant deliberately wrote nothing.</td>
+            <td class="q">Handle it himself. The reason is recorded against the email.</td>
+          </tr>
+          <tr>
+            <td><span class="verdict v-opp">AI-Drafted</span></td>
+            <td class="q">A reply is sitting in the Drafts folder right now.</td>
+            <td class="q">Disappears from the summary on its own once he sends it.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>Every verdict is explainable after the fact.</p>
+      <p>Each email gets a row recording the label, the confidence, the one-sentence reason, what the sender wanted, and which rules fired. If a decision ever looks wrong, the answer to &ldquo;why did it do that?&rdquo; is a lookup, not a guess.</p>
+    </div>
+  </section>
+
+  <footer>
+    Upperform inbox assistant &middot; classifier <span class="flagname">gpt-5.6-luna</span> &middot; drafting <span class="flagname">gpt-5.6-terra</span> &middot; confidence floor 0.6 &middot; rules read 12,000 characters of thread, none of which reaches the model
+  </footer>
+
+</div>

@@ -1080,11 +1080,18 @@ could differ.
 
 All three artifacts republished to their existing URLs.
 
-| Artifact | What changed |
-|---|---|
-| [Inbox assistant](https://claude.ai/code/artifact/91a37a65-cdcf-4262-8dc8-06cfd778ddf9) | The score, and both faults his mail found |
-| [Agent internals](https://claude.ai/code/artifact/54c05d0c-79d6-4815-b93a-1386b9172548) | Orphan gap closed, interlock, proximity, WF-E, 269 tests |
-| [Voice check](https://claude.ai/code/artifact/efd87e6e-1fd6-4bb6-8947-65c2ae9a4c46) | Regenerated from the harness instead of copied by hand |
+| Artifact | Audience | What it covers |
+|---|---|---|
+| [Inbox assistant](https://claude.ai/code/artifact/91a37a65-cdcf-4262-8dc8-06cfd778ddf9) | Yancey | What happens to one email, why it cannot send, how it scored |
+| [How it decides](https://claude.ai/code/artifact/d5e8ef1e-39d9-4bb8-9983-54292ec8013b) | Either | The four verdicts, which rules overrule the model, six real emails traced |
+| [Agent internals](https://claude.ai/code/artifact/54c05d0c-79d6-4815-b93a-1386b9172548) | Builder | Node-by-node sequence, config reference, failure modes |
+| [Voice check](https://claude.ai/code/artifact/efd87e6e-1fd6-4bb6-8947-65c2ae9a4c46) | Yancey | Gate 2 rating sheet, generated from the harness |
+
+`how-it-decides.html` is the one to reach for when the question is "why did it
+do that?" — it walks the taxonomy, the rule chain in execution order, both
+proximity windows with the measured numbers behind them, and six real emails
+from Yancey's own inbox traced from arrival to Outlook category. Three of the
+six are cases the system got wrong at some point today, shown with what changed.
 
 ### The client explainer was claiming something untrue
 
