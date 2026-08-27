@@ -1076,6 +1076,44 @@ figure to quote is **100% across three runs, having been 93.3% before this
 fix** — and it is worth saying that sampling is not pinned, so a future run
 could differ.
 
+## Artifacts, and one more hand-transcription bug (2026-08-27)
+
+All three artifacts republished to their existing URLs.
+
+| Artifact | What changed |
+|---|---|
+| [Inbox assistant](https://claude.ai/code/artifact/91a37a65-cdcf-4262-8dc8-06cfd778ddf9) | The score, and both faults his mail found |
+| [Agent internals](https://claude.ai/code/artifact/54c05d0c-79d6-4815-b93a-1386b9172548) | Orphan gap closed, interlock, proximity, WF-E, 269 tests |
+| [Voice check](https://claude.ai/code/artifact/efd87e6e-1fd6-4bb6-8947-65c2ae9a4c46) | Regenerated from the harness instead of copied by hand |
+
+### The client explainer was claiming something untrue
+
+It said **"15 of 15 — it reached the same verdict you did on every one."** That
+was written when Gate 1 reported 100%, but that figure averaged Yancey's fifteen
+in with six synthetic fixtures. His own number at the time was 14/15. The claim
+is true again now, having been earned properly, but it was not true when it was
+published, and the page now says plainly that the score is measured rather than
+promised and that it read 93% before the proximity fix.
+
+### The voice-check artifact had a transcription bug of its own
+
+Building it by copying the five drafts across by hand dropped opp-09's
+`Thanks, / Yancey`. The page was showing Yancey a draft with no sign-off — and
+inviting him to score it. He would have marked it down for a fault the system
+never committed. The same failure mode as the non-breaking space in the node
+paste: what gets retyped gets damaged.
+
+So nothing is transcribed any more. `npm run gate2` writes
+`fixtures/voice/gate2-drafts.json` beside the markdown sheet, and
+`npm run gate2:artifact` injects it into the page, re-running the four Gate 2
+pre-checks on the way and refusing to publish if any fail. Updating the rating
+sheet is now two commands rather than a careful copy:
+
+```
+OPENAI_API_KEY=sk-... npm run gate2      # draft + pre-check, writes the JSON
+npm run gate2:artifact                   # inject, re-check, ready to publish
+```
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

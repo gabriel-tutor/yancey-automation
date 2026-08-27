@@ -11,7 +11,8 @@
     "build": "node scripts/build-workflows.mjs",
     "gate1": "node scripts/golden-set.mjs",
     "verify": "npm run typecheck && npm run test && npm run build",
-    "gate2": "node scripts/gate2.mjs"
+    "gate2": "node scripts/gate2.mjs",
+    "gate2:artifact": "node scripts/build-gate2-artifact.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

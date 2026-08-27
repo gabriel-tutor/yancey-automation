@@ -9,13 +9,13 @@ would send it after edits. A 5 means you would send it as-is.
 Put your scores in `fixtures/voice/gate2-ratings.json` and re-run
 `npm run gate2`. The gate needs an average of 4 or better.
 
-Drafts generated 2026-08-26T23:53:56.111Z · model gpt-5.6-terra
+Drafts generated 2026-08-27T11:33:57.497Z · model gpt-5.6-terra
 
 ---
 
 ## 1. opp-06 — Re: NIPSCO Deliverables: Status Update
 
-*Why this one: Chuck asks his opinion directly — the colleague register, "Hey".*
+*Why this one: Chuck asks your opinion directly. This is the register you use with the people you work beside every day.*
 
 **They wrote** (from Charles Coleman):
 
@@ -28,13 +28,13 @@ Drafts generated 2026-08-26T23:53:56.111Z · model gpt-5.6-terra
 ```
 Hey Chuck,
 
-I have it. I’ll get copies of the closed initiatives from Kris and make sure we review them as a team before we depend on them in the 18-month plan.
+Agreed. I’ll get copies of the closed initiatives from Kris and make sure we review them as a team before we depend on them in the 18-month plan.
 
-I’ll also work it in with Phil that reviewing closed actions for quality will need to be part of this effort.
+I’ll also let Phil know, when the timing makes sense, that reviewing closed actions for quality will be part of this effort.
 
-I agree on the class for action owners. If the closure standard is not clear, we’ll keep finding actions marked closed that do not really resolve the issue. Let’s look at what Jaren is putting together for the closure review process and use that to help shape the training.
+I think a short class for action owners would be helpful, especially if the closure review shows the actions are being closed without enough evidence that the issue is really addressed. It could give them a clear understanding of what good closure looks like and what will be expected going forward.
 
-I’ll get the initiatives moving and we can regroup once we see what the closure reviews are showing.
+I’ll connect with Kris and Phil this week and we can regroup once we have a better feel for the quality of the closed actions.
 
 Thanks,
 
@@ -49,7 +49,7 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 
 ## 2. opp-03 — Re: (External):Re: Vector Sync-Up
 
-*Why this one: An SCE client contact on a live deck — the client register, "Hi".*
+*Why this one: An SCE contact on a live deck. Warmer distance than a colleague, and every word is read by the client.*
 
 **They wrote** (from Jessica Elaine Doucette):
 
@@ -73,9 +73,9 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 ```
 Hi Jessica,
 
-Thank you for the feedback and for fact checking the credit ratings. I understand the concern with Slide 2, and we’ll make sure we do not get stuck there while still recognizing the work ahead around T&D buy-in.
+Thank you for taking the time to review it and for fact checking the ratings. I agree on Slide 2—we do not want to get stuck there, so I'll make sure the revised version keeps the focus on the T&D opportunity and the work ahead.
 
-I’ll review the attachments and get the revised deck back out with the additions we discussed. We can talk through any remaining concerns at 2pm.
+I'll review the attachments and get the updated deck back to the team shortly. See you all at 2pm.
 
 Thanks,
 
@@ -90,7 +90,7 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 
 ## 3. opp-08 — Re: Follow-up from Upperform and PG&E Support
 
-*Why this one: Business development with PG&E, where salesmanship is the failure mode.*
+*Why this one: Chuck rewrote your PG&E note to be less salesy and asked what you think. Salesmanship is the failure mode here.*
 
 **They wrote** (from Charles Coleman):
 
@@ -114,9 +114,9 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 ```
 Hey Chuck,
 
-I agree with you. Your changes make it feel more genuine and less like we are trying too hard to sell something before we understand where they are.
+I agree. This sounds more natural and less like a sales pitch. I especially like the focus on learning more about what they have already started and having a conversation from there.
 
-I’ll use this approach for the follow-up and keep it focused on learning more about what they are doing first.
+I’ll use this direction as I revise the note and get it back over to you shortly. Let me know if there is anything else you want me to work in.
 
 Thanks,
 
@@ -131,7 +131,7 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 
 ## 4. opp-09 — Re: Coaching Summary from 3/20/24
 
-*Why this one: He is cc, not to. Should read as a colleague weighing in, not the owner.*
+*Why this one: You are cc, not to. The work Chuck is assigning belongs to Kathleen. Watch whether the reply takes it over.*
 
 **They wrote** (from Charles Coleman):
 
@@ -154,9 +154,7 @@ Hey Chuck,
 
 Thanks for the review and for cleaning up the spacing. I’ll pay closer attention to that going forward.
 
-I’ll download the Teams version, remove all comments, and double check it before sending it over to Ashley. I’ll also let you know how she responds so we can keep learning how she is interpreting the coaching.
-
-I’ll get this cleaned up and sent shortly. Let me know if you see anything else before then.
+I’ll download the Teams version, remove all comments, and double check it before sending it over to Ashley. I’ll also let you know how she responds and any feedback on how she is interpreting the coaching.
 
 Thanks,
 
@@ -171,7 +169,7 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 
 ## 5. opp-10 — Re: T+1 Project Plan
 
-*Why this one: A plan review with an open question he cannot answer from the thread.*
+*Why this one: Chuck raises an open question the thread does not answer. Watch that the reply does not invent one.*
 
 **They wrote** (from Charles Coleman):
 
@@ -184,11 +182,11 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 ```
 Hey Chuck,
 
-I agree. I’ll adjust the plan to pull the file-upload standard and column changes forward since those are more immediate.
+Agreed. I’ll adjust the plan to pull the file upload standard and column changes forward as more immediate items.
 
-I’ll also add an item to track down the workbook count and make sure we understand whether there is a misunderstanding with Joe.
+I’ll also add a step to confirm the workbook upload requirements and track down whether there is a misunderstanding with Joe.
 
-I’ll update the plan and send it back over shortly. Let me know if there are any other items you want moved up.
+I’ll update the plan and send it back over shortly. Let me know if there is anything else you want moved up.
 
 Thanks,
 

@@ -1,7 +1,7 @@
 {
   "_instructions": "Score each draft 1-5 on whether it sounds like Yancey. Read fixtures/voice/gate2-drafts.md, fill in every \"score\", then run npm run gate2.",
   "ratedBy": "",
-  "generatedAt": "2026-08-26T23:53:56.111Z",
+  "generatedAt": "2026-08-27T11:33:57.497Z",
   "model": "gpt-5.6-terra",
   "ratings": [
     {

@@ -356,7 +356,7 @@
     <div class="cards">
       <div class="card">
         <h3>15 of 15</h3>
-        <p>It reached the same verdict you did on every one.</p>
+        <p>It reached the same verdict you did on every one, on three runs in a row.</p>
       </div>
       <div class="card">
         <h3>Nothing lost</h3>
@@ -370,15 +370,18 @@
 
     <p class="prose" style="margin-top:20px;color:var(--ink-soft)">It doesn&rsquo;t draft a reply to all fifteen, and it shouldn&rsquo;t. Several were threads where you were copied rather than asked &mdash; a status update aimed at Chuck, a review addressed to Kathleen. Those are flagged for you to see, without words being put in your mouth.</p>
 
+    <p class="prose" style="margin-top:14px;color:var(--ink-soft)">One thing worth being straight about: this is a score, not a guarantee. It is a language model, and the number is measured rather than promised &mdash; it read 93% before the second fault below was fixed. What the number is <em>for</em> is catching the day it drops.</p>
+
     <div class="callout" style="margin-top:20px">
       <p>The hardest one you sent was the Paychex thread.</p>
       <p>A named person, introduced by your own accountant, proposing a specific meeting time &mdash; a thread you had already replied to twice yourself. Nothing on the surface of it says junk. You labelled it junk anyway, because retirement-plan sales isn&rsquo;t Upperform work. The assistant now reaches the same conclusion, and that one email is the reason it asks &ldquo;is this the business, or is this your admin?&rdquo; before anything else.</p>
     </div>
 
     <div class="callout" style="margin-top:12px">
-      <p>Your mail also found a real fault, which is the point of testing on it.</p>
-      <p>One of your threads ends with Chuck saying <i>&ldquo;let&rsquo;s put together what it would take.&rdquo;</i> Read on its own, that is ordinary project talk, and the assistant was ready to draft a reply to it. Two messages further down, NIPSCO had asked for <i>an estimate of timeline and cost</i>.</p>
-      <p>It was only reading the newest message. It now reads the whole thread before it will write anything near a fee &mdash; and on your emails, it holds that one. Invented tests never caught this. Yours did on the first run.</p>
+      <p>Your mail found two real faults, which is the point of testing on it.</p>
+      <p><b>It was reading too little.</b> One of your threads ends with Chuck saying <i>&ldquo;let&rsquo;s put together what it would take.&rdquo;</i> Read on its own that is ordinary project talk, and the assistant was ready to draft a reply. Two messages further down, NIPSCO had asked for <i>an estimate of timeline and cost</i>. It was only looking at the newest message. It now reads the whole thread before it will write anything near a fee.</p>
+      <p><b>Then it was reading too much.</b> Once it read whole threads, Shawn&rsquo;s crossarm status update started getting held back &mdash; because <i>&ldquo;please send me your updates&rdquo;</i> in one message and the word <i>cost</i> in another, a paragraph apart, looked together like somebody asking a price. Now the two have to sit in the same breath before it counts as a question about money.</p>
+      <p>That second one is why the score moved from 93% to 100%. Neither fault would have shown up in invented test emails. Yours found both.</p>
     </div>
   </section>
 

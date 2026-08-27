@@ -50,15 +50,40 @@ const RATING_TARGET = 4;
  * of 1–5 is really judging.
  */
 const SAMPLES = [
-  { id: 'opp-06', why: 'Chuck asks his opinion directly — the colleague register, "Hey".' },
-  { id: 'opp-03', why: 'An SCE client contact on a live deck — the client register, "Hi".' },
-  { id: 'opp-08', why: 'Business development with PG&E, where salesmanship is the failure mode.' },
-  { id: 'opp-09', why: 'He is cc, not to. Should read as a colleague weighing in, not the owner.' },
-  { id: 'opp-10', why: 'A plan review with an open question he cannot answer from the thread.' },
+  {
+    id: 'opp-06',
+    register: 'Colleague',
+    why: 'Chuck asks your opinion directly. This is the register you use with the people you work beside every day.',
+  },
+  {
+    id: 'opp-03',
+    register: 'Client',
+    why: 'An SCE contact on a live deck. Warmer distance than a colleague, and every word is read by the client.',
+  },
+  {
+    id: 'opp-08',
+    register: 'Business development',
+    why: 'Chuck rewrote your PG&E note to be less salesy and asked what you think. Salesmanship is the failure mode here.',
+  },
+  {
+    id: 'opp-09',
+    register: 'Copied in',
+    why: 'You are cc, not to. The work Chuck is assigning belongs to Kathleen. Watch whether the reply takes it over.',
+    flag:
+      'Chuck addressed that task to Kathleen — you were only copied in. The reply is in your voice and reads well, ' +
+      'which is exactly why an automated check cannot catch it. If the right answer here is a shorter note that does ' +
+      'not take over her action, score it low and say so.',
+  },
+  {
+    id: 'opp-10',
+    register: 'Plan review',
+    why: 'Chuck raises an open question the thread does not answer. Watch that the reply does not invent one.',
+  },
 ];
 
 const ratingsPath = join(root, 'fixtures/voice/gate2-ratings.json');
 const sheetPath = join(root, 'fixtures/voice/gate2-drafts.md');
+const jsonPath = join(root, 'fixtures/voice/gate2-drafts.json');
 
 /* ------------------------------------------------------------------ */
 /* Phase 2 first: if a complete rating sheet exists, score it.          */
@@ -256,6 +281,25 @@ for (const r of results) {
 
 writeFileSync(sheetPath, sheet.join('\n'));
 
+writeFileSync(
+  jsonPath,
+  JSON.stringify(
+    results.map((r) => ({
+      id: r.sample.id,
+      register: r.sample.register,
+      subject: r.n.subject,
+      why: r.sample.why,
+      from: r.n.senderName || r.n.senderEmail,
+      inbound: r.n.cleanText,
+      reply: r.guard.text,
+      words: r.guard.words,
+      ...(r.sample.flag ? { flag: r.sample.flag } : {}),
+    })),
+    null,
+    2,
+  ) + '\n',
+);
+
 if (!existsSync(ratingsPath) || !keepExisting) {
   writeFileSync(
     ratingsPath,
@@ -285,6 +329,7 @@ console.log('Model              ' + MODEL);
 console.log('Samples drafted    ' + results.length);
 console.log('Pre-checks failed  ' + preCheckFailures + '  (must be 0)');
 console.log('Rating sheet       ' + sheetPath.replace(root + '/', ''));
+console.log('Artifact data      ' + jsonPath.replace(root + '/', ''));
 console.log('Scores go in       ' + ratingsPath.replace(root + '/', ''));
 
 if (preCheckFailures > 0) {

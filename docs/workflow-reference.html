@@ -246,7 +246,8 @@
 <section>
   <div class="sec-head">
     <h2>The guard chain</h2>
-    <p>A message has to survive seven checks to become a draft, and an eighth to leave the mailbox. Five of the seven can overrule the model outright.</p>
+    <p>A message has to survive seven checks to become a draft, and an eighth to leave the mailbox. Five of the seven can overrule the model outright. Since this was drawn, an interlock has joined them: the message must also be addressed to the mailbox drafting was authorised for, so a credential re-pointed at Yancey stops drafting rather than redirecting it.</p>
+    <p style="margin-top:10px">Both halves of the pricing guard changed too. It reads the whole thread for the ask, because a fee request was found sitting two replies down a quoted chain. And both halves now require <em>proximity</em> rather than mere co-occurrence &mdash; a money noun beside a question form to fire, a figure beside fee-stating language to stand down. Without that, an SCE capital plan quoted in a thread was releasing live fee requests, and &ldquo;please send me your updates&rdquo; a paragraph from the word &ldquo;cost&rdquo; was holding ordinary status mail.</p>
   </div>
 
   <div class="figwrap">
@@ -354,8 +355,9 @@
     <div class="link"><div class="n">5b</div><div class="b"><div class="nd">Blocked &rarr; Delete the Empty Draft</div><div class="ds">The draft <code>createReply</code> already made is deleted, the message is tagged <code>AI-Review</code>, and the reason is written to <code>guard_flags</code>. Yancey never finds a blank reply waiting.</div></div></div>
   </div>
   <div class="note" style="margin-top:16px">
-    <p>Known gap.</p>
-    <p>If <code>Generate Draft</code> throws outright &mdash; a 400 or a timeout &mdash; the error propagates instead of routing to 5b, so the cleanup never fires and an empty draft is orphaned. Seen once during testing. Worth hardening before the credential points at Yancey.</p>
+    <p>Closed: the orphaned draft.</p>
+    <p>If <code>Generate Draft</code> threw outright, the error propagated instead of routing to 5b, the cleanup never fired, and an empty draft was left in the mailbox. Seen once for real.</p>
+    <p>Routing the error output to 5b does <em>not</em> work &mdash; every node on that branch reads <code>$('Voice Guard')</code>, which never ran on the failure path, so the expressions throw and the draft is still stranded. Instead <code>Generate Draft</code> now continues on error and the Voice Guard absorbs the failure, returning <code>ok: false</code> with the draft and message ids the branch needs. It already sourced those from the trigger and the prompt node, both of which have run. No rewiring. The log records <code>draft_failed</code> rather than <code>draft_blocked</code>, so a fault does not read as a decision.</p>
   </div>
 </section>
 
@@ -411,6 +413,7 @@
       <thead><tr><th>Key</th><th>Where</th><th>Now</th><th>What it does</th></tr></thead>
       <tbody>
         <tr><td class="k">draftingEnabled</td><td>WF-A</td><td class="v">true</td><td>The shadow-mode switch, and it is <b>on</b> &mdash; drafts are being written unattended every 2 minutes. Must be <code>false</code> before the credential points at Yancey.</td></tr>
+        <tr><td class="k">draftingMailbox</td><td>WF-A</td><td class="v">gtutor@&hellip;</td><td>The interlock. A message only drafts if this address is on its to or cc, so re-pointing the Outlook credential at Yancey stops drafting rather than redirecting it. <b>Change it in the same action as the credential.</b> Blank blocks all drafting.</td></tr>
         <tr><td class="k">confidenceMin</td><td>WF-A</td><td class="v">0.6</td><td>Below this the item is surfaced rather than drafted, flagged <code>below_confidence_min</code>.</td></tr>
         <tr><td class="k">lookbackHours</td><td>WF-A</td><td class="v">6</td><td>Graph <code>$filter</code> window. Wider means re-reading mail the gates will drop anyway.</td></tr>
         <tr><td class="k">pollBatch</td><td>WF-A</td><td class="v">25</td><td><code>$top</code> on the inbox read.</td></tr>
@@ -422,8 +425,9 @@
         <tr><td class="k">bookingLink</td><td>WF-B</td><td class="v">empty</td><td>Offered when a draft proposes a call. Awaiting Yancey.</td></tr>
         <tr><td class="k">followupDays</td><td>WF-A / C</td><td class="v">3</td><td>Business days of silence before a thread appears under Follow-ups Due.</td></tr>
         <tr><td class="k">autoCloseDays</td><td>WF-C</td><td class="v">21</td><td>Undrafted rows older than this close themselves, so the digest doesn&rsquo;t silt up.</td></tr>
-        <tr><td class="k">mode</td><td>WF-C</td><td class="v">shadow</td><td>Drives the banner at the top of the digest. Set to <code>live</code> when drafting is on.</td></tr>
-        <tr><td class="k">digestTo / alertTo</td><td>WF-C / E</td><td class="v">sandbox</td><td>Both still point at the Resend sandbox address. <b>Error alerts will not reach you until this changes.</b></td></tr>
+        <tr><td class="k">mode</td><td>WF-C</td><td class="v">shadow</td><td>Asks for the shadow banner, but no longer decides it. The banner is suppressed whenever a draft exists, because the digest was printing &ldquo;no replies are being drafted&rdquo; above a list of six.</td></tr>
+        <tr><td class="k">alertTo</td><td>WF-E</td><td class="v">gtutor@&hellip;</td><td>Proven to deliver &mdash; a deliberate failure was run end to end and SMTP accepted it. The Resend sandbox only delivers to the account owner, so any other address is accepted and silently dropped.</td></tr>
+        <tr><td class="k">digestTo</td><td>WF-C</td><td class="v">gtutor@&hellip;</td><td>Points at the dev mailbox, not Yancey. Changing it to him is part of the go-live step &mdash; and WF-C must be rebuilt and redeployed at the same time, because its node in n8n is deliberately one commit behind.</td></tr>
       </tbody>
     </table>
   </div>
@@ -444,6 +448,9 @@
         <tr><td><code>550 You can only send testing emails&hellip;</code></td><td>Resend sandbox. Verify a sending subdomain; the 550 names the one address that will work in the meantime.</td></tr>
         <tr><td>Digest appears in its own next digest</td><td>Sender missing from <code>ignoreSenders</code>. Compounds daily if left.</td></tr>
         <tr><td>Everything classifies as <code>flag_for_yancey</code></td><td>Model output unparseable, so <code>normalizeClassification</code> fails safe. Check <code>guard_flags</code> for <code>unparseable_label</code>.</td></tr>
+        <tr><td>Every error row says <code>unknown workflow</code> / <code>Unknown error</code></td><td>The normaliser read <code>$input</code>, but <code>Config</code> sits between the Error Trigger and it, so <code>$input</code> was the config object and every field fell back. Reads <code>$('On Workflow Error')</code> now. Two real failures were logged blank before this was found.</td></tr>
+        <tr><td>A guard term that has never once fired</td><td>A stem inside a trailing <code>\b</code>. <code>indemnif\b</code> cannot match <code>indemnification</code>, the only form anyone writes. <code>src/guards.test.js</code> now walks every term in every vocabulary against a real sentence, so a term that cannot match its own word fails the suite.</td></tr>
+        <tr><td>Ordinary mail held as a pricing request</td><td>Two phrases far apart reading as one ask. A money noun and a question form now have to sit within 60 characters &mdash; measured against the real cases, which put genuine fee requests 19 apart and the false positives at 107 and 122.</td></tr>
         <tr><td>Silence &mdash; no rows, no errors</td><td>Both gates doing their job, or <code>lookbackHours</code> too narrow after downtime. Widen it once and set it back.</td></tr>
       </tbody>
     </table>
@@ -456,7 +463,7 @@
     <p>The workflows are generated from the repo, not authored in the n8n editor.</p>
   </div>
   <div class="prose">
-    <p>Hand-editing a Code node in n8n works until the next <code>npm run build</code> overwrites it. The chain is <code>src/agent-lib.js</code> &rarr; tree-shaken per node by esbuild &rarr; inlined into the generated SDK source &rarr; deployed. Ninety-five unit tests cover the library, and a parity suite proves the tree-shaken subset that actually ships behaves the same as the module under test.</p>
+    <p>Hand-editing a Code node in n8n works until the next <code>npm run build</code> overwrites it. The chain is <code>src/agent-lib.js</code> &rarr; tree-shaken per node by esbuild &rarr; inlined into the generated SDK source &rarr; deployed. Two hundred and sixty-nine tests cover it: the library itself, a parity suite proving the tree-shaken subset that ships behaves like the module under test, a vocabulary sweep that walks every term in every guard, and &mdash; added after two bugs shipped through the gap &mdash; a suite that executes the Code node <em>bodies</em> with stubbed <code>$</code> and <code>$input</code>, because until then they were only ever strings that nothing ran.</p>
     <p>Three things change without touching code at all: the business profile (edit on the VPS, picked up on the next 2-minute poll &mdash; no restart), anything in a Config node, and the Outlook categories themselves.</p>
   </div>
 </section>
