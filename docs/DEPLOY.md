@@ -930,6 +930,34 @@ cannot see is the point of having a human in this gate at all.
 Drafts regenerate on each run unless `--keep` is passed, so a score always
 refers to text somebody actually read.
 
+## Two guard defects found by writing a demo (2026-08-27)
+
+Building a second demo set and checking the predictions before handing them
+over surfaced two more defects. Neither would have been found by the golden
+set, because neither phrase appears in Yancey's twenty emails.
+
+**"how much" satisfied the pricing rule by itself.** `pricingGuard` requires
+`PRICING_ASK && PRICING_QUESTION` — a money noun *and* a question form, two
+independent signals. "how much" was in both lists, so one phrase satisfied
+both. A commercial-property pitch reading *"given how much Upperform has
+grown"* was escalated to `flag_for_yancey`. It fails safe, but it is the
+failure that erodes trust fastest: junk landing in the "needs you" bucket. It
+is a question form, not a money noun, and now lives only in `PRICING_QUESTION`.
+
+**Two sensitivity stems had never matched anything.** The pattern ends
+`...|indemnif|...)\b/i`, and `indemnif\b` cannot match `indemnification` —
+the only form anyone writes. Same for `whistleblow` against `whistleblower`.
+Both were intended as stems and neither had ever fired. Now `indemni\w*` (short
+enough to also catch `indemnities`, which `indemnif` would have missed) and
+`whistleblow\w*`.
+
+The earlier MSA test email did trigger `sensitivity_guard`, which masked this —
+but it fired on `attorney` and `breach of contract`, never on the
+indemnification clause the email was named for.
+
+Gate 1 re-run after both fixes: PASS, no regression. Deployed and verified
+against seven behavioural cases on the live node.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

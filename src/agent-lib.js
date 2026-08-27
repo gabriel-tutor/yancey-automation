@@ -488,8 +488,11 @@ function clampConfidence(value, fallback) {
   return Math.round(num * 100) / 100;
 }
 
+// Money nouns only. "how much" lives in PRICING_QUESTION and deliberately not
+// here: a term in both lists satisfies `ASK && QUESTION` by itself, which turned
+// "given how much Upperform has grown" into a pricing request.
 const PRICING_ASK =
-  /\b(fee|fees|price|pricing|quote|quotation|cost|costs|estimate|budget|rate card|rates|retainer|proposal amount|how much|ballpark|order of magnitude|not to exceed|nte|scope of work|statement of work|sow|level of effort|loe|time and materials|fixed[- ]fee|day rate|bid)\b/i;
+  /\b(fee|fees|price|pricing|quote|quotation|cost|costs|estimate|budget|rate card|rates|retainer|proposal amount|ballpark|order of magnitude|not to exceed|nte|scope of work|statement of work|sow|level of effort|loe|time and materials|fixed[- ]fee|day rate|bid)\b/i;
 const PRICING_QUESTION = /\b(what would|what will|what does|how much|can you (provide|give|share)|could you (provide|give|share)|send (us|me) (a|your)|provide an? (estimate|indication))\b/i;
 const CURRENCY_IN_TEXT = /(?:[$€£]\s?\d|\b\d[\d,]*\s?(?:k|m)\b|\busd\b|\bdollars?\b|\bper hour\b|\bhourly rate\b)/i;
 
@@ -753,8 +756,11 @@ function addressedToMailbox(toRecipients, ccRecipients, mailbox) {
   return false;
 }
 
+// `indemnif` and `whistleblow` are stems, so they carry their own suffix match.
+// Written as bare alternatives inside the trailing \b they matched nothing:
+// "indemnif\b" cannot match "indemnification".
 const SENSITIVE_TOPICS =
-  /\b(lawsuit|litigation|subpoena|attorney|legal counsel|breach of contract|termination|severance|grievance|harassment|discrimination|press inquiry|journalist|reporter|defamation|non-?compete|indemnif|liability claim|settlement|arbitration|osha|whistleblow)\b/i;
+  /\b(lawsuit|litigation|subpoena|attorney|legal counsel|breach of contract|termination|severance|grievance|harassment|discrimination|press inquiry|journalist|reporter|defamation|non-?compete|indemni\w*|liability claim|settlement|arbitration|osha|whistleblow\w*)\b/i;
 
 /**
  * @param {string} senderEmail

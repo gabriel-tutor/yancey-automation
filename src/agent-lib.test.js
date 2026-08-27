@@ -969,3 +969,56 @@ describe('voicePreChecks — spec §11 Gate 2 automated pre-checks', () => {
     expect(check(r, 'under_word_cap').detail).toContain('150');
   });
 });
+
+describe('pricingGuard — "how much" must not fire on its own', () => {
+  // Found writing a demo: "how much" sat in BOTH the ask list and the question
+  // list, so one innocuous phrase satisfied a rule meant to need two different
+  // signals. A commercial-property pitch was escalated to flag_for_yancey.
+  it('ignores "how much" used about anything but money', () => {
+    const body =
+      'Given how much Upperform has grown since you took Suite 1170, it might ' +
+      'be worth a look before we go to market.';
+    expect(pricingGuard(body, 'Private offices two blocks from Main Street').triggered).toBe(false);
+  });
+
+  it('still fires when "how much" is asked about money', () => {
+    expect(pricingGuard('Roughly how much would the assessment cost?', 'ILI').triggered).toBe(true);
+  });
+
+  it('still fires on the plain fee ask', () => {
+    expect(
+      pricingGuard('Can you provide an estimate of timeline and cost?', 'Scoping').triggered,
+    ).toBe(true);
+  });
+});
+
+describe('sensitivityGuard — word stems that never matched', () => {
+  // The trailing \b in the alternation meant "indemnif" could not match
+  // "indemnification", which is the only form anyone actually writes.
+  it('catches every form of indemnify', () => {
+    for (const word of ['indemnification', 'indemnify', 'indemnities', 'indemnified']) {
+      expect(sensitivityGuard('a@b.com', 'They added an ' + word + ' obligation.', '', []).triggered)
+        .toBe(true);
+    }
+  });
+
+  it('catches every form of whistleblow', () => {
+    for (const word of ['whistleblower', 'whistleblowing', 'whistleblow']) {
+      expect(sensitivityGuard('a@b.com', 'A ' + word + ' complaint was raised.', '', []).triggered)
+        .toBe(true);
+    }
+  });
+
+  it('catches the MSA clause language on its own', () => {
+    const body =
+      'The limitation of liability cap has been reduced, and they have added an ' +
+      'indemnification obligation covering third-party claims.';
+    expect(sensitivityGuard('a@b.com', body, 'MSA renewal', []).triggered).toBe(true);
+  });
+
+  it('does not fire on ordinary delivery talk', () => {
+    expect(
+      sensitivityGuard('a@b.com', 'The crossarm workbook is attached for review.', 'Deck', []).triggered,
+    ).toBe(false);
+  });
+});
