@@ -1114,3 +1114,60 @@ describe('normalizeErrorPayload — the alert has to say what broke', () => {
     expect(e.stack.length).toBeLessThanOrEqual(2000);
   });
 });
+
+describe('pricingGuard — the ask and the question have to be in the same breath', () => {
+  // Found by Gate 1 disagreeing with Yancey on opp-02. PRICING_QUESTION matched
+  // "send me your" in "please send me your updates for the items you are
+  // working on", while PRICING_ASK matched "cost" and "estimate" in a different
+  // message about idling analysis. Two unrelated phrases, hundreds of
+  // characters apart, read together as a fee request.
+  //
+  // Over a 12,000-character thread a generic question form and a money noun
+  // co-occur constantly. They now have to be near each other.
+
+  it('does not fire on a status request that happens to share a thread with cost talk', () => {
+    const thread = [
+      'Please send me your updates for the items you are working on.',
+      '',
+      'Separately: total 2025 idling represents an annual cost of $4M, and we may',
+      'need a low to medium confidence estimate for the hypothesis target.',
+    ].join('\n');
+    expect(pricingGuard(thread, 'RE: ACTION NEEDED').triggered).toBe(false);
+  });
+
+  it('still fires when the ask and the question are one sentence', () => {
+    expect(
+      pricingGuard('Is this possible, and can you provide an estimate of timeline and cost?', 'ILI')
+        .triggered,
+    ).toBe(true);
+  });
+
+  it('still fires across a line break within the same request', () => {
+    expect(
+      pricingGuard('Before we take it to the steering group,\ncan you provide an estimate of cost?', 'Scoping')
+        .triggered,
+    ).toBe(true);
+  });
+
+  it('does not fire on "can you share the deck" beside unrelated budget talk', () => {
+    const thread = [
+      'Can you share the revised deck before Thursday?',
+      '',
+      'For context, the O&M gap grows from $11M in 2026 to $48M in 2027 and the',
+      'budget position is tighter than last cycle.',
+    ].join('\n');
+    expect(pricingGuard(thread, 'RE: Vector').triggered).toBe(false);
+  });
+
+  it('fires when the fee ask is buried in a quoted chain, as before', () => {
+    const thread = [
+      "Let's put together what it would take and walk Kris through it next week.",
+      '',
+      '-----Original Message-----',
+      'From: Kris Murray',
+      '',
+      'Is this possible, and can you provide an estimate of timeline and cost?',
+    ].join('\n');
+    expect(pricingGuard(thread, 'RE: Northern district ILI extension').triggered).toBe(true);
+  });
+});

@@ -1031,6 +1031,51 @@ requires rebuilding and redeploying it, because `digestTo` has to change from
 the dev mailbox to Yancey at the same moment. **Rebuild and redeploy WF-C as
 part of that step; do not publish the node currently sitting there.**
 
+## Gate 1 reaches 100% by fixing the last false positive (2026-08-27)
+
+The remaining disagreement with Yancey was `opp-02`, Shawn's status update on
+crossarm capitalization and vehicle idling. The agent held it with
+`pricing_guard`; Yancey had called it OPPORTUNITY.
+
+It was not a judgement call. `PRICING_QUESTION` matched **"send me your"** in
+*"please send me your updates for the items you are working on"*, while
+`PRICING_ASK` matched **"cost"** and **"estimate"** in a different message about
+idling analysis. Two unrelated phrases, 107 characters apart, read together as a
+fee request.
+
+That is a design flaw rather than one bad term. The rule was *any money noun
+anywhere* AND *any question form anywhere*, and over a 12,000-character thread
+those co-occur constantly in consulting mail — the thread-wide scan amplified
+it enormously.
+
+Both halves now require **proximity**, the same technique already proven in
+`feeAlreadyQuoted`. The window was measured, not guessed:
+
+```
+MUST FIRE  one sentence     closest = 19    can you provide <-> estimate
+MUST FIRE  across a break   closest = 19    can you provide <-> estimate
+MUST FIRE  buried chain     closest = 19    can you provide <-> estimate
+MUST NOT   status request   closest = 107   send me your    <-> cost
+MUST NOT   share the deck   closest = 122   Can you share   <-> budget
+```
+
+60 characters sits between them with margin on both sides.
+
+Result, stable across three consecutive runs:
+
+```
+Agreement (Yancey) 100.0%  (15/15, target >= 90%)
+Missed real work   0
+Drafted junk       0
+Gate 3 pricing     2/2 held
+```
+
+This 100% is earned rather than diluted: it comes from removing a false
+positive, not from averaging Yancey's fixtures in with synthetic ones. The
+figure to quote is **100% across three runs, having been 93.3% before this
+fix** — and it is worth saying that sampling is not pinned, so a future run
+could differ.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

@@ -570,16 +570,52 @@ function matchIndexes(text, pattern) {
 }
 
 /**
+ * How close a money noun and a question form have to be before they count as
+ * one request — about a clause, not a message.
+ *
+ * Measured against the real cases rather than guessed: genuine fee requests in
+ * Yancey's mail put the two 19 characters apart, while the false positives that
+ * prompted this sat at 107 and 122. Sixty leaves margin on both sides.
+ */
+const ASK_PROXIMITY = 60;
+
+/**
+ * Is somebody actually asking for a price here?
+ *
+ * Requires a money noun *near* a question form, not merely both present
+ * somewhere. Over a 12,000-character thread the two co-occur constantly: Gate 1
+ * caught "please send me your updates for the items you are working on" pairing
+ * with "cost" from an unrelated message about idling analysis, and reading the
+ * two together as a fee request.
+ *
+ * @param {string} haystack
+ * @returns {boolean}
+ */
+function asksForAPrice(haystack) {
+  const asks = matchIndexes(haystack, PRICING_ASK);
+  if (asks.length === 0) return false;
+  const questions = matchIndexes(haystack, PRICING_QUESTION);
+  if (questions.length === 0) return false;
+  for (const ask of asks) {
+    for (const question of questions) {
+      if (Math.abs(ask - question) <= ASK_PROXIMITY) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Deterministic backstop for the one failure mode that costs real money: the
  * agent originating or estimating a fee. Spec §11 Gate 3.
  *
  * Pass the WHOLE thread. Found by Gate 1 on Yancey's own mail: NIPSCO asked
  * "can you provide an estimate of timeline and cost?", and by the time Chuck
  * replied "let's write a proposal" the ask was one level down the quoted
- * chain. Scanning only the newest message let it through and the agent drafted
- * a reply about a proposal.
+ * chain. Scanning only the newest message let it through.
  *
- * The stand-down is deliberately narrower than the ask — see feeAlreadyQuoted.
+ * Both halves are deliberately narrower than "the words appear somewhere":
+ * the ask needs a money noun beside a question form (asksForAPrice), and the
+ * stand-down needs a figure beside fee-stating language (feeAlreadyQuoted).
  *
  * @param {string} text
  * @param {string} subject
@@ -587,8 +623,7 @@ function matchIndexes(text, pattern) {
  */
 function pricingGuard(text, subject) {
   const haystack = String(subject || '') + '\n' + String(text || '');
-  const asksPrice = PRICING_ASK.test(haystack) && PRICING_QUESTION.test(haystack);
-  if (!asksPrice) return { triggered: false, reason: '' };
+  if (!asksForAPrice(haystack)) return { triggered: false, reason: '' };
   if (feeAlreadyQuoted(haystack)) {
     return {
       triggered: false,
@@ -1502,6 +1537,7 @@ export {
   GUARD_PATTERNS,
   addBusinessDays,
   addressedToMailbox,
+  asksForAPrice,
   isPassThroughHead,
   addCategory,
   bucketDigestRows,
