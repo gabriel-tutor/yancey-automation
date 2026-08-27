@@ -1121,6 +1121,92 @@ OPENAI_API_KEY=sk-... npm run gate2      # draft + pre-check, writes the JSON
 npm run gate2:artifact                   # inject, re-check, ready to publish
 ```
 
+## Swapping the mailbox to Yancey
+
+### The shape of it
+
+All **17 Outlook nodes across 5 workflows** point at one credential,
+`gBDmBd3jHGBqqQjl`. Nothing repoints per node — re-authenticate that single
+credential and every workflow follows the sign-in at once.
+
+| Workflow | Outlook nodes |
+|---|---|
+| WF-A · Poll & Classify | 2 |
+| WF-B · Draft Reply | 7 |
+| WF-C · Daily Digest | 1 |
+| WF-E · Error Handler | 2 |
+| WF-T · Preflight | 5 |
+
+Do **not** create a second credential and migrate node by node. A half-finished
+migration leaves WF-A reading Yancey and WF-B writing into the dev mailbox,
+which is far worse than losing the dev connection. Re-auth is atomic; node
+migration is not.
+
+### Phase 0 — fix the scopes, and prove it on your own mailbox first
+
+This is the part that must not be done live in front of Yancey. `Mail.Send` is
+currently granted, and WF-T reports `202 Accepted` on its send attempt.
+
+1. n8n → Credentials → **Outlook – Dev (gtutor)**.
+2. Turn on **Custom Scopes** and set exactly:
+   `openid offline_access User.Read Mail.Read Mail.ReadWrite`
+3. **Connect my account**, sign in as gtutor@, approve.
+4. Run **WF-T** and read `sendCheck`. It must now be `PASS`, with a **401 or
+   403** on the send attempt.
+
+If it still returns 202, the tenant has a lingering consent grant: Entra →
+Enterprise applications → the app → Permissions → remove the consent, then
+repeat step 3.
+
+**Do not go past this step until WF-T passes on the dev mailbox.** The whole
+point is to find out the scope change works before Yancey's mail is involved.
+
+### Phase 1 — the swap itself, on the call
+
+5. WF-A Config: `draftingEnabled: false`, `draftingMailbox:
+   YDawson@partnersperform.com`. Publish. Do this **before** the credential
+   changes — the interlock fails closed, so if the credential moves first,
+   drafting stops anyway, but this way nothing is ambiguous.
+6. Same credential → **Connect my account** → Yancey signs in **on his own
+   machine**. He reads the permission list before approving; sending is not on
+   it. That is the moment the explainer tells him to check.
+7. Rename the credential to *Outlook – Yancey (prod)* so nobody later assumes
+   it points at the dev mailbox.
+8. Run **WF-T** again — now against his mailbox. Must `PASS`.
+9. Run **WF-A** once manually. Coloured labels appear in his inbox live. No
+   drafts, because drafting is off.
+
+### Phase 2 — shadow, 2–3 business days
+
+He reports mislabels; the profile is tuned on the VPS and picked up on the next
+poll with no restart. Spec §12 step 4.
+
+### Phase 3 — turn drafting on
+
+10. Confirm `draftingMailbox` is his address, then set `draftingEnabled: true`.
+    Publish. Watch the first few drafts land before leaving it alone.
+
+### Phase 4 — the digest
+
+11. **Blocked on a verified sending domain.** The Resend sandbox only delivers
+    to the account owner, so the digest physically cannot reach Yancey today.
+    Verify `agent.partnersperform.com`, update `digestFrom`.
+12. WF-C: `digestTo` → Yancey, and **rebuild and redeploy WF-C from source** —
+    its node in n8n is deliberately a commit behind and still carries the false
+    shadow-mode banner. Then publish.
+
+### The two things that will bite
+
+**`draftingMailbox` and the credential must move together.** The interlock
+checks the message's own To/Cc against that address. Swap the credential and
+forget the config and the agent labels Yancey's mail correctly but silently
+never drafts — recorded as `mailbox_not_addressed` in `guard_flags`, so it is
+diagnosable, but only if you know to look.
+
+**`alertTo` stays `gtutor@partnersperform.com`.** Error alerts should reach the
+builder, not the client. That address is also the only one the Resend sandbox
+delivers to, which is why alerting works today and the digest does not.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,
