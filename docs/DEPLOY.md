@@ -1611,25 +1611,50 @@ Stability: two consecutive runs, 100% both times. The only variance is how many
 messages the model chooses to surface rather than draft, which moves in the
 conservative direction and fails nothing.
 
+## Live state, 2026-08-28
+
+Published and active in production: **WF-A**, **WF-B**, **WF-C**, **WF-E**.
+WF-A is polling every minute and its scheduled runs are clean.
+
 ## Still open
 
-1. **The digest does not reach Yancey yet.** Schedule and timezone are right,
-   but Resend is on its sandbox sender and refuses every recipient except the
-   account owner with a hard 550, so it lands on Gabriel. Verify
-   `agent.partnersperform.com` in Resend, then flip `digestTo` to
-   `digestToIntended` and `digestFrom` to `agent@partnersperform.com`. Source is
-   kept equal to what is deployed on purpose — the override previously lived
-   only in the live workflow, so a rebuild would have pointed the digest at an
-   address Resend rejects and broken it silently.
+1. **The digest reaches Gabriel, not Yancey — and this cannot be fixed in n8n.**
+   Pointing `digestTo` at `YDawson@partnersperform.com` was tried on 2026-08-28
+   (execution 1392) and Resend refused it outright:
+
+   > 550 You can only send testing emails to your own email address
+   > (gtutor@partnersperform.com). To send emails to other recipients, please
+   > verify a domain at resend.com/domains, and change the `from` address to an
+   > email using this domain.
+
+   Both halves are required *together*. Changing `digestTo` on its own fails,
+   because the restriction is on the shared `onboarding@resend.dev` sender.
+
+   To unblock:
+   1. Add and verify a domain at `resend.com/domains` — `agent.partnersperform.com`
+      is the one the design assumes. This needs DNS records on
+      `partnersperform.com`, so it is a Yancey/IT action, not a Gabriel one.
+   2. Set `digestFrom` to an address on that domain
+      (`agent@partnersperform.com`).
+   3. Set `digestTo` to `YDawson@partnersperform.com`.
+
+   Both values live in `config/deploy.json` under `targets.prod`, and the
+   intended recipient is already recorded there as `digestToIntended`.
+
+   It is deliberately left pointing at Gabriel. Aimed at Yancey it would fail at
+   07:30 every weekday, alert on every failure, and deliver him nothing — worse
+   than arriving somewhere it can be forwarded from.
+
 2. **`Mail.Send` is still granted** on the Entra app. Unused by any workflow,
    but it should come off. Bundled into the SharePoint access request in
    `docs/access-request-sharepoint.md` — same admin, same conversation.
+
 3. **Gate 2 needs regenerating.** Its five voice samples were opp-06, opp-03,
    opp-08, opp-09 and opp-10 — every one of which is now flagged rather than
    drafted. Asking Yancey to rate drafts the system would never write is worse
    than not asking. Rebuild the sample from opp-02, opp-04 and opp-07.
-4. ~~Gate 1 has not been re-run.~~ **Re-run and passing** — see below.
-5. **Nothing is published.** All three workflows are updated as *drafts*; the
-   previously published versions are still serving. Publishing was blocked by
-   the permission classifier, so it needs a human — in the n8n UI, or by
-   re-running with approval.
+
+4. **Tell Yancey the drafting volume before he notices it.** On his own training
+   set these rules produce a draft for roughly 3 opportunities in 10; Chuck
+   accounts for six of the ten. That is his instruction working exactly as
+   written, but it is better heard from Gabriel than discovered.

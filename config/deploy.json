@@ -39,11 +39,11 @@
     }
   },
   "published": {
-    "_note": "Live state as of 2026-08-26. A sub-workflow must be published before any workflow referencing it can be.",
+    "_note": "Live state as of 2026-08-28. WF-A, WF-B, WF-C and WF-E are published and active in production.",
     "wfA": true,
     "wfB": true,
-    "wfE": true,
     "wfC": true,
+    "wfE": true,
     "wfT": false,
     "wfS": false
   },
@@ -75,7 +75,7 @@
       "sharepointCredentialType": null,
       "draftingEnabled": true,
       "digestToIntended": "YDawson@partnersperform.com",
-      "_digestToNote": "Yancey asked for the daily summary at 07:30 Central. The schedule is correct and the timezone is set, but delivery still lands on Gabriel: Resend is on its sandbox sender and refuses any recipient except the account owner with a hard 550. Flip digestTo to digestToIntended and digestFrom to agent@partnersperform.com the moment agent.partnersperform.com is verified in Resend. Source is kept equal to what is deployed on purpose — a previous override lived only in the live workflow, so a rebuild would have pointed the digest at an address Resend rejects and broken it every morning."
+      "_digestToNote": "Yancey asked for the daily summary at 07:30 Central. Schedule and timezone are correct and verified. Delivery still lands on Gabriel because Resend refuses any other recipient - tested 2026-08-28, execution 1392, verbatim: \"550 You can only send testing emails to your own email address (gtutor@partnersperform.com). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain.\" Both halves are required together: verify the domain AND move digestFrom onto it. Changing digestTo alone fails. Left pointing at Yancey the digest would fail silently every weekday, so it is deliberately reverted until the domain exists."
     },
     "dev": {
       "label": "gtutor sandbox",
