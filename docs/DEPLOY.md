@@ -1503,6 +1503,70 @@ more than has been proven: the Entra app still holds `Mail.Send` (see the open
 item below), so the honest claim is that *no workflow sends from his mailbox*.
 The digest footer now says exactly that.
 
+## Verified live in the dev sandbox, 2026-08-28
+
+Every rule was exercised against real mail delivered to
+`gtutor@partnersperform.com` before anything was published to Yancey's
+workflows. Seeded fixtures for the internal cases, and two genuinely sent
+emails from an outside address for the external rule.
+
+| Message | Sender | Result | Guard |
+|---|---|---|---|
+| crossarm workbook | scorkran@ (colleague) | opportunity, **draft written** | — |
+| O&M framing | dyoes@ (colleague) | opportunity, **draft written** | — |
+| Pulse rollout | **ccoleman@** | flag, no draft | `always_flag_sender` |
+| change order | dyoes@ | flag, no draft | `sensitivity:approval` |
+| ILI program | kris.murray@nisource.com | flag, no draft | `pricing_guard` |
+| AGA follow-up | outside address | flag, no draft | **`external_sender`** |
+| GridSignal newsletter | outside address | **noise**, not flagged | — |
+
+Three of these are the ones that would have caught a careless implementation.
+
+**The AGA follow-up is the behaviour change.** The classifier understood it
+perfectly — *"a utility reliability leader is following up on Yancey's CAIDI
+work and requesting a call to discuss a potential engagement approach"*, 0.98
+confidence. Before 2026-08-28 that would have been drafted. The sender rule held
+it instead, and it carries `AI-Review` rather than `AI-Action`.
+
+**The newsletter proves the rule does not over-reach.** Also an outside sender,
+also correctly understood, and it stayed `noise` with no guard and no
+`AI-Review` category — so it never reaches the 07:30 digest.
+
+**The O&M email proves the topic guards do not over-reach.** It says "reducing
+operating expense" and "realizing benefits", one word away from the financial
+and HR vocabularies, and it drafted normally.
+
+The draft that was written, in full:
+
+> Hey Shawn,
+>
+> Yes, I'll pull the crossarm workbook together for Thursday's Momentum Room and
+> make sure the capitalization approach is laid out clearly for the SLT.
+>
+> I'll get you a draft ahead of the session so we can make any tweaks needed.
+>
+> Thanks,
+>
+> Yancey Dawson
+
+45 words, his signature as he specified it, no booking link offered, voice guard
+clean. `followup_due_at` came back **2026-09-02** — Friday plus three business
+days with the weekend skipped.
+
+### Two bugs the dev run found that had nothing to do with the new rules
+
+1. **WF-S was bound to Yancey's live mailbox.** Its `Plant in Inbox` node used
+   credential `gBDmBd3jHGBqqQjl`, whose cached label read "Outlook – Dev
+   (gtutor)". That ID is *Outlook – Yancey*. Running the seeder would have
+   written six fabricated emails into a live client inbox while its sticky note
+   promised dev-only. `deploy.json` carried the same wrong mapping. Both fixed;
+   the seeder now refuses to build for prod.
+2. **`Tag in Outlook` throttles under burst.** Thirteen messages returned 429
+   `ApplicationThrottled`; `retryOnFail` does not help because every request
+   hits the ceiling together. WF-A dies at that node, so the log rows below it
+   never get written and those messages never reach the digest — a burst after a
+   quiet weekend would have read as the agent ignoring the inbox. Now serialised.
+
 ## Still open
 
 1. **The digest does not reach Yancey yet.** Schedule and timezone are right,
@@ -1521,8 +1585,9 @@ The digest footer now says exactly that.
    drafted. Asking Yancey to rate drafts the system would never write is worse
    than not asking. Rebuild the sample from opp-02, opp-04 and opp-07.
 4. **Gate 1 has not been re-run** since the policy change. It needs
-   `OPENAI_API_KEY` inline. Unit coverage is 387 tests including the deployed
-   node bodies, but the gate is the one that scores against his real mail.
+   `OPENAI_API_KEY` inline. Coverage is otherwise strong — 387 unit tests
+   including the deployed node bodies, plus the live dev run above — but Gate 1
+   is the only thing that scores against Yancey's own fifteen labelled emails.
 5. **Nothing is published.** All three workflows are updated as *drafts*; the
    previously published versions are still serving. Publishing was blocked by
    the permission classifier, so it needs a human — in the n8n UI, or by
