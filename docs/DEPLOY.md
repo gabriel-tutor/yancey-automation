@@ -1611,65 +1611,73 @@ Stability: two consecutive runs, 100% both times. The only variance is how many
 messages the model chooses to surface rather than draft, which moves in the
 conservative direction and fails nothing.
 
-## Live state, 2026-08-28
+## Live state, 2026-08-28 (second round)
 
-Published and active in production: **WF-A**, **WF-B**, **WF-C**, **WF-E**.
-WF-A polls every minute; WF-C delivers at 07:30 America/Chicago, Mon–Fri.
+Published and active: **WF-A**, **WF-B**, **WF-C**, **WF-E**. WF-A polls every
+minute; WF-C writes the digest into Yancey's inbox at 07:30 America/Chicago,
+Mon–Fri. Gate 1 + Gate 3 PASS at 100% on his fifteen labelled emails, twice, at
+the new 0.80 floor. 436 tests, typecheck clean.
 
-**The digest reaches Yancey.** Verified in production, execution 1437: the
-message is in his inbox, `isDraft: false`, unread, from "Upperform inbox
-assistant", and its first real entry is an SCE email from James Vallecorsa that
-arrived at 15:07 — flagged `external_sender` and rendered as *"held: outside
-partnersperform.com"*.
+Verified in production (execution 1476): the digest carries a real SCE email
+from James Vallecorsa held as *"outside partnersperform.com"*, and a
+"Processed as noise" entry for a Quran Coleman message with the classifier's
+reasoning attached so a misclassification would be visible.
 
-### How it is delivered, and why not by email
+### His six items
 
-Resend refused to deliver to anyone but the account owner without a verified
-domain (execution 1392, hard 550). Rather than wait on DNS, the digest is now
-**written directly into the mailbox**:
+| # | Asked for | State |
+|---|---|---|
+| 1 | Chuck Coleman always flagged, never drafted | already live; unchanged |
+| 2 | Hold anything commercial, **even if a price was quoted** | built — suppression removed, categorical term list added |
+| 3 | Upperform scheduling vs personal admin vs vendor scheduling | built — explicit rule in the classifier prompt |
+| 4 | "Processed as Noise" section for the rollout | built — each item shown once, then closed |
+| 5 | Confidence floor 0.80 | built |
+| 6 | AI-Action vs AI-Drafted, and draft failure | clarified **and fixed** — they were not mutually exclusive |
 
-```
-POST /me/mailFolders/inbox/messages     (Mail.ReadWrite)
-```
+### On item 2, and where the implementation is narrower than his sentence
 
-That is the same permission that already writes his drafts, so it needs nothing
-new. `sendMail` is never called — the no-send promise still holds, and it holds
-more simply than before: *nothing is sent by anyone*. The footer he reads says
-exactly that.
+He named six things: pricing, fees, estimates, proposals, scope changes,
+commercial terms. Four are matched literally. **`estimate`, `proposal`, `price`
+and `cost` are deliberately not**, because in his own mail they carry innocent
+meanings — "DRAFT Proposal for Kickoff Meeting Deck" is a deck, and opp-02's
+"low to medium confidence estimate for the hypothesis target" is a statistical
+estimate in an email he wants drafted. Matching them literally held two emails
+from his own labelled set for no reason.
 
-Three properties worth keeping:
+Those four stay behind the two-signal test that also needs a question form, and
+his sentence is carried in full by the classifier prompt, so the semantic
+judgement is made by the model and the literal list is the deterministic
+backstop underneath it. Worth saying to him plainly rather than claiming the
+rule is purely literal.
 
-- **No domain, no third party.** Resend and SMTP are out of the picture.
-- **It cannot be misaddressed.** The POST targets `/me`, so the digest can only
-  land in the mailbox the credential owns. `digestTo` is the displayed To:
-  header and nothing more. An SMTP recipient could be typo'd to an outsider;
-  this cannot.
-- **The agent will not classify its own digest.** `digestFrom` is
-  `assistant@agent.partnersperform.com`, already in WF-A's `ignoreSenders`.
+### On item 6, which turned out to be a defect
 
-`digestFrom` is a display identity. It never has to exist or be verified.
+The categories were not mutually exclusive. A message classified `opportunity`
+got `AI-Action`; if its draft then failed, WF-B added `AI-Review` without
+removing `AI-Action`, so it carried both. That is exactly the confusion he was
+asking about. Fixed: `AI-Action` is cleared whenever no draft is written.
 
-**Do not "simplify" this to `/me/sendMail`.** It would grant the automation the
-ability to email anyone as Yancey, contradict the footer, and undo the pending
-request to strip `Mail.Send` from the Entra app. Yancey personally asked how the
-summary was delivered; the answer has to stay true.
+The four categories now mean:
+
+- **AI-Processed** — the assistant read it. Always applied.
+- **AI-Action** — it needs Yancey, and the assistant is handling it.
+- **AI-Review** — the assistant deliberately did not draft. Over to him.
+- **AI-Drafted** — a reply is waiting in Drafts.
+
+`AI-Action` and `AI-Review` never appear together. If a draft fails, the empty
+draft is deleted, the message is tagged `AI-Review`, the row is logged
+`draft_failed`, and WF-E raises an alert.
 
 ## Still open
 
-1. **`Mail.Send` is still granted** on the Entra app. Now genuinely unused by
-   anything — the last thing that might have wanted it was the digest, and it
-   does not. Bundled into the SharePoint access request in
-   `docs/access-request-sharepoint.md`.
-
-2. **Gate 2 needs regenerating.** Its five voice samples were opp-06, opp-03,
-   opp-08, opp-09 and opp-10 — every one of which is now flagged rather than
-   drafted. Rebuild the sample from opp-02, opp-04 and opp-07 before asking
-   Yancey to rate anything.
-
-3. **Tell Yancey the drafting volume before he notices it.** On his own training
-   set these rules produce a draft for roughly 3 opportunities in 10; Chuck
-   accounts for six of the ten. That is his instruction working as written, but
-   it is better heard from Gabriel than discovered.
-
-4. **Resend is no longer used by anything.** The SMTP credential and the Resend
-   account can be retired unless something else needs them.
+1. **`Mail.Send` is still granted** on the Entra app. Unused by anything —
+   the digest is written, not sent. Bundled into the SharePoint access request.
+   **Yancey asked directly whether the send-permission test has passed: it has
+   not.** WF-T still reports `noSendInvariantProven: false`.
+2. **Gate 2 needs regenerating** from opp-02, opp-04 and opp-07; its old samples
+   are all now flagged rather than drafted.
+3. **Drafting volume is low and he should hear it from Gabriel.** With his
+   rules, on his own twenty-email training set, no draft is written for any of
+   the ten opportunities: six are Chuck, one is external, and on the remaining
+   three the classifier itself judged that no reply was warranted. The triage is
+   doing the work; the drafting is deliberately conservative.
