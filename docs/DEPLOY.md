@@ -1207,6 +1207,62 @@ diagnosable, but only if you know to look.
 builder, not the client. That address is also the only one the Resend sandbox
 delivers to, which is why alerting works today and the digest does not.
 
+## The dev sandbox (2026-08-28)
+
+Yancey's mailbox is now live on the published workflows, so testing needs its
+own everything. The build is target-aware: `npm run build` is prod,
+`TARGET=dev npm run build` is the sandbox.
+
+| Resource | prod | dev |
+|---|---|---|
+| Outlook credential | `gBDmBd3jHGBqqQjl` Outlook – Yancey | `vNJuWdSXhjzB0Jo1` Outlook – Dev (gtutor) |
+| Email log | `zGcPKOA90SMVEenJ` | `JZP4Wzctro2gA3ya` agent_email_log_dev |
+| Error log | `Q6j7VEadubVstttP` | `y7IZKnJoNHt6sNiq` agent_error_log_dev |
+| WF-A | `dSGzw1yk46JTHD3Z` | `O6f4ck4gjG2KePBL` |
+| WF-B | `Rjpk5KuPopQCpCQL` | `Ps0RYrfT3auUNwKw` |
+| WF-C | `vCbgJoNqfuVOqWGH` | `bbKJUs1WTX8kjixP` |
+| WF-E | `XSKk6eHTFGqftrUM` | `E302rNL5D7NuBy5c` |
+| WF-T | archived | `8Y3MEkP7A4kEiuGK` |
+
+### Duplicating in the UI points everything at production
+
+n8n copies node parameters verbatim, so a duplicated workflow inherits the
+live credential, the live data tables, the live sub-workflow id and the live
+error workflow. `dev - WF-A` arrived calling **prod WF-B**, with
+`draftingEnabled: true` and `draftingMailbox: YDawson@partnersperform.com` —
+running it would have driven drafts into a client mailbox from a sandbox.
+
+Two other traps in the same operation. Duplicates come back with
+`availableInMCP: false`, so they cannot be edited over MCP until that is turned
+on. And WF-A's two Outlook nodes arrived **unbound** rather than pointing at
+prod, which is the safer failure but easy to miss.
+
+An error workflow must be **published** before it can be set as one, so the
+order is: wire dev WF-E, publish it, then wire the rest.
+
+Verified afterwards by scanning every dev node for a prod credential, table,
+sub-workflow id or error workflow: **no dev workflow touches production.**
+
+### The build hardcoded a credential name, which had become dangerous
+
+Generators emitted `newCredential('Outlook – Dev (gtutor)')`. Yancey's
+credential was renamed to *Outlook – Yancey* and a **new** credential took the
+old name — so rebuilding prod from source would have repointed his workflows at
+the dev mailbox. The name now comes from the target config.
+
+Worth knowing: `newCredential()` by name creates a *placeholder*, not a
+binding. Credentials have to be attached by id with `setNodeCredential`.
+
+### State
+
+`dev WF-B` and `dev WF-E` are published because a sub-workflow and an error
+workflow have to be. Neither self-triggers. `dev WF-A` and `dev WF-C` are
+deliberately **unpublished** — publishing WF-A starts a 2-minute poll, and a
+scheduled dev digest is not wanted. Run them manually.
+
+`dev WF-A` has `draftingEnabled: false` and `draftingMailbox` set to gtutor, so
+the interlock fails closed even if the flag is flipped without thinking.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

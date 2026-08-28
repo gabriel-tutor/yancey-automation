@@ -1,4 +1,4 @@
-import { E, GRAPH, S, SDK_IMPORT } from './shared.mjs';
+import { E, GRAPH, S, SDK_IMPORT, OUTLOOK_CREDENTIAL, SUFFIX, TABLES } from './shared.mjs';
 
 const BUILD_MESSAGES = `
 // Representative fixtures planted straight into the inbox via Graph. We cannot
@@ -58,7 +58,7 @@ return messages.map(m => ({
 }));
 `;
 
-export const NAME = 'WF-S · Seed Test Inbox';
+export const NAME = 'WF-S · Seed Test Inbox' + SUFFIX;
 
 export async function build() {
   return `${SDK_IMPORT}
@@ -108,7 +108,7 @@ const plantInInbox = node({
       jsonBody: ${E('{{ JSON.stringify($json.payload) }}')},
       options: { timeout: 20000, response: { response: { responseFormat: 'json' } } }
     },
-    credentials: { microsoftOutlookOAuth2Api: newCredential('Outlook – Dev (gtutor)') },
+    credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
     position: [600, 0]
   },
   output: [{ id: 'AAMkSEED', subject: 'Vector CI working session — crossarm workbook' }]

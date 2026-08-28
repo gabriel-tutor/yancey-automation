@@ -8,6 +8,25 @@ export const ROOT = join(here, '..');
 export const DEPLOY = JSON.parse(readFileSync(join(ROOT, 'config/deploy.json'), 'utf8'));
 
 /**
+ * Which mailbox this build targets. `npm run build` is prod (Yancey);
+ * `TARGET=dev npm run build` is the gtutor sandbox.
+ *
+ * The credential is referenced by *name* in generated SDK code, so this is not
+ * cosmetic: with the name hardcoded, renaming a credential in n8n silently
+ * repoints every workflow built afterwards. Yancey's credential was renamed
+ * from "Outlook – Dev (gtutor)" to "Outlook – Yancey", and a new dev
+ * credential took the old name — so a prod rebuild would have pointed his
+ * workflows at the dev mailbox.
+ */
+const TARGET_NAME = process.env.TARGET === 'dev' ? 'dev' : 'prod';
+export const TARGET = { name: TARGET_NAME, ...DEPLOY.targets[TARGET_NAME] };
+export const OUTLOOK_CREDENTIAL = TARGET.outlookCredential;
+export const TABLES = TARGET.dataTables;
+
+/** Suffix appended to every workflow name, so dev copies are unmistakable. */
+export const SUFFIX = TARGET.nameSuffix;
+
+/**
  * JS string literal, safe for embedding in generated SDK source.
  * @param {unknown} value
  * @returns {string}

@@ -1,15 +1,15 @@
 import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from './helpers-manifest.mjs';
-import { DEPLOY, E, GRAPH, S, SDK_IMPORT } from './shared.mjs';
+import { DEPLOY, E, GRAPH, S, SDK_IMPORT, OUTLOOK_CREDENTIAL, SUFFIX, TABLES, TARGET } from './shared.mjs';
 
 const CONFIG = {
   digestFrom: 'agent@partnersperform.com',
-  digestTo: 'YDawson@partnersperform.com',
+  digestTo: TARGET.digestTo,
   digestCc: '',
   followupDays: 3,
   autoCloseDays: 21,
   mode: 'shadow',
-  mailboxLabel: 'gtutor@partnersperform.com (dev mailbox)',
+  mailboxLabel: TARGET.mailboxLabel,
   graphBase: GRAPH,
 };
 
@@ -71,7 +71,7 @@ return [{
 }];
 `;
 
-export const NAME = 'WF-C · Daily Digest & Follow-ups';
+export const NAME = 'WF-C · Daily Digest & Follow-ups' + SUFFIX;
 
 export async function build() {
   const buildDigestCode = await codeNode(
@@ -136,7 +136,7 @@ const fetchOpenDrafts = node({
       },
       options: { timeout: 30000, response: { response: { responseFormat: 'json' } } }
     },
-    credentials: { microsoftOutlookOAuth2Api: newCredential('Outlook – Dev (gtutor)') },
+    credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
     position: [400, 0]
   },
   output: [{ value: [{ id: 'AAMkDRAFT' }] }]
@@ -152,7 +152,7 @@ const fetchRecentErrors = node({
     parameters: {
       resource: 'row',
       operation: 'get',
-      dataTableId: { __rl: true, mode: 'id', value: ${S(DEPLOY.dataTables.errorLog)}, cachedResultName: 'agent_error_log' },
+      dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.errorLog)}, cachedResultName: ${S(TABLES.errorLogName)} },
       matchType: 'allConditions',
       filters: { conditions: [{ keyName: 'occurred_at', condition: 'gt', keyValue: ${E('{{ $now.minus({ hours: 24 }).toISO() }}')} }] },
       returnAll: false,
@@ -176,7 +176,7 @@ const fetchLogRows = node({
     parameters: {
       resource: 'row',
       operation: 'get',
-      dataTableId: { __rl: true, mode: 'id', value: ${S(DEPLOY.dataTables.emailLog)}, cachedResultName: 'agent_email_log' },
+      dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.emailLog)}, cachedResultName: ${S(TABLES.emailLogName)} },
       matchType: 'allConditions',
       filters: {
         conditions: [
@@ -246,7 +246,7 @@ const markResolved = node({
     parameters: {
       resource: 'row',
       operation: 'update',
-      dataTableId: { __rl: true, mode: 'id', value: ${S(DEPLOY.dataTables.emailLog)}, cachedResultName: 'agent_email_log' },
+      dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.emailLog)}, cachedResultName: ${S(TABLES.emailLogName)} },
       matchType: 'allConditions',
       filters: { conditions: [{ keyName: 'message_id', condition: 'eq', keyValue: ${E('{{ $json.message_id }}')} }] },
       columns: {

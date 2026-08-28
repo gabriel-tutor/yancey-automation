@@ -1,6 +1,6 @@
 import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from './helpers-manifest.mjs';
-import { DEPLOY, E, GRAPH, S, SDK_IMPORT } from './shared.mjs';
+import { DEPLOY, E, GRAPH, S, SDK_IMPORT, OUTLOOK_CREDENTIAL, SUFFIX, TABLES } from './shared.mjs';
 
 const CONFIG = {
   alertFrom: 'agent@partnersperform.com',
@@ -32,7 +32,7 @@ if (out.length === 0) {
 return out;
 `;
 
-export const NAME = 'WF-E · Error Handler';
+export const NAME = 'WF-E · Error Handler' + SUFFIX;
 
 export async function build() {
   const normalizeErrorCode = await codeNode(
@@ -80,7 +80,7 @@ const logError = node({
     parameters: {
       resource: 'row',
       operation: 'insert',
-      dataTableId: { __rl: true, mode: 'id', value: ${S(DEPLOY.dataTables.errorLog)}, cachedResultName: 'agent_error_log' },
+      dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.errorLog)}, cachedResultName: ${S(TABLES.errorLogName)} },
       columns: {
         mappingMode: 'defineBelow',
         value: {
@@ -161,7 +161,7 @@ const readCategories = node({
       nodeCredentialType: 'microsoftOutlookOAuth2Api',
       options: { timeout: 20000, response: { response: { responseFormat: 'json', neverError: true } } }
     },
-    credentials: { microsoftOutlookOAuth2Api: newCredential('Outlook – Dev (gtutor)') },
+    credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
     position: [880, 180]
   },
   output: [{ categories: ['AI-Processed', 'AI-Action'] }]
@@ -184,7 +184,7 @@ const tagAiError = node({
       jsonBody: ${E('{{ JSON.stringify({ categories: ($json.categories || []).filter(c => c !== "AI-Error").concat(["AI-Error"]) }) }}')},
       options: { timeout: 20000 }
     },
-    credentials: { microsoftOutlookOAuth2Api: newCredential('Outlook – Dev (gtutor)') },
+    credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
     position: [1120, 180]
   },
   output: [{ id: 'AAMk', categories: ['AI-Processed', 'AI-Action', 'AI-Error'] }]

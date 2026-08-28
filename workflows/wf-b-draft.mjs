@@ -1,6 +1,6 @@
 import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from './helpers-manifest.mjs';
-import { DEPLOY, E, GRAPH, S, SDK_IMPORT, contextLoaderNodes } from './shared.mjs';
+import { DEPLOY, E, GRAPH, S, SDK_IMPORT, contextLoaderNodes, OUTLOOK_CREDENTIAL, SUFFIX, TABLES } from './shared.mjs';
 
 const CONFIG = {
   modelDraft: 'gpt-5.6-terra',
@@ -137,9 +137,10 @@ return [{
 }];
 `;
 
-const OUTLOOK_CRED = "credentials: { microsoftOutlookOAuth2Api: newCredential('Outlook – Dev (gtutor)') }";
+const OUTLOOK_CRED =
+  'credentials: { microsoftOutlookOAuth2Api: newCredential(' + S(OUTLOOK_CREDENTIAL) + ') }';
 
-export const NAME = 'WF-B · Draft Reply';
+export const NAME = 'WF-B · Draft Reply' + SUFFIX;
 
 export async function build() {
   const resolveContextCode = await codeNode(
@@ -372,7 +373,7 @@ const updateLogDrafted = node({
     parameters: {
       resource: 'row',
       operation: 'update',
-      dataTableId: { __rl: true, mode: 'id', value: ${S(DEPLOY.dataTables.emailLog)}, cachedResultName: 'agent_email_log' },
+      dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.emailLog)}, cachedResultName: ${S(TABLES.emailLogName)} },
       matchType: 'allConditions',
       filters: { conditions: [{ keyName: 'message_id', condition: 'eq', keyValue: ${E("{{ $('Voice Guard').first().json.messageId }}")} }] },
       columns: {
@@ -468,7 +469,7 @@ const updateLogBlocked = node({
     parameters: {
       resource: 'row',
       operation: 'update',
-      dataTableId: { __rl: true, mode: 'id', value: ${S(DEPLOY.dataTables.emailLog)}, cachedResultName: 'agent_email_log' },
+      dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.emailLog)}, cachedResultName: ${S(TABLES.emailLogName)} },
       matchType: 'allConditions',
       filters: { conditions: [{ keyName: 'message_id', condition: 'eq', keyValue: ${E("{{ $('Voice Guard').first().json.messageId }}")} }] },
       columns: {

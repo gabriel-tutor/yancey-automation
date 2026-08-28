@@ -40,5 +40,53 @@
     "wfC": false,
     "wfT": false,
     "wfS": false
+  },
+  "_note": "Two targets. `npm run build` uses prod; `TARGET=dev npm run build` uses dev. The credential is referenced by NAME in the generated SDK, so renaming one in n8n silently repoints every workflow built afterwards \u2014 which is why the name lives here.",
+  "targets": {
+    "prod": {
+      "label": "Yancey (live)",
+      "nameSuffix": "",
+      "outlookCredential": "Outlook \u2013 Yancey",
+      "dataTables": {
+        "emailLog": "zGcPKOA90SMVEenJ",
+        "emailLogName": "agent_email_log",
+        "errorLog": "Q6j7VEadubVstttP",
+        "errorLogName": "agent_error_log"
+      },
+      "workflows": {
+        "wfA": "dSGzw1yk46JTHD3Z",
+        "wfB": "Rjpk5KuPopQCpCQL",
+        "wfC": "vCbgJoNqfuVOqWGH",
+        "wfE": "XSKk6eHTFGqftrUM",
+        "wfT": "1fCjIsw2JjVGkNJb",
+        "wfS": "CNttEItjnRC4RkZZ"
+      },
+      "digestTo": "YDawson@partnersperform.com",
+      "mailboxLabel": "YDawson@partnersperform.com",
+      "draftingMailbox": "YDawson@partnersperform.com",
+      "outlookCredentialId": "gBDmBd3jHGBqqQjl"
+    },
+    "dev": {
+      "label": "gtutor sandbox",
+      "nameSuffix": " \u00b7 dev",
+      "outlookCredential": "Outlook \u2013 Dev (gtutor)",
+      "dataTables": {
+        "emailLog": "JZP4Wzctro2gA3ya",
+        "emailLogName": "agent_email_log_dev",
+        "errorLog": "y7IZKnJoNHt6sNiq",
+        "errorLogName": "agent_error_log_dev"
+      },
+      "workflows": {
+        "wfA": "O6f4ck4gjG2KePBL",
+        "wfB": "Ps0RYrfT3auUNwKw",
+        "wfC": "bbKJUs1WTX8kjixP",
+        "wfE": "E302rNL5D7NuBy5c",
+        "wfT": "8Y3MEkP7A4kEiuGK"
+      },
+      "digestTo": "gtutor@partnersperform.com",
+      "mailboxLabel": "gtutor@partnersperform.com (dev sandbox)",
+      "draftingMailbox": "gtutor@partnersperform.com",
+      "outlookCredentialId": "vNJuWdSXhjzB0Jo1"
+    }
   }
 }

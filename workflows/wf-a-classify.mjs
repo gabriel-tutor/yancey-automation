@@ -1,7 +1,7 @@
 import { codeNode } from '../scripts/bundle.mjs';
 import { CLASSIFY_SCHEMA } from '../src/prompts.js';
 import { HELPERS } from './helpers-manifest.mjs';
-import { DEPLOY, E, GRAPH, S, SDK_IMPORT, contextLoaderNodes } from './shared.mjs';
+import { DEPLOY, E, GRAPH, S, SDK_IMPORT, contextLoaderNodes, OUTLOOK_CREDENTIAL, SUFFIX, TABLES, TARGET } from './shared.mjs';
 
 const CONFIG = {
   modelClassify: 'gpt-5.6-luna',
@@ -15,7 +15,7 @@ const CONFIG = {
   // re-pointed (at Yancey, say) while draftingEnabled is still true, messages
   // stop matching this and the agent falls back to labelling only. Update it
   // deliberately at handover — never leave it blank, which blocks all drafting.
-  draftingMailbox: 'gtutor@partnersperform.com',
+  draftingMailbox: TARGET.draftingMailbox,
   alwaysFlagSenders: [],
   ignoreSenders: [
     'onboarding@resend.dev',
@@ -133,7 +133,7 @@ return {
 };
 `;
 
-export const NAME = 'WF-A · Poll & Classify';
+export const NAME = 'WF-A · Poll & Classify' + SUFFIX;
 
 export async function build() {
   const wfB = DEPLOY.workflows.wfB;
@@ -217,7 +217,7 @@ const fetchInbox = node({
       },
       options: { timeout: 30000, response: { response: { responseFormat: 'json' } } }
     },
-    credentials: { microsoftOutlookOAuth2Api: newCredential('Outlook – Dev (gtutor)') },
+    credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
     position: [1000, 0]
   },
   output: [{ value: [{ id: 'AAMkAGI2', subject: 'RE: Vector CI working session', categories: [], receivedDateTime: '2026-08-26T11:58:00Z' }] }]
@@ -263,7 +263,7 @@ const skipLogged = node({
     parameters: {
       resource: 'row',
       operation: 'rowNotExists',
-      dataTableId: { __rl: true, mode: 'id', value: ${S(DEPLOY.dataTables.emailLog)}, cachedResultName: 'agent_email_log' },
+      dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.emailLog)}, cachedResultName: ${S(TABLES.emailLogName)} },
       matchType: 'allConditions',
       filters: { conditions: [{ keyName: 'message_id', condition: 'eq', keyValue: ${E('{{ $json.id }}')} }] }
     },
@@ -348,7 +348,7 @@ const tagInOutlook = node({
       jsonBody: ${E('{{ JSON.stringify({ categories: $json.categories }) }}')},
       options: { timeout: 20000 }
     },
-    credentials: { microsoftOutlookOAuth2Api: newCredential('Outlook – Dev (gtutor)') },
+    credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
     position: [2400, 0]
   },
   output: [{ id: 'AAMkAGI2', categories: ['AI-Processed', 'AI-Action'] }]
@@ -362,7 +362,7 @@ const logClassification = node({
     parameters: {
       resource: 'row',
       operation: 'insert',
-      dataTableId: { __rl: true, mode: 'id', value: ${S(DEPLOY.dataTables.emailLog)}, cachedResultName: 'agent_email_log' },
+      dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.emailLog)}, cachedResultName: ${S(TABLES.emailLogName)} },
       columns: {
         mappingMode: 'defineBelow',
         value: {

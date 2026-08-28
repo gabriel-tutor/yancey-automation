@@ -1,4 +1,4 @@
-import { E, GRAPH, S, SDK_IMPORT } from './shared.mjs';
+import { E, GRAPH, S, SDK_IMPORT, OUTLOOK_CREDENTIAL, SUFFIX, TABLES } from './shared.mjs';
 
 const CONFIG = {
   graphBase: GRAPH,
@@ -110,7 +110,7 @@ return [{
 }];
 `;
 
-export const NAME = 'WF-T · Preflight (scope proof)';
+export const NAME = 'WF-T · Preflight (scope proof)' + SUFFIX;
 
 function graphNode(varName, label, method, urlSuffix, position, jsonBody) {
   return `
@@ -134,7 +134,7 @@ const ${varName} = node({
         response: { response: { responseFormat: 'json', fullResponse: true, neverError: true } }
       }
     },
-    credentials: { microsoftOutlookOAuth2Api: newCredential('Outlook – Dev (gtutor)') },
+    credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
     position: [${position}]
   },
   output: [{ statusCode: 200, body: {} }]
