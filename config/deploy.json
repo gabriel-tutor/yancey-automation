@@ -16,11 +16,6 @@
   "n8nBaseUrl": "https://n8n-wevu.srv1921545.hstgr.cloud",
   "credentials": {
     "_note": "IDs only. Secrets live in n8n, encrypted under N8N_ENCRYPTION_KEY. Never store keys here.",
-    "outlookDev": {
-      "id": "gBDmBd3jHGBqqQjl",
-      "name": "Outlook – Dev (gtutor)",
-      "type": "microsoftOutlookOAuth2Api"
-    },
     "smtp": {
       "id": "zf9Tel6L2frlA9MB",
       "name": "SMTP account",
@@ -30,6 +25,17 @@
       "id": "rAIYGuFHzE6oTea9",
       "name": "OpenAI account",
       "type": "openAiApi"
+    },
+    "_credentialNote": "n8n caches a credential's display name inside each node, so a renamed credential leaves stale labels behind and the ID is the only thing that means anything. This block used to map gBDmBd3jHGBqqQjl to 'Outlook - Dev (gtutor)'; that ID is in fact 'Outlook - Yancey', the production credential. WF-S's seeder inherited the mistake and was bound to Yancey's live mailbox while its sticky note promised dev-only. Use targets.<env>.outlookCredentialId.",
+    "outlookProd": {
+      "id": "gBDmBd3jHGBqqQjl",
+      "name": "Outlook – Yancey",
+      "type": "microsoftOutlookOAuth2Api"
+    },
+    "outlookDev": {
+      "id": "vNJuWdSXhjzB0Jo1",
+      "name": "Outlook – Dev (gtutor)",
+      "type": "microsoftOutlookOAuth2Api"
     }
   },
   "published": {
@@ -37,7 +43,7 @@
     "wfA": true,
     "wfB": true,
     "wfE": true,
-    "wfC": false,
+    "wfC": true,
     "wfT": false,
     "wfS": false
   },
