@@ -213,8 +213,9 @@ function buildDraftSystemPrompt(profile, options) {
     '   [CONFIRM] in place.',
     '2. Never state, originate, or estimate a fee. Not a range, not a ballpark,',
     '   not an order of magnitude.',
-    '3. Acknowledge attachments without claiming to have read them ("I\'ll review',
-    '   the workbook and come back to you").',
+    '3. Only describe an attachment if its contents appear under ATTACHMENTS',
+    '   below. If they do not, acknowledge it without claiming to have read it',
+    '   ("I\'ll review the workbook and come back to you").',
     '4. No sales language, no superlatives, no "I hope this email finds you well".',
     '5. Under ' + maxWords + ' words unless the inbound message is genuinely detailed.',
     bookingLink
@@ -233,18 +234,26 @@ function buildDraftSystemPrompt(profile, options) {
 /**
  * @param {{ subject: string, senderName: string, senderEmail: string,
  *           cleanText: string, reasoning: string, asks: string[],
- *           hasAttachments: boolean, label: string, urgency: string }} ctx
+ *           hasAttachments: boolean, label: string, urgency: string,
+ *           attachmentText?: string }} ctx
  * @returns {string}
  */
 function buildDraftUserPrompt(ctx) {
   const asks = ctx.asks && ctx.asks.length ? ctx.asks.join('; ') : '(none identified)';
+  const attachments = String(ctx.attachmentText || '').trim();
+  const attachmentLine = attachments
+    ? 'yes — contents below'
+    : ctx.hasAttachments
+      ? 'yes — not read; acknowledge without summarising them'
+      : 'none';
   return [
     'INBOUND MESSAGE',
     'From: ' + (ctx.senderName ? ctx.senderName + ' <' + ctx.senderEmail + '>' : ctx.senderEmail),
     'Subject: ' + ctx.subject,
-    'Attachments: ' + (ctx.hasAttachments ? 'yes — acknowledge without summarising them' : 'none'),
+    'Attachments: ' + attachmentLine,
     '',
     ctx.cleanText || '(empty body)',
+    ...(attachments ? ['', '--- ATTACHMENTS ---', attachments] : []),
     '',
     '--- TRIAGE NOTES ---',
     'Classification: ' + ctx.label + ' (' + ctx.urgency + ')',

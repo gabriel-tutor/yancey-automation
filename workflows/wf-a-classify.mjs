@@ -89,21 +89,40 @@ for (const item of $input.all()) {
 return out;
 `;
 
+export const ATTACH_FINDINGS = `
+const src = $('Prepare Email').item.json;
+const res = $input.item.json || {};
+
+// WF-D is allowed to fail without taking the classification down with it.
+// No text means the attachments were not read, and the prompt says so plainly
+// rather than passing over it in silence.
+const attachmentText = String(res.attachmentText || '');
+
+return { json: Object.assign({}, src, {
+  attachmentText: attachmentText,
+  attachmentsRead: Number(res.attachmentsRead) || 0,
+  attachmentsSkipped: Number(res.attachmentsSkipped) || 0,
+  attachmentsFailed: Number(res.attachmentsFailed) || 0,
+  classifierInput: buildClassifierInput(src, attachmentText)
+})};
+`;
+
 export const APPLY_CLASSIFICATION = `
 const cfg = $('Config').first().json;
 
 // Pair this classification back to the message it came from. $().item is the
 // supported route; the index fallback keeps the run alive if any upstream node
 // ever drops pairedItem, which would otherwise break every message at once.
+const SOURCE_NODE = 'SOURCE_NODE_NAME';
 let src;
 try {
-  src = $('Prepare Email').item.json;
+  src = $(SOURCE_NODE).item.json;
 } catch (e) {
-  const prepared = $('Prepare Email').all();
+  const prepared = $(SOURCE_NODE).all();
   const fallback = prepared[$itemIndex] || prepared[0];
   src = fallback ? fallback.json : {};
 }
-if (!src || !src.messageId) throw new Error('Apply Classification could not pair with Prepare Email');
+if (!src || !src.messageId) throw new Error('Apply Classification could not pair with ' + SOURCE_NODE);
 
 const nowIso = new Date().toISOString();
 
@@ -142,6 +161,8 @@ return {
     subject: String(src.subject || ''),
     webLink: String(src.webLink || ''),
     hasAttachments: Boolean(src.hasAttachments),
+    attachmentText: String(src.attachmentText || ''),
+    attachmentsRead: Number(src.attachmentsRead) || 0,
     cleanText: String(src.cleanText || ''),
     label: c.label,
     confidence: c.confidence,
@@ -161,8 +182,19 @@ return {
 export const NAME = 'WF-A · Poll & Classify' + SUFFIX;
 
 export async function build() {
-  const wfB = DEPLOY.workflows.wfB;
+  // Per target. The top-level block holds production IDs, so reading it
+  // directly made a dev build of WF-A call the *production* WF-B — drafting
+  // into Yancey's mailbox from the sandbox.
+  const wfB = (TARGET.workflows && TARGET.workflows.wfB) || DEPLOY.workflows.wfB;
   if (!wfB) throw new Error('config/deploy.json: workflows.wfB must be set before building WF-A');
+
+  // Attachment reading is switched on by the presence of a WF-D id for this
+  // target, and nothing else. Yancey was told in writing that the assistant
+  // never opens attachments; until he says otherwise the production target has
+  // no wfD and this build cannot read one.
+  const wfD = (TARGET.workflows && TARGET.workflows.wfD) || null;
+  const readsAttachments = Boolean(wfD);
+  const sourceNode = readsAttachments ? 'Attach Findings' : 'Prepare Email';
 
   const resolveContextCode = await codeNode(
     HELPERS['wf-a/Resolve Context'],
@@ -174,8 +206,11 @@ export async function build() {
   );
   const applyClassificationCode = await codeNode(
     HELPERS['wf-a/Apply Classification'],
-    APPLY_CLASSIFICATION,
+    APPLY_CLASSIFICATION.replace('SOURCE_NODE_NAME', sourceNode),
   );
+  const attachFindingsCode = readsAttachments
+    ? await codeNode(HELPERS['wf-a/Attach Findings'], ATTACH_FINDINGS)
+    : '';
 
   return `${SDK_IMPORT}
 
@@ -308,6 +343,49 @@ const prepareEmail = node({
   output: [{ messageId: 'AAMkAGI2', messageIdEnc: 'AAMkAGI2', conversationId: 'AAQk', subject: 'RE: Vector CI working session', senderEmail: 'ccoleman@partnersperform.com', senderName: 'Charles Coleman', receivedAt: '2026-08-26T11:58:00Z', hasAttachments: true, categories: [], cleanText: 'Please send the crossarm workbook before the Momentum Room.', classifierInput: 'SUBJECT: RE: Vector CI working session...' }]
 });
 
+${readsAttachments ? `
+const readAttachments = node({
+  type: 'n8n-nodes-base.executeWorkflow',
+  version: 1.3,
+  config: {
+    name: 'Read Attachments',
+    onError: 'continueRegularOutput',
+    parameters: {
+      mode: 'each',
+      source: 'database',
+      workflowId: { __rl: true, mode: 'id', value: ${S(wfD || '')}, cachedResultName: 'WF-D · Read Attachments' },
+      workflowInputs: {
+        mappingMode: 'defineBelow',
+        value: {
+          messageId: ${E('{{ $json.messageId }}')},
+          messageIdEnc: ${E('{{ $json.messageIdEnc }}')}
+        },
+        matchingColumns: [],
+        schema: [
+          { id: 'messageId', displayName: 'messageId', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'string' },
+          { id: 'messageIdEnc', displayName: 'messageIdEnc', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'string' }
+        ],
+        attemptToConvertTypes: false,
+        convertFieldsToString: true
+      },
+      options: { waitForSubWorkflow: true }
+    },
+    position: [2000, 0]
+  },
+  output: [{ attachmentText: '- Reliability tracker.xlsx (240 KB) with the feeder rows', attachmentsRead: 1, attachmentsSkipped: 0, attachmentsFailed: 0, attachmentCount: 1 }]
+});
+
+const attachFindings = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Attach Findings',
+    parameters: { mode: 'runOnceForEachItem', language: 'javaScript', jsCode: ${S(attachFindingsCode)} },
+    position: [2200, 0]
+  },
+  output: [{ messageId: 'AAMkAGI2', hasAttachments: true, attachmentText: '- Reliability tracker.xlsx (240 KB)', attachmentsRead: 1, classifierInput: 'SUBJECT: RE: Vector CI working session...' }]
+});
+` : ''}
 const classifyEmail = node({
   type: '@n8n/n8n-nodes-langchain.openAi',
   version: 2.3,
@@ -338,7 +416,7 @@ const classifyEmail = node({
       }
     },
     credentials: { openAiApi: newCredential('OpenAI – Upperform') },
-    position: [2000, 0]
+    position: [2400, 0]
   },
   output: [{ label: 'opportunity', confidence: 0.88, reasoning: 'live engagement work on an active deliverable', requires_draft: true, urgency: 'this_week', asks_of_yancey: ['send the crossarm workbook'] }]
 });
@@ -349,7 +427,7 @@ const applyClassification = node({
   config: {
     name: 'Apply Classification',
     parameters: { mode: 'runOnceForEachItem', language: 'javaScript', jsCode: ${S(applyClassificationCode)} },
-    position: [2200, 0]
+    position: [2600, 0]
   },
   output: [{ messageId: 'AAMkAGI2', messageIdEnc: 'AAMkAGI2', conversationId: 'AAQk', internetMessageId: '<abc@partnersperform.com>', receivedAt: '2026-08-26T11:58:00Z', senderEmail: 'ccoleman@partnersperform.com', senderName: 'Charles Coleman', subject: 'RE: Vector CI working session', webLink: 'https://outlook.office.com/mail/id/AAMkAGI2', hasAttachments: true, cleanText: 'Please send the crossarm workbook.', label: 'opportunity', confidence: 0.88, urgency: 'this_week', reasoning: 'live engagement work', asks: '["send the crossarm workbook"]', requiresDraft: true, guardFlags: '', status: 'classified', followupDueAt: '2026-08-31T11:58:00.000Z', categories: ['AI-Processed', 'AI-Action'], profileSource: 'file' }]
 });
@@ -387,7 +465,7 @@ const tagInOutlook = node({
       }
     },
     credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
-    position: [2400, 0]
+    position: [2800, 0]
   },
   output: [{ id: 'AAMkAGI2', categories: ['AI-Processed', 'AI-Action'] }]
 });
@@ -445,7 +523,7 @@ const logClassification = node({
         ]
       }
     },
-    position: [2600, 0]
+    position: [3000, 0]
   },
   output: [{ id: 12, createdAt: '2026-08-26T12:00:00.000Z' }]
 });
@@ -465,7 +543,7 @@ const needsDraft = ifElse({
       },
       looseTypeValidation: true
     },
-    position: [2800, 0]
+    position: [3200, 0]
   },
   output: [{ id: 12 }]
 });
@@ -494,7 +572,8 @@ const callDraftWorkflow = node({
           urgency: ${E("{{ $('Apply Classification').item.json.urgency }}")},
           reasoning: ${E("{{ $('Apply Classification').item.json.reasoning }}")},
           asks: ${E("{{ $('Apply Classification').item.json.asks }}")},
-          hasAttachments: ${E("{{ $('Apply Classification').item.json.hasAttachments }}")}
+          hasAttachments: ${E("{{ $('Apply Classification').item.json.hasAttachments }}")},
+          attachmentText: ${E("{{ $('Apply Classification').item.json.attachmentText }}")}
         },
         matchingColumns: [],
         schema: [
@@ -509,14 +588,15 @@ const callDraftWorkflow = node({
           { id: 'urgency', displayName: 'urgency', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'string' },
           { id: 'reasoning', displayName: 'reasoning', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'string' },
           { id: 'asks', displayName: 'asks', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'string' },
-          { id: 'hasAttachments', displayName: 'hasAttachments', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'boolean' }
+          { id: 'hasAttachments', displayName: 'hasAttachments', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'boolean' },
+          { id: 'attachmentText', displayName: 'attachmentText', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'string' }
         ],
         attemptToConvertTypes: false,
         convertFieldsToString: false
       },
       options: { waitForSubWorkflow: true }
     },
-    position: [3020, -140]
+    position: [3420, -140]
   },
   output: [{ ok: true, draftId: 'AAMkDRAFT' }]
 });
@@ -549,7 +629,7 @@ export default workflow('upperform-wf-a-classify', ${S(NAME)})
   .to(splitMessages)
   .to(skipProcessed)
   .to(skipLogged)
-  .to(prepareEmail)
+  .to(prepareEmail)${readsAttachments ? '\n  .to(readAttachments)\n  .to(attachFindings)' : ''}
   .to(classifyEmail)
   .to(applyClassification)
   .to(tagInOutlook)

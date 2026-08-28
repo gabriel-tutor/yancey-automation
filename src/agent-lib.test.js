@@ -186,6 +186,32 @@ describe('normalizeGraphMessage', () => {
     expect(input).toContain('FORWARD_CHAIN_DEPTH:');
     expect(input).toContain('--- EMAIL BODY (newest message only) ---');
   });
+
+  it('carries what the attachments say, not just that they exist', () => {
+    const input = buildClassifierInput(
+      normalizeGraphMessage(graphMessage()),
+      '- Crossarm workbook.xlsx (240 KB):\nFeeder | CAIDI\nF12-North | 88.4',
+    );
+    expect(input).toContain('HAS_ATTACHMENTS: yes, read below');
+    expect(input).toContain('--- ATTACHMENTS ---');
+    expect(input).toContain('F12-North | 88.4');
+  });
+
+  // An unread attachment must not read as an absent one. The classifier has to
+  // be able to tell "nothing attached" from "attached, and I could not open it".
+  it('says attachments went unread rather than staying silent', () => {
+    const input = buildClassifierInput(normalizeGraphMessage(graphMessage()), '   ');
+    expect(input).toContain('HAS_ATTACHMENTS: yes, not read');
+    expect(input).not.toContain('--- ATTACHMENTS ---');
+  });
+
+  it('says nothing about attachments when there are none', () => {
+    const msg = graphMessage();
+    msg.hasAttachments = false;
+    const input = buildClassifierInput(normalizeGraphMessage(msg));
+    expect(input).toContain('HAS_ATTACHMENTS: no');
+    expect(input).not.toContain('--- ATTACHMENTS ---');
+  });
 });
 
 describe('parseModelJson', () => {

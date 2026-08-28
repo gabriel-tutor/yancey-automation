@@ -6,14 +6,21 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 
 /**
- * @typedef {{ lib?: string[], prompts?: string[] }} HelperNeeds
+ * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[] }} HelperNeeds
  */
 
 /** @type {Record<string, string>} */
 const SOURCES = {
   lib: './src/agent-lib.js',
   prompts: './src/prompts.js',
+  // Attachment ingestion. `unzip` carries a DEFLATE decompressor because n8n's
+  // Code node refuses require('zlib'), and .docx/.pptx/.xlsx are ZIP archives.
+  unzip: './src/unzip.js',
+  attachments: './src/attachments.js',
 };
+
+/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments'>} */
+const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments'];
 
 
 /**
@@ -59,7 +66,7 @@ export async function subset(needs) {
   const imports = [];
   /** @type {string[]} */
   const names = [];
-  for (const key of /** @type {const} */ (['lib', 'prompts'])) {
+  for (const key of SOURCE_KEYS) {
     const wanted = needs[key];
     if (!wanted || wanted.length === 0) continue;
     imports.push(`export { ${wanted.join(', ')} } from '${SOURCES[key]}';`);
@@ -87,7 +94,7 @@ export async function subset(needs) {
     throw new Error('subset: emitted code still contains import/export');
   }
   for (const name of names) {
-    if (!new RegExp('\\b(?:function|const|let|var)\\s+' + name + '\\b').test(stripped)) {
+    if (!new RegExp('\\b(?:function|const|let|var|class)\\s+' + name + '\\b').test(stripped)) {
       throw new Error('subset: tree shaking dropped a requested name: ' + name);
     }
   }
@@ -102,7 +109,7 @@ export async function subset(needs) {
 export async function codeNode(needs, body) {
   const helpers = await subset(needs);
   return [
-    '// ---- shared helpers (generated from src/agent-lib.js — edit there, not here) ----',
+    '// ---- shared helpers (generated from src/ — edit there, not here) ----',
     helpers,
     '// ---- end shared helpers ----',
     '',

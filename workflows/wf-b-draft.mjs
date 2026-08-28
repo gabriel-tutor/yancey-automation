@@ -61,6 +61,7 @@ return [{
       reasoning: String(req.reasoning || ''),
       asks: Array.isArray(asks) ? asks : [],
       hasAttachments: Boolean(req.hasAttachments),
+      attachmentText: String(req.attachmentText || ''),
       label: String(req.label || ''),
       urgency: String(req.urgency || '')
     })
@@ -182,7 +183,8 @@ const draftRequest = trigger({
           { name: 'urgency', type: 'string' },
           { name: 'reasoning', type: 'string' },
           { name: 'asks', type: 'string' },
-          { name: 'hasAttachments', type: 'boolean' }
+          { name: 'hasAttachments', type: 'boolean' },
+          { name: 'attachmentText', type: 'string' }
         ]
       }
     },

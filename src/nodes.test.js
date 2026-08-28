@@ -14,10 +14,17 @@ import { APPLY_CLASSIFICATION } from '../workflows/wf-a-classify.mjs';
  */
 
 const voiceGuardCode = await codeNode(HELPERS['wf-b/Voice Guard'], VOICE_GUARD);
-const applyClassificationCode = await codeNode(
-  HELPERS['wf-a/Apply Classification'],
-  APPLY_CLASSIFICATION,
-);
+/**
+ * The node reads whichever upstream node is authoritative for this build, and
+ * the build substitutes the name. Production pairs with Prepare Email; a target
+ * that reads attachments pairs with Attach Findings instead.
+ * @param {string} sourceNode
+ */
+const applyClassificationFor = (sourceNode) =>
+  codeNode(HELPERS['wf-a/Apply Classification'], APPLY_CLASSIFICATION.replace('SOURCE_NODE_NAME', sourceNode));
+
+const applyClassificationCode = await applyClassificationFor('Prepare Email');
+const applyWithAttachmentsCode = await applyClassificationFor('Attach Findings');
 
 /**
  * @param {Record<string, any>} map
@@ -114,6 +121,33 @@ describe('WF-A Apply Classification node body', () => {
     $: nodeRef({ Config: cfg, 'Prepare Email': prep, 'Resolve Context': { profileSource: 'file' } }),
     $json: model,
     $itemIndex: 0,
+  });
+
+  it('carries what the attachments said through to the log and the draft', () => {
+    const out = run(applyWithAttachmentsCode, {
+      $: nodeRef({
+        Config: cfg,
+        'Attach Findings': {
+          ...prepared,
+          hasAttachments: true,
+          attachmentText: '- tracker.xlsx (240 KB):\nF12-North | 88.4',
+          attachmentsRead: 1,
+        },
+        'Resolve Context': { profileSource: 'file' },
+      }),
+      $json: model,
+      $itemIndex: 0,
+    });
+    expect(out.json.attachmentText).toContain('F12-North | 88.4');
+    expect(out.json.attachmentsRead).toBe(1);
+  });
+
+  // The production build has no Attach Findings node at all, so the same body
+  // has to work when nothing upstream ever set these fields.
+  it('reports no attachment text when the build does not read attachments', () => {
+    const out = run(applyClassificationCode, globals(prepared));
+    expect(out.json.attachmentText).toBe('');
+    expect(out.json.attachmentsRead).toBe(0);
   });
 
   it('drafts for the mailbox drafting was authorised for', () => {

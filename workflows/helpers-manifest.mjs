@@ -8,6 +8,7 @@
 export const HELPERS = {
   'wf-a/Resolve Context': { prompts: ['buildClassifySystemPrompt', 'FALLBACK_PROFILE'] },
   'wf-a/Prepare Email': { lib: ['normalizeGraphMessage', 'buildClassifierInput'] },
+  'wf-a/Attach Findings': { lib: ['buildClassifierInput'] },
   'wf-a/Apply Classification': {
     lib: ['normalizeClassification', 'decideCategories', 'addBusinessDays', 'addressedToMailbox'],
   },
@@ -24,4 +25,11 @@ export const HELPERS = {
   },
   'wf-c/Build Digest': { lib: ['bucketDigestRows', 'renderDigestHtml', 'renderDigestText'] },
   'wf-e/Normalize Error': { lib: ['normalizeErrorPayload'] },
+
+  // Attachment ingestion. The triage node decides what to open; the extract
+  // node does the in-process work (Office unzip, text decode) and builds the
+  // request for anything that needs the model instead.
+  'wf-d/Triage Attachments': { attachments: ['triageAttachment'] },
+  'wf-d/Extract': { unzip: ['officeText'] },
+  'wf-d/Summarise': { attachments: ['summariseAttachments'] },
 };

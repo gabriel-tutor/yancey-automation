@@ -45,7 +45,8 @@
     "wfC": true,
     "wfE": true,
     "wfT": false,
-    "wfS": false
+    "wfS": false,
+    "wfD": false
   },
   "_note": "Two targets. `npm run build` uses prod; `TARGET=dev npm run build` uses dev. The credential is referenced by NAME in the generated SDK, so renaming one in n8n silently repoints every workflow built afterwards — which is why the name lives here.",
   "targets": {
@@ -75,7 +76,8 @@
       "sharepointCredentialType": null,
       "draftingEnabled": true,
       "_digestToNote": "Delivered by writing the message into the mailbox via Graph, not by email, so no verified domain is needed and Resend is out of the picture entirely. The POST targets /me, so the digest always lands in the mailbox the credential owns - digestTo is only the displayed To: header and cannot misroute it. digestFrom is the display identity and is listed in WF-A's ignoreSenders, so the agent does not classify its own digest.",
-      "draftingAliases": []
+      "draftingAliases": [],
+      "_wfDNote": "Deliberately absent. WF-A only reads attachments when its target names a wfD, and Yancey was told in writing that the assistant never opens them. Set this once he has agreed, not before."
     },
     "dev": {
       "label": "gtutor sandbox",
@@ -92,7 +94,8 @@
         "wfB": "Ps0RYrfT3auUNwKw",
         "wfC": "bbKJUs1WTX8kjixP",
         "wfE": "E302rNL5D7NuBy5c",
-        "wfT": "8Y3MEkP7A4kEiuGK"
+        "wfT": "8Y3MEkP7A4kEiuGK",
+        "wfD": "P2BfDd7Y782I13ZD"
       },
       "digestTo": "gtutor@partnersperform.com",
       "mailboxLabel": "gtutor@partnersperform.com (dev sandbox)",

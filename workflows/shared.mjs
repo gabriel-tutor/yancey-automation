@@ -50,7 +50,7 @@ export const E = (value) => 'expr(' + JSON.stringify(value) + ')';
 export const GRAPH = 'https://graph.microsoft.com/v1.0';
 
 export const SDK_IMPORT =
-  "import { workflow, node, trigger, sticky, ifElse, splitOut, newCredential, expr } from '@n8n/workflow-sdk';";
+  "import { workflow, node, trigger, sticky, ifElse, merge, splitOut, newCredential, expr } from '@n8n/workflow-sdk';";
 
 /**
  * The three-node chain that loads the mounted business profile with a fallback.

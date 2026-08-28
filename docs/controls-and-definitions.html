@@ -383,14 +383,33 @@
 
   <h2>Are attachments read or processed?</h2>
   <div class="answer">
-    <strong>No.</strong> The assistant records only that attachments exist. It never opens
-    or reads them.
+    <strong>Not in your inbox — the switch is off, and it stays off until you turn it on.</strong>
+    Today the assistant records only that attachments exist. It never opens or reads them.
   </div>
   <p>
     Drafts acknowledge an attachment without pretending to have read it — "I'll review
-    the workbook and come back to you". This is deliberate: reading attachments would
-    mean pulling client documents through the model, which is a much larger question
-    than triaging mail.
+    the workbook and come back to you".
+  </p>
+  <p>
+    The capability now exists and has been tested, because triaging a message whose
+    substance sits in the attachment rather than the body is guesswork otherwise. It is
+    switched off in your instance because reading attachments means client documents
+    pass through the model, and that is your decision to make rather than ours.
+  </p>
+  <p>
+    If you do want it on, this is what it would do. Word, PowerPoint and Excel files are
+    opened on the automation server itself and never leave it. PDFs and images are the
+    only kinds sent to the model, because a scanned page has no text to extract — that is
+    also what makes a photographed document or a screenshot readable. Plain text, CSV and
+    similar are decoded directly. Anything it cannot open — a Power BI file, an old
+    <span class="mono">.xls</span>, an archive, a video — is named in the summary as not
+    read, rather than passed over in silence. Only the first few attachments on a message
+    are opened, nothing above 8&nbsp;MB is touched, and signature images are skipped.
+  </p>
+  <p>
+    Turning it on is a one-line configuration change and a redeploy. Turning it off again
+    is the same change in reverse, and the assistant goes back to recording only that an
+    attachment was there.
   </p>
 
   <h2>Where are the decision logs, and who can reach them?</h2>

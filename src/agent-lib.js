@@ -361,21 +361,31 @@ function normalizeGraphMessage(msg, options) {
 /**
  * The user-turn payload handed to the classifier.
  * @param {ReturnType<typeof normalizeGraphMessage>} n
+ * @param {string} [attachmentText] what WF-D read out of the attachments
  * @returns {string}
  */
-function buildClassifierInput(n) {
+function buildClassifierInput(n, attachmentText) {
+  const attachments = String(attachmentText || '').trim();
+  // "Attached but unreadable" and "nothing attached" are different situations
+  // and the classifier has to be able to tell them apart.
+  const attachmentState = attachments
+    ? 'yes, read below'
+    : n.hasAttachments
+      ? 'yes, not read'
+      : 'no';
   const lines = [
     'SUBJECT: ' + n.subject,
     'FROM: ' + (n.senderName ? n.senderName + ' <' + n.senderEmail + '>' : n.senderEmail),
     'TO: ' + (n.toRecipients.length ? n.toRecipients.join(', ') : '(none)'),
     'CC: ' + (n.ccRecipients.length ? n.ccRecipients.join(', ') : '(none)'),
     'RECEIVED: ' + n.receivedAt,
-    'HAS_ATTACHMENTS: ' + (n.hasAttachments ? 'yes' : 'no'),
+    'HAS_ATTACHMENTS: ' + attachmentState,
     'FORWARD_CHAIN_DEPTH: ' + n.quoteBoundaries,
     '',
     '--- EMAIL BODY (newest message only) ---',
     n.cleanText || '(empty body)',
   ];
+  if (attachments) lines.push('', '--- ATTACHMENTS ---', attachments);
   return lines.join('\n');
 }
 

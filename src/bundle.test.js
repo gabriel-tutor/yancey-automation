@@ -19,7 +19,7 @@ const evalIn = (source, expression) =>
 
 /** @type {Record<string, string>} */
 const subsets = {};
-/** @type {Record<string, { lib?: string[], prompts?: string[] }>} */
+/** @type {Record<string, { lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[] }>} */
 const manifest = HELPERS;
 for (const [nodeKey, needs] of Object.entries(manifest)) {
   subsets[nodeKey] = await subset(needs);
