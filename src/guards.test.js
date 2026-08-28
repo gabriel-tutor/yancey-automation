@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CLIENT_POLICY_TOPICS,
   GUARD_PATTERNS as BASE_PATTERNS,
+  policyTopicGuard,
   pricingGuard,
   sensitivityGuard,
 } from './agent-lib.js';
@@ -327,5 +328,33 @@ describe('the guards stay quiet on ordinary consulting mail', () => {
       expect(sensitivityGuard('ccoleman@partnersperform.com', line, 'RE: Vector', []).triggered)
         .toBe(false);
     });
+    // The topic vocabulary moved out of sensitivityGuard, so it needs its own
+    // silence check or the four regression lines above would stop guarding it.
+    it('topic guard silent on: ' + line.slice(0, 46), () => {
+      expect(policyTopicGuard(line, 'RE: Vector').triggered).toBe(false);
+    });
   }
+});
+
+/**
+ * The topic vocabulary is allowed to be broad precisely because the caller only
+ * applies it to mail that would otherwise get a reply. These assert the split
+ * rather than the words: the guard still fires on the text, and the classifier's
+ * verdict is what decides whether that matters.
+ */
+describe('topic guards fire on the words but do not judge the mail', () => {
+  const INVOICE = 'Invoice from JEREMIAH CHRISTIAN PLACENTE ROSALES (0028)';
+
+  it('sees "invoice" as a financial matter', () => {
+    const v = policyTopicGuard('You sent a payment request.', INVOICE);
+    expect(v.triggered).toBe(true);
+    expect(v.category).toBe('financial');
+  });
+
+  // Yancey's own junk set is three PayPal invoices. Folding this vocabulary
+  // back into sensitivityGuard would put all three in his 07:30 digest.
+  it('is not consulted by sensitivityGuard, which overrules the classifier', () => {
+    expect(sensitivityGuard('service@paypal.com', 'You sent a payment request.', INVOICE, [])
+      .triggered).toBe(false);
+  });
 });

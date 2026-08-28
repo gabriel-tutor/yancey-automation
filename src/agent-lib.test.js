@@ -1269,6 +1269,36 @@ describe("Yancey's drafting rules", () => {
     expect(v.requiresDraft).toBe(true);
   });
 
+  // Gate 1 caught this: three of the five emails Yancey labelled JUNK are
+  // PayPal invoices titled "Invoice from ...". With the topic vocabulary applied
+  // unconditionally, every one of them was promoted into his 07:30 review
+  // bucket — a 60% false-positive rate on his own junk mail.
+  it('does not resurrect junk that happens to say "invoice"', () => {
+    const v = normalizeClassification(
+      raw({ label: 'noise', requires_draft: false }),
+      ctx('service@paypal.com', {
+        subject: 'Invoice from JEREMIAH CHRISTIAN PLACENTE ROSALES (0028)',
+        cleanText: 'You sent a payment request for a contractor invoice.',
+      }),
+    );
+    expect(v.label).toBe('noise');
+    expect(v.guards).toEqual([]);
+  });
+
+  // The counterpart: a genuine legal matter still overrules the classifier,
+  // because that guard exists precisely for the case where the model is wrong.
+  it('still overrules the classifier on a legal matter', () => {
+    const v = normalizeClassification(
+      raw({ label: 'noise', requires_draft: false }),
+      ctx('someone@example.com', {
+        subject: 'Notice of litigation',
+        cleanText: 'Our attorney has filed a lawsuit regarding the inspection records.',
+      }),
+    );
+    expect(v.label).toBe('flag_for_yancey');
+    expect(v.guardFlags).toContain('sensitivity:legal');
+  });
+
   it('names the category that held a message back', () => {
     const v = normalizeClassification(
       raw({}),

@@ -1,19 +1,31 @@
 {
   "id": "synthetic-03",
   "source": "synthetic",
-  "expected": "opportunity",
-  "note": "Thin forward over live client work. The quote-trimmer must extend past the boundary or this reads as noise.",
+  "expected": "flag_for_yancey",
+  "note": "Thin forward over live client work. The quote-trimmer must extend past the boundary or this reads as noise. Sender is Chuck Coleman, so under Yancey's 2026-08-28 rule this is flagged rather than drafted. The expectation was stale: the real opp-* fixtures were updated for Chuck and this synthetic one was missed.",
   "message": {
     "id": "SYN-03",
     "subject": "FW: Vector CI working session — crossarm capitalization",
     "receivedDateTime": "2026-08-24T16:40:00Z",
-    "from": { "emailAddress": { "name": "Charles Coleman", "address": "ccoleman@partnersperform.com" } },
-    "toRecipients": [{ "emailAddress": { "address": "YDawson@partnersperform.com" } }],
+    "from": {
+      "emailAddress": {
+        "name": "Charles Coleman",
+        "address": "ccoleman@partnersperform.com"
+      }
+    },
+    "toRecipients": [
+      {
+        "emailAddress": {
+          "address": "YDawson@partnersperform.com"
+        }
+      }
+    ],
     "hasAttachments": true,
     "categories": [],
     "body": {
       "contentType": "text",
       "content": "FYI\n\nChuck\n\n________________________________\nFrom: Jessica Doucette <jessica.doucette@sce.com>\nSent: Monday, August 24, 2026 9:14 AM\nTo: Charles Coleman <ccoleman@partnersperform.com>\nSubject: RE: Vector CI working session — crossarm capitalization\n\nChuck, the SLT deck looks right to me. Dean had one comment on slide 12 about how we are treating the capitalization threshold. Can Yancey weigh in before the Momentum Room on Thursday?"
     }
-  }
+  },
+  "gate": "always-flag"
 }

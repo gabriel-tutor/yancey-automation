@@ -991,6 +991,35 @@ function sensitivityGuard(senderEmail, text, subject, alwaysFlagSenders) {
   // "sensitive" verdict, so the digest can tell Yancey *which* of his rules
   // held a message back. He asked for these by name; the log should answer in
   // the same terms.
+  return { triggered: false, reason: '', category: '' };
+}
+
+/**
+ * Yancey's named categories, checked separately from the guard above because
+ * they answer a different question.
+ *
+ * `sensitivityGuard` is a liability backstop: legal, HR and press matters are
+ * rare, expensive to miss, and it deliberately overrules the classifier because
+ * the classifier might be wrong about them. These categories are not that. They
+ * describe mail Yancey wants to *answer himself* — so if the classifier has
+ * already decided a message is junk, there is nothing to answer and nothing to
+ * withhold, and promoting it would only put junk in front of him.
+ *
+ * That distinction is not theoretical. Three of the five emails Yancey labelled
+ * JUNK are PayPal contractor invoices with "Invoice from ..." in the subject.
+ * Applied unconditionally, this vocabulary moved every one of them into the
+ * 07:30 review bucket — a 60% false-positive rate on his own junk mail, and the
+ * exact outcome the external-sender rule was written to avoid.
+ *
+ * The caller decides when this applies. Today: only to mail that would
+ * otherwise have been replied to.
+ *
+ * @param {string} text
+ * @param {string} subject
+ * @returns {{ triggered: boolean, reason: string, category: string }}
+ */
+function policyTopicGuard(text, subject) {
+  const haystack = String(subject || '') + '\n' + String(text || '');
   for (const topic of CLIENT_POLICY_TOPICS) {
     if (topic.pattern.test(haystack)) {
       return {
@@ -1072,11 +1101,26 @@ function normalizeClassification(raw, ctx) {
   //
   // Skipped entirely when no domain list is configured, matching how
   // `alwaysFlagSenders` and `authorised` behave — the deployment opts in.
+  // Both of the rules below only ever act on mail that would otherwise have
+  // been replied to. Neither resurrects something the classifier called junk:
+  // ten of the twenty-one fixtures are outside senders and three are invoices,
+  // and sweeping those into the review bucket would cost more trust than the
+  // guards buy.
+  const draftableNow = label === 'opportunity' || label === 'admin';
+
+  // Draft only for colleagues. Checked before the topic sweep so an outsider
+  // is explained by the simpler, categorical reason.
   const hasInternalList = Array.isArray(ctx.internalDomains) && ctx.internalDomains.length > 0;
-  if (hasInternalList && (label === 'opportunity' || label === 'admin')) {
-    if (!isInternalSender(ctx.senderEmail, ctx.internalDomains)) {
+  if (draftableNow && hasInternalList && !isInternalSender(ctx.senderEmail, ctx.internalDomains)) {
+    label = 'flag_for_yancey';
+    guards.push('external_sender');
+  }
+
+  if (label === 'opportunity' || label === 'admin') {
+    const topic = policyTopicGuard(ctx.cleanText, ctx.subject);
+    if (topic.triggered) {
       label = 'flag_for_yancey';
-      guards.push('external_sender');
+      guards.push('sensitivity:' + topic.category);
     }
   }
 
@@ -1791,6 +1835,7 @@ export {
   normalizeErrorPayload,
   normalizeGraphMessage,
   parseModelJson,
+  policyTopicGuard,
   pricingGuard,
   renderDigestHtml,
   renderDigestText,

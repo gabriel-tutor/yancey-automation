@@ -226,6 +226,22 @@ describe("WF-A Apply Classification under Yancey's rules", () => {
     expect(out.json.guardFlags).toBe('');
   });
 
+  it('does not resurrect a junk invoice into the review bucket', () => {
+    const out = runWith(
+      {
+        ...base,
+        senderEmail: 'service@paypal.com',
+        subject: 'Invoice from JEREMIAH CHRISTIAN PLACENTE ROSALES (0028)',
+        cleanText: 'You sent a payment request for a contractor invoice.',
+        threadText: 'You sent a payment request for a contractor invoice.',
+      },
+      { label: 'noise', confidence: 0.99, reasoning: 'contractor invoice', requires_draft: false, urgency: 'fyi', asks_of_yancey: [] },
+    );
+    expect(out.json.label).toBe('noise');
+    expect(out.json.guardFlags).toBe('');
+    expect(out.json.categories).not.toContain('AI-Review');
+  });
+
   it('names the category that held a colleague message back', () => {
     const out = runWith({
       ...base,

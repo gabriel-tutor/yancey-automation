@@ -1567,6 +1567,50 @@ days with the weekend skipped.
    never get written and those messages never reach the digest — a burst after a
    quiet weekend would have read as the agent ignoring the inbox. Now serialised.
 
+## Gate 1 after the policy change — and the defect it caught
+
+**PASS at 100% agreement on Yancey's fifteen labelled emails, twice.**
+
+```
+Agreement (Yancey)  100.0%  (15/15)
+Classifier vs YD    100.0%  (15/15 junk vs not-junk)
+Missed real work    0        Drafted junk    0
+Gate 3 pricing      2/2      Policy gates    9/9
+```
+
+The first run did **not** pass — 80% — and the failure was worth more than the
+pass. Three of the five emails Yancey labelled JUNK are PayPal contractor
+invoices titled *"Invoice from JEREMIAH CHRISTIAN PLACENTE ROSALES"*. The
+classifier read all three correctly as `noise`; the new `financial` vocabulary
+saw "invoice" and promoted every one of them into his 07:30 review bucket.
+
+A 60% false-positive rate on his own junk mail, and precisely the outcome the
+external-sender rule had been written to avoid — the same reasoning simply had
+not been applied to the topic guards.
+
+### The fix, and the distinction it rests on
+
+The two guard families answer different questions, so they now behave
+differently:
+
+- **`sensitivityGuard`** — always-flag senders, plus legal, HR and press. A
+  liability backstop. It deliberately overrules the classifier, because it
+  exists for the case where the classifier is wrong. Unconditional.
+- **`policyTopicGuard`** — Yancey's named categories. These describe mail he
+  wants to *answer himself*. If the classifier already called something junk,
+  there is nothing to answer and nothing to withhold. Applied only to mail that
+  would otherwise have been replied to.
+
+Both directions are now asserted: an invoice-titled junk email stays `noise`,
+and a `noise`-classified message mentioning litigation is still flagged.
+
+The second failure was bookkeeping — `synthetic-03` is from Chuck Coleman and
+its expectation had not been updated with the real `opp-*` fixtures.
+
+Stability: two consecutive runs, 100% both times. The only variance is how many
+messages the model chooses to surface rather than draft, which moves in the
+conservative direction and fails nothing.
+
 ## Still open
 
 1. **The digest does not reach Yancey yet.** Schedule and timezone are right,
@@ -1584,10 +1628,7 @@ days with the weekend skipped.
    opp-08, opp-09 and opp-10 — every one of which is now flagged rather than
    drafted. Asking Yancey to rate drafts the system would never write is worse
    than not asking. Rebuild the sample from opp-02, opp-04 and opp-07.
-4. **Gate 1 has not been re-run** since the policy change. It needs
-   `OPENAI_API_KEY` inline. Coverage is otherwise strong — 387 unit tests
-   including the deployed node bodies, plus the live dev run above — but Gate 1
-   is the only thing that scores against Yancey's own fifteen labelled emails.
+4. ~~Gate 1 has not been re-run.~~ **Re-run and passing** — see below.
 5. **Nothing is published.** All three workflows are updated as *drafts*; the
    previously published versions are still serving. Publishing was blocked by
    the permission classifier, so it needs a human — in the n8n UI, or by
