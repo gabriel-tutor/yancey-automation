@@ -275,7 +275,7 @@
 
       <div class="lab l-flag">
         <div class="name">flag_for_yancey</div>
-        <p>Surface it, never draft. Legal, contractual, HR, press, disputes &mdash; anything where a wrong word costs money. And anything asking a price he has not already quoted.</p>
+        <p>Surface it, never draft. Legal, contractual, HR, press, disputes &mdash; anything where a wrong word costs money. And anything commercial &mdash; pricing, fees, estimates, proposals, scope changes &mdash; even where a price has already been quoted.</p>
         <div class="outcome">Category <b>AI-Review</b> &middot; deliberately no draft</div>
       </div>
     </div>
@@ -320,33 +320,54 @@
       <div class="gate">
         <div class="n">2</div>
         <div class="body">
-          <h3>Is anyone asking a price?</h3>
-          <p>Scans the whole thread. If somebody is asking what something costs and no fee has already been quoted, the label is forced to <code>flag_for_yancey</code>. Flag: <span class="flagname">pricing_guard</span>.</p>
+          <h3>Is this commercial?</h3>
+          <p>Pricing, fees, estimates, proposals, scope changes or commercial terms &mdash; the label is forced to <code>flag_for_yancey</code>. <strong>A price already quoted in the thread does not release it.</strong> Yancey removed that exception on 28 August; a quoted number raises the stakes rather than lowering them. Flag: <span class="flagname">pricing_guard</span>.</p>
         </div>
       </div>
       <div class="gate">
         <div class="n">3</div>
         <div class="body">
-          <h3>Is this legal, contractual or personnel?</h3>
-          <p>Lawsuits, subpoenas, attorneys, breach of contract, indemnities, severance, harassment, press. Any of them forces <code>flag_for_yancey</code>. Flag: <span class="flagname">sensitivity_guard</span>.</p>
+          <h3>Is the sender on the always-flag list?</h3>
+          <p>Mail from <code>Ccoleman@partnersperform.com</code> is surfaced and never drafted, whatever it says. A sender rule, so it does not depend on the assistant reading the message correctly. Flag: <span class="flagname">always_flag_sender</span>.</p>
         </div>
       </div>
       <div class="gate">
         <div class="n">4</div>
         <div class="body">
-          <h3>Was the model sure enough?</h3>
-          <p>Below 0.6 confidence the email is surfaced rather than drafted. The label stands; the draft does not happen. Flag: <span class="flagname">below_confidence_min</span>.</p>
+          <h3>Is this legal, contractual or personnel?</h3>
+          <p>Lawsuits, subpoenas, attorneys, breach of contract, indemnities, severance, harassment, press. Any of them forces <code>flag_for_yancey</code>. This one overrules the classifier deliberately &mdash; it exists for the case where the classifier is wrong. Flag: <span class="flagname">sensitivity:legal</span>.</p>
         </div>
       </div>
       <div class="gate">
         <div class="n">5</div>
         <div class="body">
-          <h3>Is this even the right mailbox?</h3>
-          <p>A draft is only written if the mailbox it was authorised for is on the message&rsquo;s To or Cc. Re-point the mail account at somebody else and drafting stops rather than following it. Flag: <span class="flagname">mailbox_not_addressed</span>.</p>
+          <h3>Is the sender a colleague?</h3>
+          <p>A reply is only written for someone at <code>partnersperform.com</code>. Everyone else is surfaced instead &mdash; Yancey&rsquo;s instruction of 28 August. It applies only to mail that would otherwise have been replied to, so a newsletter from outside stays filtered rather than being pushed into his morning summary. Flag: <span class="flagname">external_sender</span>.</p>
         </div>
       </div>
       <div class="gate">
         <div class="n">6</div>
+        <div class="body">
+          <h3>Is it one of the categories he named?</h3>
+          <p>Contracts, HR, financial and billing, client complaints, media requests, confidential material, approval requests. Each reports itself by name, so the summary can say which rule held the message. Unlike the legal gate above, these only apply to mail that would otherwise have been drafted &mdash; three of the five emails he labelled JUNK are contractor invoices, and resurrecting those would put junk in front of him. Flag: <span class="flagname">sensitivity:&hellip;</span>.</p>
+        </div>
+      </div>
+      <div class="gate">
+        <div class="n">7</div>
+        <div class="body">
+          <h3>Was the model sure enough?</h3>
+          <p>Below <strong>0.80</strong> confidence the email is surfaced rather than drafted &mdash; raised from 0.60 at his request. The label stands; the draft does not happen. Flag: <span class="flagname">below_confidence_min</span>.</p>
+        </div>
+      </div>
+      <div class="gate">
+        <div class="n">8</div>
+        <div class="body">
+          <h3>Is this even the right mailbox?</h3>
+          <p>A draft is only written if the mailbox it was authorised for is on the message&rsquo;s To or Cc. Re-point the mail account at somebody else and drafting stops rather than following it. Anything bcc&rsquo;d, or sent to an alias that has not been registered, lands here too. Flag: <span class="flagname">mailbox_not_addressed</span>.</p>
+        </div>
+      </div>
+      <div class="gate">
+        <div class="n">9</div>
         <div class="body">
           <h3>Then, and only then, a draft</h3>
           <p>Written by a second model, checked against the source for invented figures, given his sign-off, and left in the Drafts folder. It cannot be sent. That is a separate guarantee, covered in the other note.</p>
@@ -453,6 +474,42 @@
 
   <section>
     <div class="sec-head">
+      <h2>What the rules add up to</h2>
+      <p>Measured against the twenty emails he labelled himself, rather than estimated.</p>
+    </div>
+
+    <div class="prose">
+      <p>Of his ten work emails, the assistant found a genuine request directed at
+      him in <strong>seven</strong>. The mail is actionable, and the classifier reads it
+      correctly &mdash; 100% agreement with his own labels, twice in a row.</p>
+
+      <p>But of those seven, the three where the assistant judged a reply was
+      genuinely warranted were <strong>all from Chuck Coleman</strong>. Every one. The
+      remaining four are status updates and contributions to a discussion, where a
+      reply would add nothing beyond an acknowledgement.</p>
+
+      <p>So the first rule &mdash; always flag Chuck, never draft &mdash; removes the
+      whole of the drafting surface in that sample. Not because the rule is wrong, but
+      because Chuck is the person who assigns Yancey work, and assigned work is what
+      produces a reply worth writing. On the labelled set, the two facts are the same
+      fact.</p>
+
+      <p><strong>This is worth knowing before drawing conclusions from a quiet Drafts
+      folder.</strong> The triage is doing the work: reading everything, labelling it,
+      and putting the handful that needs him in one place each morning. Drafting is
+      deliberately narrow on top of that.</p>
+
+      <p>If he wants more drafts later, the lever is one line and it is already
+      in place: take Chuck off the always-flag list. His mail would then be drafted
+      only when it is not commercial, not legal, not an approval request, and the
+      assistant is confident &mdash; every other gate above still applies. That is his
+      call to make, not ours, and it is easier to make after a week of watching than
+      before.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
       <h2>What he actually sees</h2>
       <p>All of the above surfaces as three colours on his existing inbox. There is nothing new to log into.</p>
     </div>
@@ -465,17 +522,17 @@
         <tbody>
           <tr>
             <td><span class="verdict v-noise">AI-Processed</span></td>
-            <td class="q">Seen, logged, judged not to need him.</td>
+            <td class="q">Seen, logged, judged not to need him. Listed once in the summary&rsquo;s &ldquo;Processed as noise&rdquo; section so a misjudgement is visible.</td>
             <td class="q">Nothing. It stays out of the morning summary.</td>
           </tr>
           <tr>
             <td><span class="verdict v-opp">AI-Action</span></td>
-            <td class="q">Needs him, and a reply has been written.</td>
+            <td class="q">Needs him, and the assistant is handling it. Never appears alongside AI-Review.</td>
             <td class="q">Read the draft, change what he wants, press Send &mdash; or bin it.</td>
           </tr>
           <tr>
             <td><span class="verdict v-flag">AI-Review</span></td>
-            <td class="q">Needs him, and the assistant deliberately wrote nothing.</td>
+            <td class="q">The assistant deliberately wrote nothing, or a draft failed. Never appears alongside AI-Action.</td>
             <td class="q">Handle it himself. The reason is recorded against the email.</td>
           </tr>
           <tr>
@@ -494,7 +551,7 @@
   </section>
 
   <footer>
-    Upperform inbox assistant &middot; classifier <span class="flagname">gpt-5.6-luna</span> &middot; drafting <span class="flagname">gpt-5.6-terra</span> &middot; confidence floor 0.6 &middot; rules read 12,000 characters of thread, none of which reaches the model
+    Upperform inbox assistant &middot; classifier <span class="flagname">gpt-5.6-luna</span> &middot; drafting <span class="flagname">gpt-5.6-terra</span> &middot; confidence floor 0.80 &middot; rules read 12,000 characters of thread, none of which reaches the model
   </footer>
 
 </div>

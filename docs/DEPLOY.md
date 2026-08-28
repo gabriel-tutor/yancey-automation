@@ -1668,6 +1668,58 @@ The four categories now mean:
 draft is deleted, the message is tagged `AI-Review`, the row is logged
 `draft_failed`, and WF-E raises an alert.
 
+## Verified 2026-08-29
+
+Two things checked rather than asserted.
+
+**Send permission — still granted.** WF-T re-run today, execution 1514, against
+the dev credential so nothing lands in Yancey's mailbox. Read, list, create and
+delete all PASS; the deliberate send attempt returned **202 Accepted**, so the
+verdict is `noSendInvariantProven: false`. The answer given to him is correct and
+now rests on a run from today rather than on memory. The Entra app is the same
+for both credentials, which is why the dev test proves the point.
+
+**Production is running what the repo says.** WF-A execution 1515 shows
+`confidenceMin 0.8`, Chuck on `alwaysFlagSenders`, `internalDomains` set, and
+`profileSource: file` — so the business profile mounted on the VPS is the one the
+model reads, and it contains the corrected pricing rule. Source, build, deploy
+and runtime all agree.
+
+## Why so few drafts — measured, not estimated
+
+Ran the classifier over all ten of Yancey's OPPORTUNITY emails and captured
+`asks_of_yancey` per message:
+
+- **7 of 10 contain a genuine request directed at him.** The mail is actionable
+  and the classifier reads it correctly.
+- Of those, the three where a reply was judged genuinely warranted — opp-06,
+  opp-08, opp-10 — are **all from Chuck Coleman**.
+- The remaining four are status updates and discussion contributions where a
+  reply adds nothing beyond an acknowledgement.
+
+So the always-flag rule removes the entire drafting surface in that sample. Not
+because the rule is wrong, but because Chuck is the person who assigns Yancey
+work, and assigned work is what produces a reply worth writing. On his labelled
+set those are the same fact.
+
+**No code should change for this.** The lever already exists and is one line:
+remove Chuck from `policy.alwaysFlagSenders` in `config/deploy.json`. His mail
+would then draft only when it is not commercial, not legal, not an approval
+request and the classifier is confident — every other gate still applies. That
+is Yancey's decision, and it is easier to make after a week of watching.
+
+## Client documents — all brought current 2026-08-29
+
+They had drifted into actively misleading territory, which matters because
+Yancey holds the links.
+
+| Document | Was wrong about | Now |
+|---|---|---|
+| `how-it-decides.html` | 0.6 floor, the pricing carve-out he removed, no external or always-flag rule, no noise section | rewritten: nine gates in the order they run, plus the measured drafting finding above |
+| `workflow-reference.html` | 0.6 floor, WF-C "not published", digest over SMTP, `digestTo` pointing at dev, missing `internalDomains` / `draftingAliases` / `showNoise` | current |
+| `gate2-voice-check.html` | asked him to score five drafts the system would now never write | marked superseded, replaced with a real draft the assistant produced |
+| `controls-and-definitions.html` | — | new, answers his 28 August email |
+
 ## Still open
 
 1. **`Mail.Send` is still granted** on the Entra app. Unused by anything —

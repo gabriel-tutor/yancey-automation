@@ -139,7 +139,7 @@
   <div class="board">
     <div class="unit"><span class="id">WF-A</span><span class="nm">Poll &amp; Classify</span><span class="mt">schedule &middot; every minute<br>dSGzw1yk46JTHD3Z</span><span class="pill p-live">live &middot; drafting on</span></div>
     <div class="unit"><span class="id">WF-B</span><span class="nm">Draft Reply</span><span class="mt">called by WF-A<br>Rjpk5KuPopQCpCQL</span><span class="pill p-live">published</span></div>
-    <div class="unit"><span class="id">WF-C</span><span class="nm">Digest &amp; Follow-ups</span><span class="mt">weekdays 07:30 CT<br>vCbgJoNqfuVOqWGH</span><span class="pill p-hold">not published</span></div>
+    <div class="unit"><span class="id">WF-C</span><span class="nm">Digest &amp; Follow-ups</span><span class="mt">weekdays 07:30 CT<br>vCbgJoNqfuVOqWGH</span><span class="pill p-live">published</span></div>
     <div class="unit"><span class="id">WF-E</span><span class="nm">Error Handler</span><span class="mt">on failure of A/B/C<br>XSKk6eHTFGqftrUM</span><span class="pill p-live">published</span></div>
     <div class="unit"><span class="id">WF-T</span><span class="nm">Preflight</span><span class="mt">manual &middot; scope proof<br>1fCjIsw2JjVGkNJb</span><span class="pill p-util">diagnostic</span></div>
     <div class="unit"><span class="id">WF-S</span><span class="nm">Seed Test Inbox</span><span class="mt">manual &middot; dev only<br>CNttEItjnRC4RkZZ</span><span class="pill p-util">diagnostic</span></div>
@@ -310,7 +310,7 @@
             <text x="360" y="157" text-anchor="middle" fill="#B5610C" font-weight="650">pricingGuard</text>
             <text x="360" y="215" text-anchor="middle" fill="currentColor">label draftable ?</text>
             <text x="360" y="273" text-anchor="middle" fill="#B5610C" font-weight="650">sensitivityGuard</text>
-            <text x="360" y="331" text-anchor="middle" fill="currentColor">confidence &ge; 0.6 ?</text>
+            <text x="360" y="331" text-anchor="middle" fill="currentColor">confidence &ge; 0.80 ?</text>
             <text x="360" y="389" text-anchor="middle" fill="#B5610C" font-weight="650">draftingEnabled</text>
             <text x="360" y="447" text-anchor="middle" fill="#B5610C" font-weight="650">voiceGuard</text>
 
@@ -414,20 +414,23 @@
       <tbody>
         <tr><td class="k">draftingEnabled</td><td>WF-A</td><td class="v">true</td><td>The shadow-mode switch, and it is <b>on</b> &mdash; drafts are being written unattended every minute. Must be <code>false</code> before the credential points at Yancey.</td></tr>
         <tr><td class="k">draftingMailbox</td><td>WF-A</td><td class="v">gtutor@&hellip;</td><td>The interlock. A message only drafts if this address is on its to or cc, so re-pointing the Outlook credential at Yancey stops drafting rather than redirecting it. <b>Change it in the same action as the credential.</b> Blank blocks all drafting.</td></tr>
-        <tr><td class="k">confidenceMin</td><td>WF-A</td><td class="v">0.6</td><td>Below this the item is surfaced rather than drafted, flagged <code>below_confidence_min</code>.</td></tr>
+        <tr><td class="k">confidenceMin</td><td>WF-A</td><td class="v">0.80</td><td>Below this the item is surfaced rather than drafted, flagged <code>below_confidence_min</code>.</td></tr>
         <tr><td class="k">lookbackHours</td><td>WF-A</td><td class="v">6</td><td>Graph <code>$filter</code> window. Wider means re-reading mail the gates will drop anyway.</td></tr>
         <tr><td class="k">pollBatch</td><td>WF-A</td><td class="v">25</td><td><code>$top</code> on the inbox read.</td></tr>
         <tr><td class="k">ignoreSenders</td><td>WF-A</td><td class="v">3 entries</td><td>Never classified at all. Holds the digest sender so the agent doesn&rsquo;t triage itself.</td></tr>
-        <tr><td class="k">alwaysFlagSenders</td><td>WF-A</td><td class="v">[]</td><td>Forced to <code>flag_for_yancey</code>. Accepts full addresses or <code>@domain.com</code>.</td></tr>
+        <tr><td class="k">alwaysFlagSenders</td><td>WF-A</td><td class="v">ccoleman@&hellip;</td><td>Forced to <code>flag_for_yancey</code> whatever the message says. Accepts full addresses or <code>@domain.com</code>. Read from <code>policy</code> in <code>config/deploy.json</code>, which the Gate&nbsp;1 harness reads too &mdash; so a gate cannot certify a policy that is not the deployed one.</td></tr>
+        <tr><td class="k">internalDomains</td><td>WF-A</td><td class="v">partnersperform.com</td><td>A reply is only written for a sender inside these. Exact domain match, fails closed: no address, malformed address or empty list all read as external. Applies only to mail that would otherwise be drafted, so noise stays noise. Flag: <code>external_sender</code>.</td></tr>
+        <tr><td class="k">draftingAliases</td><td>WF-A</td><td class="v">[]</td><td>Extra addresses Yancey receives on. Mail to an address not listed here &mdash; including anything bcc&rsquo;d, which appears in no recipient list &mdash; is surfaced but never drafted.</td></tr>
+        <tr><td class="k">showNoise</td><td>WF-C</td><td class="v">true</td><td>Adds the &ldquo;Processed as noise&rdquo; section for the rollout. Each row appears in exactly one digest and is then closed, which is what stops the section and the log table growing. Set <code>false</code> to retire it.</td></tr>
         <tr><td class="k">modelClassify</td><td>WF-A</td><td class="v">gpt-5.6-luna</td><td>$0.20/1M in. Cheaper than the mini tier &mdash; don&rsquo;t &ldquo;optimise&rdquo; this without checking the price list.</td></tr>
         <tr><td class="k">modelDraft</td><td>WF-B</td><td class="v">gpt-5.6-terra</td><td>$2/1M in, but only ~220 calls a month. The premium buys voice quality where it&rsquo;s client-visible.</td></tr>
-        <tr><td class="k">signOff / signature</td><td>WF-B</td><td class="v">Thanks, / Yancey</td><td>What the Voice Guard enforces and repairs.</td></tr>
+        <tr><td class="k">signOff / signature</td><td>WF-B</td><td class="v">Thanks, / Yancey Dawson</td><td>What the Voice Guard enforces and repairs.</td></tr>
         <tr><td class="k">bookingLink</td><td>WF-B</td><td class="v">empty</td><td>Offered when a draft proposes a call. Awaiting Yancey.</td></tr>
         <tr><td class="k">followupDays</td><td>WF-A / C</td><td class="v">3</td><td>Business days of silence before a thread appears under Follow-ups Due.</td></tr>
         <tr><td class="k">autoCloseDays</td><td>WF-C</td><td class="v">21</td><td>Undrafted rows older than this close themselves, so the digest doesn&rsquo;t silt up.</td></tr>
-        <tr><td class="k">mode</td><td>WF-C</td><td class="v">shadow</td><td>Asks for the shadow banner, but no longer decides it. The banner is suppressed whenever a draft exists, because the digest was printing &ldquo;no replies are being drafted&rdquo; above a list of six.</td></tr>
+        <tr><td class="k">mode</td><td>WF-C</td><td class="v">live</td><td>Asks for the shadow banner, but no longer decides it. The banner is suppressed whenever a draft exists, because the digest was printing &ldquo;no replies are being drafted&rdquo; above a list of six.</td></tr>
         <tr><td class="k">alertTo</td><td>WF-E</td><td class="v">gtutor@&hellip;</td><td>Proven to deliver &mdash; a deliberate failure was run end to end and SMTP accepted it. The Resend sandbox only delivers to the account owner, so any other address is accepted and silently dropped.</td></tr>
-        <tr><td class="k">digestTo</td><td>WF-C</td><td class="v">gtutor@&hellip;</td><td>Points at the dev mailbox, not Yancey. Changing it to him is part of the go-live step &mdash; and WF-C must be rebuilt and redeployed at the same time, because its node in n8n is deliberately one commit behind.</td></tr>
+        <tr><td class="k">digestTo</td><td>WF-C</td><td class="v">YDawson@&hellip;</td><td>Yancey&rsquo;s mailbox. Only the displayed To: header &mdash; the digest is written into whichever mailbox the credential owns via <code>POST /me/mailFolders/inbox/messages</code>, so it cannot be misaddressed the way an SMTP recipient could.</td></tr>
       </tbody>
     </table>
   </div>
@@ -445,7 +448,7 @@
         <tr><td><code>profileSource: fallback</code></td><td>The mount or, more likely, <code>N8N_RESTRICT_FILE_ACCESS_TO</code>. Since n8n v1.123.5 it defaults to <code>/home/node/.n8n-files</code>, so <code>/data/context</code> is refused even though <code>cat</code> works inside the container.</td></tr>
         <tr><td><code>Unsupported parameter: 'temperature'</code></td><td>The 5.6 family rejects it outright. Determinism comes from the strict <code>json_schema</code> instead.</td></tr>
         <tr><td><code>ErrorInvalidReferenceItem</code> on createReply</td><td>The target message has <code>isDraft: true</code>. Only ever seen with seeded fixtures &mdash; real inbound mail cannot be a draft.</td></tr>
-        <tr><td><code>550 You can only send testing emails&hellip;</code></td><td>Resend sandbox. Verify a sending subdomain; the 550 names the one address that will work in the meantime.</td></tr>
+        <tr><td class="k">550 You can only send testing emails&hellip;</td><td>Historical. The digest no longer uses SMTP at all &mdash; it is written into the mailbox over Graph, so no domain needs verifying. This error can still appear from <b>WF-E</b>, whose failure alerts do go out over Resend to the account owner.</td></tr>
         <tr><td>Digest appears in its own next digest</td><td>Sender missing from <code>ignoreSenders</code>. Compounds daily if left.</td></tr>
         <tr><td>Everything classifies as <code>flag_for_yancey</code></td><td>Model output unparseable, so <code>normalizeClassification</code> fails safe. Check <code>guard_flags</code> for <code>unparseable_label</code>.</td></tr>
         <tr><td>Every error row says <code>unknown workflow</code> / <code>Unknown error</code></td><td>The normaliser read <code>$input</code>, but <code>Config</code> sits between the Error Trigger and it, so <code>$input</code> was the config object and every field fell back. Reads <code>$('On Workflow Error')</code> now. Two real failures were logged blank before this was found.</td></tr>
