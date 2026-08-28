@@ -18,7 +18,7 @@
     "_note": "IDs only. Secrets live in n8n, encrypted under N8N_ENCRYPTION_KEY. Never store keys here.",
     "outlookDev": {
       "id": "gBDmBd3jHGBqqQjl",
-      "name": "Outlook \u2013 Dev (gtutor)",
+      "name": "Outlook – Dev (gtutor)",
       "type": "microsoftOutlookOAuth2Api"
     },
     "smtp": {
@@ -41,12 +41,12 @@
     "wfT": false,
     "wfS": false
   },
-  "_note": "Two targets. `npm run build` uses prod; `TARGET=dev npm run build` uses dev. The credential is referenced by NAME in the generated SDK, so renaming one in n8n silently repoints every workflow built afterwards \u2014 which is why the name lives here.",
+  "_note": "Two targets. `npm run build` uses prod; `TARGET=dev npm run build` uses dev. The credential is referenced by NAME in the generated SDK, so renaming one in n8n silently repoints every workflow built afterwards — which is why the name lives here.",
   "targets": {
     "prod": {
       "label": "Yancey (live)",
       "nameSuffix": "",
-      "outlookCredential": "Outlook \u2013 Yancey",
+      "outlookCredential": "Outlook – Yancey",
       "dataTables": {
         "emailLog": "cKOjAskKEn5wYTuf",
         "emailLogName": "agent_email_log_yancey",
@@ -64,12 +64,14 @@
       "digestTo": "YDawson@partnersperform.com",
       "mailboxLabel": "YDawson@partnersperform.com",
       "draftingMailbox": "YDawson@partnersperform.com",
-      "outlookCredentialId": "gBDmBd3jHGBqqQjl"
+      "outlookCredentialId": "gBDmBd3jHGBqqQjl",
+      "sharepointCredential": null,
+      "sharepointCredentialType": null
     },
     "dev": {
       "label": "gtutor sandbox",
-      "nameSuffix": " \u00b7 dev",
-      "outlookCredential": "Outlook \u2013 Dev (gtutor)",
+      "nameSuffix": " · dev",
+      "outlookCredential": "Outlook – Dev (gtutor)",
       "dataTables": {
         "emailLog": "JZP4Wzctro2gA3ya",
         "emailLogName": "agent_email_log_dev",
@@ -86,7 +88,10 @@
       "digestTo": "gtutor@partnersperform.com",
       "mailboxLabel": "gtutor@partnersperform.com (dev sandbox)",
       "draftingMailbox": "gtutor@partnersperform.com",
-      "outlookCredentialId": "vNJuWdSXhjzB0Jo1"
+      "outlookCredentialId": "vNJuWdSXhjzB0Jo1",
+      "sharepointCredential": null,
+      "sharepointCredentialType": null
     }
-  }
+  },
+  "_sharepointNote": "Phase 2. The Outlook credential cannot reach SharePoint — WF-S0 measured 403 on all four Graph checks on 2026-08-28, and n8n's Outlook credential type requests mail scopes only at authorization time, so consent alone cannot widen it. When the new credential exists, set sharepointCredential + sharepointCredentialType on the target below, rebuild, and re-run WF-S0. See docs/PHASE2-SHAREPOINT.md."
 }
