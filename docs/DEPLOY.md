@@ -1334,6 +1334,69 @@ deploying a 12,000-character node body to an active production workflow was not
 worth the risk on the morning of a client meeting. Deploy it with the `digestTo`
 change, which requires rebuilding WF-C anyway.
 
+## Closing out Phase 1 (2026-08-28)
+
+### The digest cannot reach Yancey — tested, not assumed
+
+Pointed `digestTo` at him and ran it. Resend answered:
+
+```
+550 You can only send testing emails to your own email address
+(gtutor@partnersperform.com). To send emails to other recipients,
+please verify...
+```
+
+Reverted to `gtutor@` so the digest keeps working rather than failing every
+weekday at 07:30. **This is a Resend account action, not a workflow change:**
+verify `agent.partnersperform.com`, point `digestFrom` at it, then switch
+`digestTo`. One config edit once the domain is live.
+
+Until then Gabriel receives the digest and can forward it. It is correct in
+every other respect — right mailbox label, no false shadow banner, only his
+mail in it.
+
+### Yancey's mailbox got a clean log
+
+The log table still held 32 open rows from the dev-mailbox era. Two of them
+were already appearing in his digest under "Needs you", with *Open in Outlook*
+links pointing into a different mailbox, and the rest would have surfaced as
+phantom follow-ups from Monday.
+
+Production now writes to **`agent_email_log_yancey`** (`cKOjAskKEn5wYTuf`).
+The old table is left intact as an archive of the build.
+
+Drafting was switched off for the changeover so re-classification could not
+produce duplicate drafts for mail he had already dealt with. It turned out not
+to matter — the `Skip Already Labelled` gate reads Outlook categories, so his
+already-tagged mail is not reprocessed at all. The new table therefore fills
+with **new** mail from here on, which is the right behaviour. Drafting is back
+on.
+
+### A stale label worth knowing about
+
+Prod WF-E's Outlook nodes still displayed `Outlook – Dev (gtutor)` while being
+bound to the correct credential id. n8n resolves by id, so it was harmless —
+but that name now belongs to a *different* credential, so reading the workflow
+would tell you the error handler was pointed at the wrong mailbox. Relabelled.
+
+The general lesson, twice over now: **n8n caches credential display names in
+the node.** After renaming a credential, every workflow that used it shows the
+old name until touched. Trust the id.
+
+### Where Phase 1 stands
+
+Live on Yancey's mailbox and working: classify, draft, error alerting. Gate 1
+100% on his own labels, Gate 3 2/2, 269 tests, typecheck clean. An isolated dev
+sandbox exists with its own credential, tables and workflows.
+
+Three things remain, none of them code:
+
+1. **`Mail.Send` is granted at tenant level.** Needs an Entra admin on
+   partnersperform.com. Until then the no-send guarantee rests on the code
+   rather than on the permission being absent.
+2. **Digest delivery** needs a verified sending domain.
+3. **Gate 2** needs Yancey's five voice ratings.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,

@@ -2,7 +2,7 @@
   "projectId": "iQ01JuNC6TRAqIDj",
   "contextFilePath": "/data/context/business-profile.md",
   "dataTables": {
-    "emailLog": "zGcPKOA90SMVEenJ",
+    "emailLog": "cKOjAskKEn5wYTuf",
     "errorLog": "Q6j7VEadubVstttP"
   },
   "workflows": {
@@ -48,8 +48,8 @@
       "nameSuffix": "",
       "outlookCredential": "Outlook \u2013 Yancey",
       "dataTables": {
-        "emailLog": "zGcPKOA90SMVEenJ",
-        "emailLogName": "agent_email_log",
+        "emailLog": "cKOjAskKEn5wYTuf",
+        "emailLogName": "agent_email_log_yancey",
         "errorLog": "Q6j7VEadubVstttP",
         "errorLogName": "agent_error_log"
       },
