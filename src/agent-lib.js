@@ -1741,14 +1741,12 @@ function renderDigestHtml(buckets, options) {
     errorRows.length > 0
       ? renderSection({ title: 'Errors in the last 24h', emptyText: '', rows: errorRows })
       : '',
-    // Yancey read the old wording and caught the apparent contradiction: "the
-    // assistant supposedly cannot send email, but the document says it will
-    // send you a summary email." He was right to ask. Two corrections: the
-    // digest travels over SMTP through a separate sending service that holds no
-    // access to his mailbox, and "cannot send" overstated what has been proven
-    // — no workflow sends from his mailbox, which is the claim we can stand
-    // behind.
-    '<p style="margin:28px 0 0;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;">The assistant reads your mail and writes drafts. It never sends from your mailbox — a reply leaves only when you press Send. This digest is delivered by a separate service that has no access to your mailbox.</p>',
+    // Yancey caught the apparent contradiction himself: "the assistant supposedly
+    // cannot send email, but the document says it will send you a summary
+    // email." The answer is now simpler than it was, because nothing is sent at
+    // all — this summary is written directly into his mailbox with the same
+    // permission that writes his drafts, and no workflow calls sendMail.
+    '<p style="margin:28px 0 0;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;">The assistant reads your mail and writes drafts. It never sends anything — this summary was written straight into your inbox rather than emailed to you, and a reply leaves your mailbox only when you press Send.</p>',
     '</div>',
   ]
     .filter(Boolean)
@@ -1777,8 +1775,8 @@ function renderDigestText(buckets, options) {
   }
   lines.push(
     '',
-    'The assistant never sends from your mailbox — only you press Send.',
-    'This digest is delivered by a separate service with no access to your mailbox.',
+    'The assistant never sends anything — only you press Send.',
+    'This summary was written straight into your inbox rather than emailed to you.',
   );
   return lines.join('\n');
 }

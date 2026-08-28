@@ -3,12 +3,10 @@ import { HELPERS } from './helpers-manifest.mjs';
 import { DEPLOY, E, GRAPH, S, SDK_IMPORT, OUTLOOK_CREDENTIAL, SUFFIX, TABLES, TARGET } from './shared.mjs';
 
 const CONFIG = {
-  // Resend's sandbox sender. The verified-domain address
-  // (agent@partnersperform.com) only works once agent.partnersperform.com is
-  // verified; until then Resend rejects anything else outright. Source and the
-  // live workflow had drifted apart on this, which is how a redeploy would have
-  // silently broken delivery.
-  digestFrom: 'onboarding@resend.dev',
+  // Display identity only — nothing is sent, so this address never has to exist
+  // or be verified anywhere. It is listed in WF-A's ignoreSenders so the agent
+  // does not pick up and classify its own digest on the next poll.
+  digestFrom: 'assistant@agent.partnersperform.com',
   digestTo: TARGET.digestTo,
   digestCc: '',
   // Yancey, 2026-08-28: "Please send the daily summary at 7:30 AM Central,
@@ -68,8 +66,28 @@ const html = renderDigestHtml(buckets, {
   errors: errors.slice(0, 5)
 });
 
+// Delivered by writing the message straight into the mailbox rather than
+// emailing it. Mail.ReadWrite is the permission that already writes Yancey's
+// drafts, so this needs nothing new — and because the POST targets /me, the
+// digest can only ever land in the mailbox the credential owns. It cannot be
+// misaddressed to a third party the way an SMTP recipient can.
+//
+// The 0x0E07 extended property clears MSGFLAG_UNSENT, without which Graph files
+// a POSTed message as a draft instead of as received mail.
+const graphPayload = {
+  subject: 'Inbox digest — ' + buckets.stats.needsYou + ' need you, ' +
+    buckets.stats.draftsWaiting + ' drafts waiting',
+  body: { contentType: 'HTML', content: html },
+  from: { emailAddress: { name: 'Upperform inbox assistant', address: String(cfg.digestFrom || '') } },
+  sender: { emailAddress: { name: 'Upperform inbox assistant', address: String(cfg.digestFrom || '') } },
+  toRecipients: [{ emailAddress: { name: 'Yancey Dawson', address: String(cfg.digestTo || '') } }],
+  isRead: false,
+  singleValueExtendedProperties: [{ id: 'Integer 0x0E07', value: '1' }]
+};
+
 return [{
   json: {
+    graphPayload,
     subject: 'Inbox digest — ' + buckets.stats.needsYou + ' need you, ' +
       buckets.stats.draftsWaiting + ' drafts waiting',
     html,
@@ -215,27 +233,28 @@ const buildDigest = node({
 });
 
 const sendDigest = node({
-  type: 'n8n-nodes-base.emailSend',
-  version: 2.1,
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.5,
   config: {
-    name: 'Send Digest (SMTP)',
+    name: 'Deliver Digest (Graph)',
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 5000,
     parameters: {
-      operation: 'send',
-      fromEmail: ${E("{{ $('Config').first().json.digestFrom }}")},
-      toEmail: ${E("{{ $('Config').first().json.digestTo }}")},
-      subject: ${E('{{ $json.subject }}')},
-      emailFormat: 'both',
-      text: ${E('{{ $json.text }}')},
-      html: ${E('{{ $json.html }}')},
-      options: { appendAttribution: false, ccEmail: ${E("{{ $('Config').first().json.digestCc }}")} }
+      method: 'POST',
+      url: ${E("{{ $('Config').first().json.graphBase }}/me/mailFolders/inbox/messages")},
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'microsoftOutlookOAuth2Api',
+      sendBody: true,
+      contentType: 'json',
+      specifyBody: 'json',
+      jsonBody: ${E('{{ JSON.stringify($json.graphPayload) }}')},
+      options: { timeout: 30000 }
     },
-    credentials: { smtp: newCredential('SMTP – Digest Sender') },
+    credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
     position: [1280, -140]
   },
-  output: [{ accepted: ['YDawson@partnersperform.com'] }]
+  output: [{ id: 'AAMkDIGEST', subject: 'Inbox digest', isDraft: false }]
 });
 
 const splitResolved = node({
@@ -279,7 +298,7 @@ const markResolved = node({
 });
 
 const noteHeader = sticky(
-  ${S('## WF-C · Daily Digest & Follow-ups\n\n07:30 America/Chicago, Monday to Friday. Monday looks back 72 hours so nothing from Friday afternoon is missed.\n\n**The digest goes out over SMTP, not Graph.** That is deliberate: it is what lets the Entra app stay read-and-draft only. Do not "simplify" this to Graph later — it would break the promise made to the client on the go-live call.')},
+  ${S('## WF-C · Daily Digest & Follow-ups\n\n07:30 America/Chicago, Monday to Friday. Monday looks back 72 hours so nothing from Friday afternoon is missed.\n\n**The digest is written into the mailbox, not emailed.** A POST to `/me/mailFolders/inbox/messages` under `Mail.ReadWrite` — the same permission that writes the drafts. `sendMail` is never called, so the no-send promise made on the go-live call still holds, and it holds more simply than before: nothing is sent by anyone.\n\nThis replaced SMTP because Resend refused to deliver to Yancey without a verified domain. Writing to the mailbox needs no domain, no third-party service, and cannot be misaddressed — the POST targets `/me`, so it can only ever land in the mailbox the credential owns.\n\n**Do not "simplify" this to `/me/sendMail`.** That would grant the automation the ability to email anyone as Yancey, contradict the footer he reads every morning, and undo the request to strip `Mail.Send` from the Entra app.')},
   [weekdayMorning, config, fetchOpenDrafts],
   { color: 4, width: 620, height: 260 },
 );

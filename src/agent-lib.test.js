@@ -658,8 +658,8 @@ describe('renderDigestHtml', () => {
     // The promise Yancey actually gets to read. He spotted that "cannot send
     // email" sat oddly beside an emailed digest, so both halves are asserted:
     // nothing sends from his mailbox, and the digest comes from elsewhere.
-    expect(html).toContain('never sends from your mailbox');
-    expect(html).toContain('separate service that has no access to your mailbox');
+    expect(html).toContain('never sends anything');
+    expect(html).toContain('written straight into your inbox');
     expect(html).not.toContain('cannot send email');
   });
 

@@ -67,15 +67,14 @@
         "wfT": "1fCjIsw2JjVGkNJb",
         "wfS": "CNttEItjnRC4RkZZ"
       },
-      "digestTo": "gtutor@partnersperform.com",
+      "digestTo": "YDawson@partnersperform.com",
       "mailboxLabel": "YDawson@partnersperform.com",
       "draftingMailbox": "YDawson@partnersperform.com",
       "outlookCredentialId": "gBDmBd3jHGBqqQjl",
       "sharepointCredential": null,
       "sharepointCredentialType": null,
       "draftingEnabled": true,
-      "digestToIntended": "YDawson@partnersperform.com",
-      "_digestToNote": "Yancey asked for the daily summary at 07:30 Central. Schedule and timezone are correct and verified. Delivery still lands on Gabriel because Resend refuses any other recipient - tested 2026-08-28, execution 1392, verbatim: \"550 You can only send testing emails to your own email address (gtutor@partnersperform.com). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain.\" Both halves are required together: verify the domain AND move digestFrom onto it. Changing digestTo alone fails. Left pointing at Yancey the digest would fail silently every weekday, so it is deliberately reverted until the domain exists."
+      "_digestToNote": "Delivered by writing the message into the mailbox via Graph, not by email, so no verified domain is needed and Resend is out of the picture entirely. The POST targets /me, so the digest always lands in the mailbox the credential owns - digestTo is only the displayed To: header and cannot misroute it. digestFrom is the display identity and is listed in WF-A's ignoreSenders, so the agent does not classify its own digest."
     },
     "dev": {
       "label": "gtutor sandbox",

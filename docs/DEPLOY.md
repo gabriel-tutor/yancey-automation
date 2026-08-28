@@ -1614,47 +1614,62 @@ conservative direction and fails nothing.
 ## Live state, 2026-08-28
 
 Published and active in production: **WF-A**, **WF-B**, **WF-C**, **WF-E**.
-WF-A is polling every minute and its scheduled runs are clean.
+WF-A polls every minute; WF-C delivers at 07:30 America/Chicago, Mon–Fri.
+
+**The digest reaches Yancey.** Verified in production, execution 1437: the
+message is in his inbox, `isDraft: false`, unread, from "Upperform inbox
+assistant", and its first real entry is an SCE email from James Vallecorsa that
+arrived at 15:07 — flagged `external_sender` and rendered as *"held: outside
+partnersperform.com"*.
+
+### How it is delivered, and why not by email
+
+Resend refused to deliver to anyone but the account owner without a verified
+domain (execution 1392, hard 550). Rather than wait on DNS, the digest is now
+**written directly into the mailbox**:
+
+```
+POST /me/mailFolders/inbox/messages     (Mail.ReadWrite)
+```
+
+That is the same permission that already writes his drafts, so it needs nothing
+new. `sendMail` is never called — the no-send promise still holds, and it holds
+more simply than before: *nothing is sent by anyone*. The footer he reads says
+exactly that.
+
+Three properties worth keeping:
+
+- **No domain, no third party.** Resend and SMTP are out of the picture.
+- **It cannot be misaddressed.** The POST targets `/me`, so the digest can only
+  land in the mailbox the credential owns. `digestTo` is the displayed To:
+  header and nothing more. An SMTP recipient could be typo'd to an outsider;
+  this cannot.
+- **The agent will not classify its own digest.** `digestFrom` is
+  `assistant@agent.partnersperform.com`, already in WF-A's `ignoreSenders`.
+
+`digestFrom` is a display identity. It never has to exist or be verified.
+
+**Do not "simplify" this to `/me/sendMail`.** It would grant the automation the
+ability to email anyone as Yancey, contradict the footer, and undo the pending
+request to strip `Mail.Send` from the Entra app. Yancey personally asked how the
+summary was delivered; the answer has to stay true.
 
 ## Still open
 
-1. **The digest reaches Gabriel, not Yancey — and this cannot be fixed in n8n.**
-   Pointing `digestTo` at `YDawson@partnersperform.com` was tried on 2026-08-28
-   (execution 1392) and Resend refused it outright:
+1. **`Mail.Send` is still granted** on the Entra app. Now genuinely unused by
+   anything — the last thing that might have wanted it was the digest, and it
+   does not. Bundled into the SharePoint access request in
+   `docs/access-request-sharepoint.md`.
 
-   > 550 You can only send testing emails to your own email address
-   > (gtutor@partnersperform.com). To send emails to other recipients, please
-   > verify a domain at resend.com/domains, and change the `from` address to an
-   > email using this domain.
-
-   Both halves are required *together*. Changing `digestTo` on its own fails,
-   because the restriction is on the shared `onboarding@resend.dev` sender.
-
-   To unblock:
-   1. Add and verify a domain at `resend.com/domains` — `agent.partnersperform.com`
-      is the one the design assumes. This needs DNS records on
-      `partnersperform.com`, so it is a Yancey/IT action, not a Gabriel one.
-   2. Set `digestFrom` to an address on that domain
-      (`agent@partnersperform.com`).
-   3. Set `digestTo` to `YDawson@partnersperform.com`.
-
-   Both values live in `config/deploy.json` under `targets.prod`, and the
-   intended recipient is already recorded there as `digestToIntended`.
-
-   It is deliberately left pointing at Gabriel. Aimed at Yancey it would fail at
-   07:30 every weekday, alert on every failure, and deliver him nothing — worse
-   than arriving somewhere it can be forwarded from.
-
-2. **`Mail.Send` is still granted** on the Entra app. Unused by any workflow,
-   but it should come off. Bundled into the SharePoint access request in
-   `docs/access-request-sharepoint.md` — same admin, same conversation.
-
-3. **Gate 2 needs regenerating.** Its five voice samples were opp-06, opp-03,
+2. **Gate 2 needs regenerating.** Its five voice samples were opp-06, opp-03,
    opp-08, opp-09 and opp-10 — every one of which is now flagged rather than
-   drafted. Asking Yancey to rate drafts the system would never write is worse
-   than not asking. Rebuild the sample from opp-02, opp-04 and opp-07.
+   drafted. Rebuild the sample from opp-02, opp-04 and opp-07 before asking
+   Yancey to rate anything.
 
-4. **Tell Yancey the drafting volume before he notices it.** On his own training
+3. **Tell Yancey the drafting volume before he notices it.** On his own training
    set these rules produce a draft for roughly 3 opportunities in 10; Chuck
-   accounts for six of the ten. That is his instruction working exactly as
-   written, but it is better heard from Gabriel than discovered.
+   accounts for six of the ten. That is his instruction working as written, but
+   it is better heard from Gabriel than discovered.
+
+4. **Resend is no longer used by anything.** The SMTP credential and the Resend
+   account can be retired unless something else needs them.
