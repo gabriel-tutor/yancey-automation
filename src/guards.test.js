@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { GUARD_PATTERNS, pricingGuard, sensitivityGuard } from './agent-lib.js';
+import {
+  CLIENT_POLICY_TOPICS,
+  GUARD_PATTERNS as BASE_PATTERNS,
+  pricingGuard,
+  sensitivityGuard,
+} from './agent-lib.js';
+
+/**
+ * Base guards plus Yancey's named categories, composed here rather than in the
+ * library so the library's bundles stay tree-shakeable. Built from the list, so
+ * adding a category without adding probes fails this suite.
+ * @type {Record<string, RegExp>}
+ */
+const GUARD_PATTERNS = Object.assign({}, BASE_PATTERNS);
+for (const topic of CLIENT_POLICY_TOPICS) {
+  GUARD_PATTERNS['TOPIC_' + topic.key.toUpperCase()] = topic.pattern;
+}
 
 /**
  * Every term in every guard vocabulary, checked against a sentence somebody
@@ -129,6 +145,96 @@ const PROBES = {
     'osha': 'OSHA is opening an inquiry into the incident.',
     'whistleblow\\w*': 'A whistleblower complaint was raised internally.',
   },
+
+  TOPIC_CONTRACT: {
+    'contract': 'The contract needs signing before we mobilise.',
+    'contracts': 'Both contracts are up for renewal in March.',
+    'subcontract': 'We would subcontract the field survey portion.',
+    'nda': 'Can you sign the NDA before we share the model?',
+    'non-?disclosure': 'Their non-disclosure agreement is attached.',
+    'master service agreement': 'The master service agreement covers this scope.',
+    'msa': 'Is this work under the MSA or a separate order?',
+    'terms and conditions': 'Legal flagged the terms and conditions.',
+    'addendum': 'Please review the addendum before Friday.',
+    'countersign': 'I need you to countersign the amendment.',
+    'executed agreement': 'The executed agreement is in the folder.',
+    'signed agreement': 'We do not have a signed agreement yet.',
+  },
+  TOPIC_HR: {
+    'human resources': 'Human resources asked about the start date.',
+    'hr': 'HR needs the paperwork by Monday.',
+    'new hire': 'The new hire starts on the second.',
+    'hiring': 'Are we hiring for the analyst role this quarter?',
+    'onboarding': 'Her onboarding is scheduled for next week.',
+    'offboarding': 'We should start his offboarding checklist.',
+    'performance review': 'Your performance review is due.',
+    'compensation': 'The compensation question came up again.',
+    'salary': 'He asked about the salary band.',
+    'payroll': 'Payroll needs the timesheet corrections.',
+    'employee benefits': 'The employee benefits renewal is due.',
+    'open enrollment': 'Open enrollment closes on the fifteenth.',
+    'resignation': 'I received his resignation this morning.',
+    'disciplinary': 'This may become a disciplinary matter.',
+    'headcount': 'Do we have headcount approved for this?',
+  },
+  TOPIC_FINANCIAL: {
+    'invoice': 'The invoice for July has not arrived.',
+    'invoices': 'Two invoices are still outstanding.',
+    'invoicing': 'Who handles invoicing for this account?',
+    'past due': 'The account is 30 days past due.',
+    'overdue': 'That payment is overdue.',
+    'accounts payable': 'Accounts payable is asking for the reference.',
+    'accounts receivable': 'Accounts receivable flagged the balance.',
+    'wire transfer': 'They want to pay by wire transfer.',
+    'bank details': 'Please confirm the bank details before we pay.',
+    'routing number': 'The routing number on the form looks wrong.',
+    'purchase order': 'We need a purchase order before starting.',
+    'expense report': 'My expense report is still unapproved.',
+    'reimbursement': 'Submitting the travel reimbursement today.',
+    'remittance': 'The remittance advice is attached.',
+  },
+  TOPIC_COMPLAINT: {
+    'complaint': 'We received a complaint from the district team.',
+    'complaints': 'There have been complaints about response times.',
+    'dissatisfied': 'They are dissatisfied with the last deliverable.',
+    'unacceptable': 'The delay is unacceptable to their leadership.',
+    'escalation': 'This is heading for an escalation.',
+    'escalating': 'They are escalating to the steering committee.',
+    'disappointed': 'The client is disappointed with the outcome.',
+    'unhappy with': 'They are unhappy with how it was handled.',
+    'not happy with': 'He is not happy with the revised plan.',
+  },
+  TOPIC_MEDIA: {
+    'media inquiry': 'We have a media inquiry about the outage.',
+    'media request': 'A media request came in this morning.',
+    'media contact': 'Who is the media contact for this?',
+    'press release': 'Do you want to review the press release?',
+    'press statement': 'They are drafting a press statement.',
+    'interview request': 'An interview request landed in my inbox.',
+    'on the record': 'He wants a comment on the record.',
+    'for attribution': 'Is that quote for attribution?',
+  },
+  TOPIC_CONFIDENTIAL: {
+    'confidential': 'The attached numbers are confidential.',
+    'confidentiality': 'Confidentiality applies to the whole appendix.',
+    'proprietary': 'That method is proprietary to them.',
+    'privileged': 'This thread is privileged and should stay closed.',
+    'do not share': 'Please do not share this outside the team.',
+    'not for distribution': 'Draft only, not for distribution.',
+    'internal use only': 'Marked internal use only.',
+  },
+  TOPIC_APPROVAL: {
+    'approve': 'Can you approve this before Thursday?',
+    'approves': 'Once he approves it we can proceed.',
+    'approval': 'This needs your approval to move.',
+    'approvals': 'Two approvals are still outstanding.',
+    'sign-?off': 'We need your sign-off on the scope.',
+    'authorization': 'Who gives authorization for the spend?',
+    'authorisation': 'Their authorisation has not come through.',
+    'authorize': 'Please authorize the change order.',
+    'authorise': 'Can you authorise the extra day?',
+    'go-?ahead': 'Give me the go-ahead and I will book it.',
+  },
 };
 
 /**
@@ -173,8 +279,8 @@ describe('guard vocabularies do not overlap where the rule needs two signals', (
   // collapses that into a single-token trigger — how "given how much Upperform
   // has grown" became a pricing request.
   it('PRICING_ASK and PRICING_QUESTION share no term', () => {
-    const ask = alternativesOf(GUARD_PATTERNS.PRICING_ASK);
-    const question = alternativesOf(GUARD_PATTERNS.PRICING_QUESTION);
+    const ask = alternativesOf(BASE_PATTERNS.PRICING_ASK);
+    const question = alternativesOf(BASE_PATTERNS.PRICING_QUESTION);
     expect(ask.filter((t) => question.indexOf(t) !== -1)).toEqual([]);
   });
 });
@@ -203,6 +309,14 @@ describe('the guards stay quiet on ordinary consulting mail', () => {
     'I will send the revised deck with the additions you mention.',
     'Please do a peer review of the T+1 project plan for me.',
     'SCE plans to deploy approximately $40.6B from 2026 to 2030.',
+    // Upperform's own subject matter, one word away from the new categories.
+    // All four are lifted from opp-04, which Yancey labelled OPPORTUNITY and
+    // which must still be draftable: "benefits" there means programme benefits,
+    // and "expense" is the client's cost base, not a claim form.
+    'Sustain benefits through performance monitoring that feeds the pipeline.',
+    'Reducing operating expense improves cash flow and credit metrics.',
+    'The contractor crews are onsite Monday morning.',
+    'Directors are accountable for realizing benefits across the portfolio.',
   ];
 
   for (const line of ORDINARY) {

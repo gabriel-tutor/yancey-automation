@@ -155,3 +155,96 @@ describe('WF-A Apply Classification node body', () => {
     expect(out.json.guardFlags).toContain('pricing_guard');
   });
 });
+
+/**
+ * The same node body, configured exactly as production is: Yancey's rules of
+ * 2026-08-28. This is the layer that actually ships — the library is tested
+ * separately, but a config key spelled wrong in the node would pass there and
+ * fail here.
+ */
+describe("WF-A Apply Classification under Yancey's rules", () => {
+  const cfg = {
+    confidenceMin: 0.6,
+    followupDays: 3,
+    alwaysFlagSenders: ['ccoleman@partnersperform.com'],
+    internalDomains: ['partnersperform.com'],
+    draftingMailbox: 'YDawson@partnersperform.com',
+  };
+  const base = {
+    messageId: 'M1', messageIdEnc: 'M1', conversationId: 'C1', internetMessageId: '<x>',
+    receivedAt: '2026-08-27T09:00:00Z',
+    subject: 'RE: Vector CI', webLink: 'https://o/x', hasAttachments: false, categories: [],
+    cleanText: 'Can you pull the workbook together before Thursday?',
+    threadText: 'Can you pull the workbook together before Thursday?',
+    toRecipients: ['YDawson@partnersperform.com'], ccRecipients: [],
+  };
+  const model = {
+    label: 'opportunity', confidence: 0.95, reasoning: 'live work',
+    requires_draft: true, urgency: 'this_week', asks_of_yancey: ['send workbook'],
+  };
+
+  /** @param {any} prep @param {any} [modelOut] */
+  const runWith = (prep, modelOut) =>
+    run(applyClassificationCode, {
+      $: nodeRef({ Config: cfg, 'Prepare Email': prep, 'Resolve Context': { profileSource: 'file' } }),
+      $json: modelOut || model,
+      $itemIndex: 0,
+    });
+
+  it('drafts for a colleague', () => {
+    const out = runWith({ ...base, senderEmail: 'scorkran@partnersperform.com', senderName: 'Shawn Corkran' });
+    expect(out.json.label).toBe('opportunity');
+    expect(out.json.requiresDraft).toBe(true);
+    expect(out.json.categories).toContain('AI-Action');
+  });
+
+  it('never drafts for Chuck Coleman', () => {
+    const out = runWith({ ...base, senderEmail: 'Ccoleman@partnersperform.com', senderName: 'Charles Coleman' });
+    expect(out.json.label).toBe('flag_for_yancey');
+    expect(out.json.requiresDraft).toBe(false);
+    expect(out.json.guardFlags).toContain('always_flag_sender');
+    expect(out.json.categories).toContain('AI-Review');
+  });
+
+  it('flags an outsider rather than replying to them', () => {
+    const out = runWith({ ...base, senderEmail: 'Jessica.Doucette@sce.com', senderName: 'Jessica Doucette' });
+    expect(out.json.label).toBe('flag_for_yancey');
+    expect(out.json.requiresDraft).toBe(false);
+    expect(out.json.guardFlags).toContain('external_sender');
+  });
+
+  // The rule he gave is "flag without drafting", not "escalate everything
+  // external". Five of his junk fixtures are outside senders; promoting those
+  // would put PayPal receipts in the bucket he reads at 07:30.
+  it('leaves an outside newsletter as noise', () => {
+    const out = runWith(
+      { ...base, senderEmail: 'service@paypal.com', senderName: 'PayPal' },
+      { label: 'noise', confidence: 0.97, reasoning: 'receipt', requires_draft: false, urgency: 'fyi', asks_of_yancey: [] },
+    );
+    expect(out.json.label).toBe('noise');
+    expect(out.json.status).toBe('resolved');
+    expect(out.json.guardFlags).toBe('');
+  });
+
+  it('names the category that held a colleague message back', () => {
+    const out = runWith({
+      ...base,
+      senderEmail: 'dyoes@partnersperform.com',
+      cleanText: 'Can you approve the change order before Thursday?',
+      threadText: 'Can you approve the change order before Thursday?',
+    });
+    expect(out.json.label).toBe('flag_for_yancey');
+    expect(out.json.guardFlags).toContain('sensitivity:approval');
+  });
+
+  it('still drafts consulting mail that only sounds like a flagged category', () => {
+    const out = runWith({
+      ...base,
+      senderEmail: 'dyoes@partnersperform.com',
+      cleanText: 'Sustain benefits through performance monitoring. Reducing operating expense improves cash flow.',
+      threadText: 'Sustain benefits through performance monitoring. Reducing operating expense improves cash flow.',
+    });
+    expect(out.json.label).toBe('opportunity');
+    expect(out.json.requiresDraft).toBe(true);
+  });
+});

@@ -1446,10 +1446,84 @@ Fine on disk, but pair it with `saveDataSuccessExecution: none` on WF-A. At
 2,880 runs a day the execution list becomes unusable for debugging, drowned in
 idle polls — which is the actual cost, not storage.
 
-## Open items still owed by Yancey
+## Yancey's answers, 2026-08-28 — all five received and implemented
 
-From the spec §13 and the client doc: exact signature block for first contacts,
-booking link, digest time confirmation, follow-up threshold, and any senders
-that should always be flagged. The first two are `signature` / `bookingLink` in
-WF-B's Config; the last is `alwaysFlagSenders` in WF-A's Config, which accepts
-either full addresses or `@domain.com`.
+He replied to every open question and added one instruction nobody had asked
+for. Everything below is deployed to the prod drafts.
+
+| He asked for | Where it lives | State |
+|---|---|---|
+| Signature: `Yancey Dawson` | WF-B Config `signature` | done |
+| No booking link | WF-B Config `bookingLink` empty | done — the empty value now produces an explicit prohibition in the draft prompt rather than silently dropping the rule, so the model cannot offer to "send a calendar link" |
+| Digest 07:30 Central, Mon–Fri | WF-C trigger + workflow timezone | already correct; **verified live** — the trigger reports `America/Chicago (UTC-05:00)` and execution 1247 fired at 12:30:35 UTC |
+| Follow-up after 3 business days | `followupDays` in WF-A and WF-C | already correct; `addBusinessDays` skips weekends |
+| Always flag Chuck Coleman and anyone outside partnersperform.com | `config/deploy.json` → `policy` | done |
+
+### The one that changes the product
+
+> "Please always flag emails from Chuck Coleman and anyone outside of
+> partnersperform.com without drafting a response."
+
+A reply is now written only for a colleague at `partnersperform.com` who is not
+Chuck and trips no topic guard. Measured against his own labelled set, that
+takes drafting from 10 of 10 opportunities to **3 of 10** — Chuck sent six of
+them, and one was external. He keeps all of the triage and most of the drafting
+goes away. That is a deliberate, conservative posture, not a defect, and
+widening it later is one line in `policy`.
+
+**The external rule deliberately does not touch `noise`.** Ten of the
+twenty-one fixtures are outside senders classified as junk; promoting those to
+`flag_for_yancey` would put PayPal receipts and newsletters into the bucket he
+reads at 07:30. Only mail that would otherwise have been *drafted* is promoted.
+
+### Topic guards he named
+
+`legal, contracts, HR, pricing, financial matters, client complaints, media
+requests, confidential information, approval requests` — added as
+`CLIENT_POLICY_TOPICS` in `src/agent-lib.js`, each reporting its own category
+so the digest can say *why* something was held.
+
+Pricing keeps its existing two-signal guard rather than firing on any money
+word: it is the gate that caught opp-05, and external pricing asks are now
+covered by the sender rule anyway. The financial vocabulary is deliberately
+narrow — Upperform's day job *is* budgets, costs and operating expense, and
+opp-04 says "sustain benefits" and "reducing operating expense" while being
+exactly the kind of mail he wants drafted. Bare `benefits` and `expense` would
+have broken it; there are regression probes for both.
+
+### The contradiction he spotted
+
+> "The assistant supposedly cannot send email, but the document says it will
+> send you a summary email."
+
+He was right to ask, and the old wording was sloppy in two ways. The digest goes
+out over **SMTP through Resend**, a service with no access to his mailbox — the
+Graph app is not involved in sending at all. And "cannot send email" claimed
+more than has been proven: the Entra app still holds `Mail.Send` (see the open
+item below), so the honest claim is that *no workflow sends from his mailbox*.
+The digest footer now says exactly that.
+
+## Still open
+
+1. **The digest does not reach Yancey yet.** Schedule and timezone are right,
+   but Resend is on its sandbox sender and refuses every recipient except the
+   account owner with a hard 550, so it lands on Gabriel. Verify
+   `agent.partnersperform.com` in Resend, then flip `digestTo` to
+   `digestToIntended` and `digestFrom` to `agent@partnersperform.com`. Source is
+   kept equal to what is deployed on purpose — the override previously lived
+   only in the live workflow, so a rebuild would have pointed the digest at an
+   address Resend rejects and broken it silently.
+2. **`Mail.Send` is still granted** on the Entra app. Unused by any workflow,
+   but it should come off. Bundled into the SharePoint access request in
+   `docs/access-request-sharepoint.md` — same admin, same conversation.
+3. **Gate 2 needs regenerating.** Its five voice samples were opp-06, opp-03,
+   opp-08, opp-09 and opp-10 — every one of which is now flagged rather than
+   drafted. Asking Yancey to rate drafts the system would never write is worse
+   than not asking. Rebuild the sample from opp-02, opp-04 and opp-07.
+4. **Gate 1 has not been re-run** since the policy change. It needs
+   `OPENAI_API_KEY` inline. Unit coverage is 387 tests including the deployed
+   node bodies, but the gate is the one that scores against his real mail.
+5. **Nothing is published.** All three workflows are updated as *drafts*; the
+   previously published versions are still serving. Publishing was blocked by
+   the permission classifier, so it needs a human — in the n8n UI, or by
+   re-running with approval.

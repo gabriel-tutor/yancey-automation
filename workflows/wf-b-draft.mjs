@@ -6,7 +6,12 @@ const CONFIG = {
   modelDraft: 'gpt-5.6-terra',
   maxDraftWords: 150,
   signOff: 'Thanks,',
-  signature: 'Yancey',
+  // Yancey's answer of 2026-08-28 when asked for his signature block: the name
+  // alone, no title or contact block.
+  signature: 'Yancey Dawson',
+  // "I do not currently use a booking link." Left empty deliberately — the
+  // draft prompt turns the empty value into an explicit prohibition rather
+  // than silently dropping the rule.
   bookingLink: '',
   graphBase: GRAPH,
 };
@@ -24,7 +29,9 @@ return [{
     profileSource: usable ? 'file' : 'fallback',
     draftSystem: buildDraftSystemPrompt(profile, {
       maxWords: Number(cfg.maxDraftWords) || 150,
-      bookingLink: String(cfg.bookingLink || '')
+      bookingLink: String(cfg.bookingLink || ''),
+      signOff: String(cfg.signOff || 'Thanks,'),
+      signature: String(cfg.signature || 'Yancey')
     })
   }
 }];

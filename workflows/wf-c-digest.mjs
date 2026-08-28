@@ -3,12 +3,24 @@ import { HELPERS } from './helpers-manifest.mjs';
 import { DEPLOY, E, GRAPH, S, SDK_IMPORT, OUTLOOK_CREDENTIAL, SUFFIX, TABLES, TARGET } from './shared.mjs';
 
 const CONFIG = {
-  digestFrom: 'agent@partnersperform.com',
+  // Resend's sandbox sender. The verified-domain address
+  // (agent@partnersperform.com) only works once agent.partnersperform.com is
+  // verified; until then Resend rejects anything else outright. Source and the
+  // live workflow had drifted apart on this, which is how a redeploy would have
+  // silently broken delivery.
+  digestFrom: 'onboarding@resend.dev',
   digestTo: TARGET.digestTo,
   digestCc: '',
+  // Yancey, 2026-08-28: "Please send the daily summary at 7:30 AM Central,
+  // Monday through Friday." The trigger below is already 07:30 Mon-Fri, and the
+  // America/Chicago timezone is a workflow *setting* the SDK cannot express —
+  // it is applied via MCP and survives node updates. Verify it after any
+  // recreate-from-scratch, or the digest silently moves to 07:30 UTC, which is
+  // 01:30 his time.
   followupDays: 3,
   autoCloseDays: 21,
-  mode: 'shadow',
+  // Drafting is on in production, so the shadow-mode banner must not appear.
+  mode: 'live',
   mailboxLabel: TARGET.mailboxLabel,
   graphBase: GRAPH,
 };

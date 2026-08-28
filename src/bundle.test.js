@@ -95,7 +95,7 @@ describe('tree-shaken Code node helpers', () => {
       source,
       'renderDigestHtml(bucketDigestRows([], { now: "2026-08-26T12:30:00Z", liveDraftIds: [], followupDays: 3 }), { dateLabel: "Wednesday, August 26" })',
     );
-    expect(html).toContain('cannot send email');
+    expect(html).toContain('never sends from your mailbox');
     expect(html).toContain('Needs you');
   });
 

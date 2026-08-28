@@ -1,7 +1,7 @@
 import { codeNode } from '../scripts/bundle.mjs';
 import { CLASSIFY_SCHEMA } from '../src/prompts.js';
 import { HELPERS } from './helpers-manifest.mjs';
-import { DEPLOY, E, GRAPH, S, SDK_IMPORT, contextLoaderNodes, OUTLOOK_CREDENTIAL, SUFFIX, TABLES, TARGET } from './shared.mjs';
+import { DEPLOY, E, GRAPH, POLICY, S, SDK_IMPORT, contextLoaderNodes, OUTLOOK_CREDENTIAL, SUFFIX, TABLES, TARGET } from './shared.mjs';
 
 const CONFIG = {
   modelClassify: 'gpt-5.6-luna',
@@ -10,13 +10,27 @@ const CONFIG = {
   pollBatch: 25,
   lookbackHours: 6,
   maxBodyChars: 6000,
-  draftingEnabled: false,
+  // Live in both targets since 2026-08-28. Read from the target rather than
+  // hardcoded false: the source said false while production ran true, so any
+  // rebuild would have silently switched Yancey's drafting back off.
+  draftingEnabled: TARGET.draftingEnabled === true,
   // The mailbox drafting is authorised for. If the Outlook credential is ever
   // re-pointed (at Yancey, say) while draftingEnabled is still true, messages
   // stop matching this and the agent falls back to labelling only. Update it
   // deliberately at handover — never leave it blank, which blocks all drafting.
   draftingMailbox: TARGET.draftingMailbox,
-  alwaysFlagSenders: [],
+  // Yancey, 2026-08-28: "Please always flag emails from Chuck Coleman and
+  // anyone outside of partnersperform.com without drafting a response."
+  //
+  // Chuck is internal, so the domain rule alone would not catch him. He is the
+  // President and the most frequent sender in the labelled set — six of the ten
+  // OPPORTUNITY emails — so this single line is what most changes the agent's
+  // day-to-day behaviour. Deliberate.
+  alwaysFlagSenders: POLICY.alwaysFlagSenders,
+  // Replies are written only for colleagues. Everyone else is surfaced instead.
+  // Exact domain match, so add any second domain here rather than relying on a
+  // suffix; `upperform.com` is the business's website, not its mail domain.
+  internalDomains: POLICY.internalDomains,
   ignoreSenders: [
     'onboarding@resend.dev',
     'agent@partnersperform.com',
@@ -100,6 +114,7 @@ const c = normalizeClassification($json, {
   senderEmail: String(src.senderEmail || ''),
   confidenceMin: Number(cfg.confidenceMin) || 0.6,
   alwaysFlagSenders: Array.isArray(cfg.alwaysFlagSenders) ? cfg.alwaysFlagSenders : [],
+  internalDomains: Array.isArray(cfg.internalDomains) ? cfg.internalDomains : [],
   authorised
 });
 
@@ -496,7 +511,7 @@ const noteIdempotency = sticky(
 );
 
 const noteShadow = sticky(
-  ${S('### Shadow mode lives in this IF\n\n`draftingEnabled` is **false** at deploy time. WF-A labels only — exactly the 2–3 day shadow period in the spec.\n\nWhen Yancey signs off on the labels, flip `draftingEnabled` to `true` in **Config**. Nothing else changes.')},
+  ${S('### The drafting switch lives in this IF\n\n`draftingEnabled` is **true** — the shadow period is over and replies are being written.\n\nSince 2026-08-28 a reply is only written for a colleague at `partnersperform.com` who is not Chuck Coleman, and only when no topic guard fires. Everything else is flagged for Yancey instead, which is what he asked for. Set `draftingEnabled` to `false` in **Config** to stop drafting entirely without touching anything else.')},
   [needsDraft, callDraftWorkflow],
   { color: 3, width: 460, height: 260 },
 );

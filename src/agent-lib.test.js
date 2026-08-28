@@ -18,6 +18,8 @@ import {
   pricingGuard,
   renderDigestHtml,
   normalizeErrorPayload,
+  senderDomain,
+  isInternalSender,
   sensitivityGuard,
   stripLegalFooter,
   stripQuotedHistory,
@@ -653,7 +655,12 @@ describe('renderDigestHtml', () => {
     expect(html).toContain('Needs you');
     expect(html).toContain('Drafts waiting');
     expect(html).toContain('Follow-ups due');
-    expect(html).toContain('cannot send email');
+    // The promise Yancey actually gets to read. He spotted that "cannot send
+    // email" sat oddly beside an emailed digest, so both halves are asserted:
+    // nothing sends from his mailbox, and the digest comes from elsewhere.
+    expect(html).toContain('never sends from your mailbox');
+    expect(html).toContain('separate service that has no access to your mailbox');
+    expect(html).not.toContain('cannot send email');
   });
 
   it('shows empty-state copy rather than a blank section', () => {
@@ -1169,5 +1176,145 @@ describe('pricingGuard — the ask and the question have to be in the same breat
       'Is this possible, and can you provide an estimate of timeline and cost?',
     ].join('\n');
     expect(pricingGuard(thread, 'RE: Northern district ILI extension').triggered).toBe(true);
+  });
+});
+
+/**
+ * Yancey's rules of 2026-08-28: draft only for colleagues, never for Chuck
+ * Coleman, and flag his named categories.
+ */
+describe("Yancey's drafting rules", () => {
+  const INTERNAL = ['partnersperform.com'];
+
+  /** @param {Partial<Record<string, unknown>>} over */
+  function raw(over) {
+    return Object.assign(
+      {
+        label: 'opportunity',
+        confidence: 0.95,
+        reasoning: 'Colleague asking for a plan review.',
+        requires_draft: true,
+        urgency: 'this_week',
+        asks_of_yancey: ['review the plan'],
+      },
+      over || {},
+    );
+  }
+
+  /** @param {string} senderEmail @param {Partial<Record<string, unknown>>} over */
+  function ctx(senderEmail, over) {
+    return Object.assign(
+      {
+        cleanText: 'Can you take a look at the project plan before Thursday?',
+        subject: 'Plan review',
+        senderEmail,
+        confidenceMin: 0.6,
+        internalDomains: INTERNAL,
+      },
+      over || {},
+    );
+  }
+
+  it('drafts for a colleague', () => {
+    const v = normalizeClassification(raw({}), ctx('scorkran@partnersperform.com', {}));
+    expect(v.label).toBe('opportunity');
+    expect(v.requiresDraft).toBe(true);
+    expect(v.guards).toEqual([]);
+  });
+
+  it('flags an outsider instead of drafting', () => {
+    const v = normalizeClassification(raw({}), ctx('jessica.doucette@sce.com', {}));
+    expect(v.label).toBe('flag_for_yancey');
+    expect(v.requiresDraft).toBe(false);
+    expect(v.guards).toContain('external_sender');
+  });
+
+  // The rule is "flag without drafting", not "promote everything external".
+  // Ten of the twenty-one fixtures are external noise; routing those into the
+  // review bucket would put a newsletter in front of him every morning.
+  it('leaves external noise as noise', () => {
+    const v = normalizeClassification(
+      raw({ label: 'noise', requires_draft: false }),
+      ctx('billing@paypal.com', {}),
+    );
+    expect(v.label).toBe('noise');
+    expect(v.requiresDraft).toBe(false);
+    expect(v.guards).not.toContain('external_sender');
+  });
+
+  it('never drafts for Chuck Coleman even though he is internal', () => {
+    const v = normalizeClassification(
+      raw({}),
+      ctx('ccoleman@partnersperform.com', {
+        alwaysFlagSenders: ['ccoleman@partnersperform.com'],
+      }),
+    );
+    expect(v.label).toBe('flag_for_yancey');
+    expect(v.requiresDraft).toBe(false);
+    expect(v.guardFlags).toContain('always_flag_sender');
+  });
+
+  it('keeps the classifier verdict alongside the policy outcome', () => {
+    const v = normalizeClassification(raw({}), ctx('jessica.doucette@sce.com', {}));
+    expect(v.modelLabel).toBe('opportunity');
+    expect(v.label).toBe('flag_for_yancey');
+  });
+
+  it('does nothing when no internal domain is configured', () => {
+    const v = normalizeClassification(
+      raw({}),
+      ctx('jessica.doucette@sce.com', { internalDomains: [] }),
+    );
+    expect(v.label).toBe('opportunity');
+    expect(v.requiresDraft).toBe(true);
+  });
+
+  it('names the category that held a message back', () => {
+    const v = normalizeClassification(
+      raw({}),
+      ctx('scorkran@partnersperform.com', {
+        cleanText: 'Can you approve the change order before Thursday?',
+      }),
+    );
+    expect(v.label).toBe('flag_for_yancey');
+    expect(v.guardFlags).toContain('sensitivity:approval');
+  });
+
+  it('still drafts consulting mail that only sounds like a flagged category', () => {
+    const v = normalizeClassification(
+      raw({}),
+      ctx('dyoes@partnersperform.com', {
+        cleanText:
+          'Sustain benefits through performance monitoring. Reducing operating expense improves cash flow.',
+      }),
+    );
+    expect(v.label).toBe('opportunity');
+    expect(v.requiresDraft).toBe(true);
+  });
+});
+
+describe('sender domain matching fails closed', () => {
+  it('reads the domain half', () => {
+    expect(senderDomain('Ccoleman@PartnersPerform.com')).toBe('partnersperform.com');
+  });
+
+  it.each([
+    ['', 'no address'],
+    ['not-an-address', 'no @'],
+    ['someone@', 'no domain'],
+  ])('treats %s as external (%s)', (address) => {
+    expect(isInternalSender(address, ['partnersperform.com'])).toBe(false);
+  });
+
+  it('does not accept a subdomain as internal', () => {
+    expect(isInternalSender('a@mail.partnersperform.com', ['partnersperform.com'])).toBe(false);
+  });
+
+  it('does not accept a lookalike suffix as internal', () => {
+    expect(isInternalSender('a@notpartnersperform.com', ['partnersperform.com'])).toBe(false);
+  });
+
+  it('matches the configured domain regardless of case or a leading @', () => {
+    expect(isInternalSender('YDawson@partnersperform.com', ['@PartnersPerform.com'])).toBe(true);
   });
 });

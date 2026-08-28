@@ -21,6 +21,13 @@ export const DEPLOY = JSON.parse(readFileSync(join(ROOT, 'config/deploy.json'), 
 const TARGET_NAME = process.env.TARGET === 'dev' ? 'dev' : 'prod';
 export const TARGET = { name: TARGET_NAME, ...DEPLOY.targets[TARGET_NAME] };
 export const OUTLOOK_CREDENTIAL = TARGET.outlookCredential;
+
+/**
+ * Yancey's drafting rules. Deliberately not a literal in the workflow: the
+ * golden-set harness reads the same block, so a gate can never certify a policy
+ * that differs from the one running in his mailbox.
+ */
+export const POLICY = DEPLOY.policy || { internalDomains: [], alwaysFlagSenders: [] };
 export const TABLES = TARGET.dataTables;
 
 /** Suffix appended to every workflow name, so dev copies are unmistakable. */

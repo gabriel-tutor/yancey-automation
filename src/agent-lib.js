@@ -844,6 +844,47 @@ function addressedToMailbox(toRecipients, ccRecipients, mailbox) {
   return false;
 }
 
+/**
+ * The domain half of an address, lowercased. Empty when there is not one.
+ * @param {unknown} email
+ * @returns {string}
+ */
+function senderDomain(email) {
+  const addr = String(email || '').toLowerCase().trim();
+  const at = addr.lastIndexOf('@');
+  if (at === -1) return '';
+  return addr.slice(at + 1).trim();
+}
+
+/**
+ * Is this sender inside the business?
+ *
+ * Yancey's rule of 2026-08-28: draft only for colleagues, flag everyone else.
+ * Fails closed — a missing address, a malformed one, or an unconfigured domain
+ * list all read as external. The asymmetry is the point: a wrong "internal"
+ * writes a reply to an outsider, which is the exact thing he ruled out, while a
+ * wrong "external" costs him one flag he could have had a draft for.
+ *
+ * Exact domain match only. `mail.partnersperform.com` is not
+ * `partnersperform.com`, and a lookalike domain is precisely the case where
+ * being strict is worth the inconvenience.
+ *
+ * @param {unknown} email
+ * @param {unknown} internalDomains
+ * @returns {boolean}
+ */
+function isInternalSender(email, internalDomains) {
+  const domains = Array.isArray(internalDomains) ? internalDomains : [];
+  if (domains.length === 0) return false;
+  const domain = senderDomain(email);
+  if (domain.length === 0) return false;
+  for (const entry of domains) {
+    const d = String(entry || '').toLowerCase().trim().replace(/^@/, '');
+    if (d.length > 0 && d === domain) return true;
+  }
+  return false;
+}
+
 // `indemnif` and `whistleblow` are stems, so they carry their own suffix match.
 // Written as bare alternatives inside the trailing \b they matched nothing:
 // "indemnif\b" cannot match "indemnification".
@@ -851,11 +892,78 @@ const SENSITIVE_TOPICS =
   /\b(lawsuit|litigation|subpoena|attorney|legal counsel|breach of contract|termination|severance|grievance|harassment|discrimination|press inquiry|journalist|reporter|defamation|non-?compete|indemni\w*|liability claim|settlement|arbitration|osha|whistleblow\w*)\b/i;
 
 /**
+ * The categories Yancey named on 2026-08-28: "legal, contracts, HR, pricing,
+ * financial matters, client complaints, media requests, confidential
+ * information, approval requests, and anything the assistant is uncertain
+ * about."
+ *
+ * Legal, HR and press already live in SENSITIVE_TOPICS above and are not
+ * repeated. Pricing stays with `pricingGuard`, which needs two independent
+ * signals and is the guard that caught opp-05 — widening it to fire on any
+ * money word would trade a proven gate for a noisier one. "Uncertain" is the
+ * existing `below_confidence_min` path.
+ *
+ * The vocabulary is deliberately narrow where Upperform's own subject matter
+ * overlaps it. Their consulting work *is* budgets, costs, operating expense
+ * and realizing benefits — opp-04 says "sustain benefits through performance
+ * monitoring" and "reducing operating expense", neither of which is an HR or
+ * finance matter. So this set targets Upperform's internal administration
+ * (invoices, payroll, purchase orders) and never the client financials that
+ * are the day job.
+ *
+ * @type {Array<{ key: string, label: string, pattern: RegExp }>}
+ */
+const CLIENT_POLICY_TOPICS = [
+  {
+    key: 'contract',
+    label: 'contract or agreement',
+    pattern:
+      /\b(contract|contracts|subcontract|nda|non-?disclosure|master service agreement|msa|terms and conditions|addendum|countersign|executed agreement|signed agreement)\b/i,
+  },
+  {
+    key: 'hr',
+    label: 'HR matter',
+    pattern:
+      /\b(human resources|hr|new hire|hiring|onboarding|offboarding|performance review|compensation|salary|payroll|employee benefits|open enrollment|resignation|disciplinary|headcount)\b/i,
+  },
+  {
+    key: 'financial',
+    label: 'financial or billing matter',
+    pattern:
+      /\b(invoice|invoices|invoicing|past due|overdue|accounts payable|accounts receivable|wire transfer|bank details|routing number|purchase order|expense report|reimbursement|remittance)\b/i,
+  },
+  {
+    key: 'complaint',
+    label: 'client complaint',
+    pattern:
+      /\b(complaint|complaints|dissatisfied|unacceptable|escalation|escalating|disappointed|unhappy with|not happy with)\b/i,
+  },
+  {
+    key: 'media',
+    label: 'media request',
+    pattern:
+      /\b(media inquiry|media request|media contact|press release|press statement|interview request|on the record|for attribution)\b/i,
+  },
+  {
+    key: 'confidential',
+    label: 'confidential information',
+    pattern:
+      /\b(confidential|confidentiality|proprietary|privileged|do not share|not for distribution|internal use only)\b/i,
+  },
+  {
+    key: 'approval',
+    label: 'approval request',
+    pattern:
+      /\b(approve|approves|approval|approvals|sign-?off|authorization|authorisation|authorize|authorise|go-?ahead)\b/i,
+  },
+];
+
+/**
  * @param {string} senderEmail
  * @param {string} text
  * @param {string} subject
  * @param {string[]} alwaysFlagSenders
- * @returns {{ triggered: boolean, reason: string }}
+ * @returns {{ triggered: boolean, reason: string, category: string }}
  */
 function sensitivityGuard(senderEmail, text, subject, alwaysFlagSenders) {
   const sender = String(senderEmail || '').toLowerCase();
@@ -864,14 +972,35 @@ function sensitivityGuard(senderEmail, text, subject, alwaysFlagSenders) {
     const needle = String(entry || '').toLowerCase().trim();
     if (!needle) continue;
     if (sender === needle || (needle.startsWith('@') && sender.endsWith(needle))) {
-      return { triggered: true, reason: 'sender is on the always-flag list' };
+      return {
+        triggered: true,
+        reason: 'sender is on the always-flag list',
+        category: 'always_flag_sender',
+      };
     }
   }
   const haystack = String(subject || '') + '\n' + String(text || '');
   if (SENSITIVE_TOPICS.test(haystack)) {
-    return { triggered: true, reason: 'legal/HR/press subject matter detected' };
+    return {
+      triggered: true,
+      reason: 'legal/HR/press subject matter detected',
+      category: 'legal',
+    };
   }
-  return { triggered: false, reason: '' };
+  // Named categories are reported individually rather than as one anonymous
+  // "sensitive" verdict, so the digest can tell Yancey *which* of his rules
+  // held a message back. He asked for these by name; the log should answer in
+  // the same terms.
+  for (const topic of CLIENT_POLICY_TOPICS) {
+    if (topic.pattern.test(haystack)) {
+      return {
+        triggered: true,
+        reason: topic.label + ' detected',
+        category: topic.key,
+      };
+    }
+  }
+  return { triggered: false, reason: '', category: '' };
 }
 
 /**
@@ -881,7 +1010,8 @@ function sensitivityGuard(senderEmail, text, subject, alwaysFlagSenders) {
  * @param {any} raw
  * @param {{ cleanText: string, subject: string, senderEmail: string,
  *           confidenceMin: number, alwaysFlagSenders?: string[],
- *           threadText?: string, authorised?: boolean }} ctx
+ *           threadText?: string, authorised?: boolean,
+ *           internalDomains?: string[] }} ctx
  */
 function normalizeClassification(raw, ctx) {
   const parsed = parseModelJson(raw) || {};
@@ -893,6 +1023,13 @@ function normalizeClassification(raw, ctx) {
     label = 'flag_for_yancey';
     guards.push('unparseable_label');
   }
+
+  // What the classifier itself concluded, before any policy guard rewrites it.
+  // Kept because the two questions are genuinely different: "did the model
+  // understand this email" and "may we reply to it" now have different answers
+  // for most of the inbox, and a test that only sees the second one would pass
+  // even if the first regressed to flagging everything.
+  const modelLabel = label;
 
   let confidence = clampConfidence(parsed.confidence, 0);
   const urgency =
@@ -918,7 +1055,29 @@ function normalizeClassification(raw, ctx) {
   );
   if (sensitivity.triggered) {
     label = 'flag_for_yancey';
-    guards.push('sensitivity_guard');
+    if (!sensitivity.category) {
+      guards.push('sensitivity_guard');
+    } else if (sensitivity.category === 'always_flag_sender') {
+      guards.push('always_flag_sender');
+    } else {
+      guards.push('sensitivity:' + sensitivity.category);
+    }
+  }
+
+  // Draft only for colleagues. Applied last and only to mail that would
+  // otherwise have been replied to, which is the part that matters: promoting
+  // *everything* external to flag_for_yancey would push every newsletter and
+  // cold approach into the review bucket he reads each morning, and ten of the
+  // twenty-one fixtures are exactly that. Noise stays noise.
+  //
+  // Skipped entirely when no domain list is configured, matching how
+  // `alwaysFlagSenders` and `authorised` behave — the deployment opts in.
+  const hasInternalList = Array.isArray(ctx.internalDomains) && ctx.internalDomains.length > 0;
+  if (hasInternalList && (label === 'opportunity' || label === 'admin')) {
+    if (!isInternalSender(ctx.senderEmail, ctx.internalDomains)) {
+      label = 'flag_for_yancey';
+      guards.push('external_sender');
+    }
   }
 
   if (guards.length > 0) confidence = Math.max(confidence, 0.9);
@@ -941,6 +1100,7 @@ function normalizeClassification(raw, ctx) {
 
   return {
     label,
+    modelLabel,
     confidence,
     urgency,
     reasoning: String(parsed.reasoning || '').slice(0, 500),
@@ -1406,6 +1566,50 @@ function renderCard(subject, sender, meta, detail, webLink) {
 }
 
 /**
+ * Plain English for the flags the guards raise.
+ *
+ * These strings are read by Yancey over coffee, not by an engineer in a log.
+ * "external_sender" is an accurate label and a useless sentence; "outside
+ * partnersperform.com" tells him which of his own rules held the message, and
+ * therefore whether he still agrees with it.
+ *
+ * Unknown flags pass through unchanged rather than being dropped — a guard
+ * nobody has written a phrase for should still be visible.
+ *
+ * @param {string} guardFlags
+ * @returns {string}
+ */
+function describeGuards(guardFlags) {
+  /** @type {Record<string, string>} */
+  const PHRASES = {
+    external_sender: 'outside partnersperform.com',
+    always_flag_sender: 'always-flag sender',
+    pricing_guard: 'pricing',
+    below_confidence_min: 'not confident enough',
+    mailbox_not_addressed: 'not addressed to you',
+    unparseable_label: 'unreadable classification',
+    sensitivity_guard: 'sensitive subject',
+    draft_generation_failed: 'draft failed',
+    'sensitivity:legal': 'legal, HR or press',
+    'sensitivity:contract': 'contract',
+    'sensitivity:hr': 'HR',
+    'sensitivity:financial': 'financial or billing',
+    'sensitivity:complaint': 'client complaint',
+    'sensitivity:media': 'media request',
+    'sensitivity:confidential': 'confidential',
+    'sensitivity:approval': 'approval request',
+  };
+
+  const parts = String(guardFlags || '')
+    .split(',')
+    .map((f) => f.trim())
+    .filter(Boolean)
+    .map((f) => PHRASES[f] || f);
+
+  return parts.join(', ');
+}
+
+/**
  * @param {ReturnType<typeof bucketDigestRows>} buckets
  * @param {{ dateLabel: string, mailboxLabel?: string, mode?: string, errors?: any[] }} options
  * @returns {string}
@@ -1416,7 +1620,10 @@ function renderDigestHtml(buckets, options) {
   const needsYouRows = buckets.needsYou.map((r) => {
     const asks = r.asks ? String(r.asks).replace(/^\[|\]$/g, '').replace(/","/g, '; ').replace(/"/g, '') : '';
     const detail = [r.reasoning, asks ? 'Asks: ' + asks : ''].filter(Boolean).join(' — ');
-    const meta = [labelBadge(r.label), r.urgency, r.guardFlags].filter(Boolean).join(' · ');
+    const held = describeGuards(r.guardFlags);
+    const meta = [labelBadge(r.label), r.urgency, held ? 'held: ' + held : '']
+      .filter(Boolean)
+      .join(' · ');
     return renderCard(r.subject, r.sender, meta, detail, r.webLink);
   });
 
@@ -1424,7 +1631,7 @@ function renderDigestHtml(buckets, options) {
     const meta = [
       r.waitingDays > 0 ? 'waiting ' + r.waitingDays + ' business day' + (r.waitingDays === 1 ? '' : 's') : 'new',
       r.urgency,
-      r.guardFlags ? 'check: ' + r.guardFlags : '',
+      r.guardFlags ? 'check: ' + describeGuards(r.guardFlags) : '',
     ]
       .filter(Boolean)
       .join(' · ');
@@ -1490,7 +1697,14 @@ function renderDigestHtml(buckets, options) {
     errorRows.length > 0
       ? renderSection({ title: 'Errors in the last 24h', emptyText: '', rows: errorRows })
       : '',
-    '<p style="margin:28px 0 0;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;">The assistant can read your mail and write drafts. It cannot send email — every reply leaves your mailbox only when you press Send.</p>',
+    // Yancey read the old wording and caught the apparent contradiction: "the
+    // assistant supposedly cannot send email, but the document says it will
+    // send you a summary email." He was right to ask. Two corrections: the
+    // digest travels over SMTP through a separate sending service that holds no
+    // access to his mailbox, and "cannot send" overstated what has been proven
+    // — no workflow sends from his mailbox, which is the claim we can stand
+    // behind.
+    '<p style="margin:28px 0 0;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;">The assistant reads your mail and writes drafts. It never sends from your mailbox — a reply leaves only when you press Send. This digest is delivered by a separate service that has no access to your mailbox.</p>',
     '</div>',
   ]
     .filter(Boolean)
@@ -1517,7 +1731,11 @@ function renderDigestText(buckets, options) {
   for (const r of buckets.followupsDue) {
     lines.push('  - ' + (r.subject || '(no subject)') + ' — quiet ' + r.quietDays + ' business days');
   }
-  lines.push('', 'The assistant cannot send email. Only you press Send.');
+  lines.push(
+    '',
+    'The assistant never sends from your mailbox — only you press Send.',
+    'This digest is delivered by a separate service with no access to your mailbox.',
+  );
   return lines.join('\n');
 }
 
@@ -1526,6 +1744,8 @@ function renderDigestText(buckets, options) {
  * in them. Three defects shipped in one day because nothing asserted that a
  * term in these lists actually matches the word it was written for.
  */
+/** @type {{ PRICING_ASK: RegExp, PRICING_QUESTION: RegExp, FEE_STATEMENT: RegExp,
+ *           SENSITIVE_TOPICS: RegExp } & Record<string, RegExp>} */
 const GUARD_PATTERNS = {
   PRICING_ASK,
   PRICING_QUESTION,
@@ -1533,7 +1753,17 @@ const GUARD_PATTERNS = {
   SENSITIVE_TOPICS,
 };
 
+// The topic patterns are deliberately NOT merged in here. A top-level loop
+// mutating this object is a module side effect, so esbuild must keep both it
+// and CLIENT_POLICY_TOPICS in every bundle — which dragged the whole pricing
+// and sensitivity vocabulary into WF-C's digest node, where none of it is used.
+// guards.test.js composes the two instead; it is the only consumer, and it
+// iterates CLIENT_POLICY_TOPICS directly, so a new category still cannot skip
+// the probe suite.
+
 export {
+  CLIENT_POLICY_TOPICS,
+  describeGuards,
   GUARD_PATTERNS,
   addBusinessDays,
   addressedToMailbox,
@@ -1554,7 +1784,9 @@ export {
   htmlToText,
   injectReplyIntoDraftHtml,
   inventedTokens,
+  isInternalSender,
   sameAddress,
+  senderDomain,
   normalizeClassification,
   normalizeErrorPayload,
   normalizeGraphMessage,

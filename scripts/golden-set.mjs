@@ -58,6 +58,13 @@ const CONFIDENCE_MIN = Number(flag('confidence-min', '0.6'));
 const REQUIRED_REAL_FIXTURES = 15;
 const AGREEMENT_TARGET = 0.9;
 
+/**
+ * Yancey's drafting rules, read from the same file WF-A builds from. Hardcoding
+ * them here would let the gate pass on a policy nobody deployed.
+ * @type {{ internalDomains?: string[], alwaysFlagSenders?: string[] }}
+ */
+const POLICY = JSON.parse(readFileSync(join(root, 'config/deploy.json'), 'utf8')).policy || {};
+
 const apiKey = process.env.OPENAI_API_KEY;
 if (!apiKey) {
   console.error('OPENAI_API_KEY is not set. Export the key from the Upperform OpenAI account.');
@@ -155,12 +162,27 @@ for (const file of files) {
     subject: normalized.subject,
     senderEmail: normalized.senderEmail,
     confidenceMin: CONFIDENCE_MIN,
-    alwaysFlagSenders: fixture.alwaysFlagSenders || [],
+    // The policy that is actually deployed, not a per-fixture one. Both this
+    // and WF-A read config/deploy.json, so the gate cannot certify rules that
+    // differ from the ones running in Yancey's mailbox.
+    alwaysFlagSenders: fixture.alwaysFlagSenders || POLICY.alwaysFlagSenders || [],
+    internalDomains: POLICY.internalDomains || [],
   });
 
   const agreed = verdict.label === fixture.expected;
+  // Policy agreement above is partly deterministic: seven of Yancey's ten
+  // opportunities are now forced to flag_for_yancey by a guard, so a classifier
+  // that had regressed to flagging everything would still score well on it.
+  // This second measure only looks at what the model itself concluded, against
+  // the one judgement Yancey actually gave us — junk, or not junk.
+  const classifierOk =
+    fixture.yanceyLabel === 'JUNK'
+      ? verdict.modelLabel === 'noise'
+      : fixture.yanceyLabel === 'OPPORTUNITY'
+        ? verdict.modelLabel !== 'noise'
+        : null;
   const outcome = fixture.behavior ? outcomeOf(fixture, verdict) : 'correct';
-  results.push({ file, fixture, verdict, agreed, outcome });
+  results.push({ file, fixture, verdict, agreed, outcome, classifierOk });
 
   const mark = agreed ? 'PASS' : 'FAIL';
   console.log(
@@ -168,7 +190,7 @@ for (const file of files) {
       mark.padEnd(5),
       file.padEnd(30),
       ('expected=' + fixture.expected).padEnd(28),
-      ('got=' + verdict.label).padEnd(24),
+      ('got=' + verdict.label + (verdict.modelLabel !== verdict.label ? '(' + verdict.modelLabel + ')' : '')).padEnd(30),
       'conf=' + verdict.confidence.toFixed(2),
       verdict.requiresDraft ? 'draft' : 'no-draft',
       verdict.guardFlags ? '[' + verdict.guardFlags + ']' : '',
@@ -197,6 +219,16 @@ const gate3 = results.filter((r) => r.fixture.gate === 'pricing');
 const gate3Failures = gate3.filter(
   (r) => r.verdict.label !== 'flag_for_yancey' || r.verdict.requiresDraft,
 );
+// Every fixture that names a gate must end up flagged and undrafted, whichever
+// rule caught it. Pricing keeps its own line because it is the spec's Gate 3.
+const gated = results.filter((r) => r.fixture.gate);
+const gatedFailures = gated.filter(
+  (r) => r.verdict.label !== 'flag_for_yancey' || r.verdict.requiresDraft,
+);
+const classifierScored = results.filter((r) => r.classifierOk !== null);
+const classifierRight = classifierScored.filter((r) => r.classifierOk).length;
+const classifierRate =
+  classifierScored.length > 0 ? classifierRight / classifierScored.length : 0;
 
 console.log('\n' + '='.repeat(72));
 console.log('Model              ' + MODEL);
@@ -214,6 +246,14 @@ console.log(
 console.log('Agreement (all)    ' + (overallAgreement * 100).toFixed(1) + '%  (incl. synthetic smoke fixtures)');
 console.log('Flagged + drafted  ' + flaggedButDrafted.length + '  (must be 0)');
 console.log('Gate 3 pricing     ' + (gate3.length - gate3Failures.length) + '/' + gate3.length + ' held');
+console.log(
+  'Policy gates held  ' + (gated.length - gatedFailures.length) + '/' + gated.length +
+    '  (pricing, always-flag, external)',
+);
+console.log(
+  'Classifier vs YD   ' + (classifierRate * 100).toFixed(1) + '%  ' +
+    '(' + classifierRight + '/' + classifierScored.length + ' junk vs not-junk, target >= 90%)',
+);
 
 const problems = [];
 for (const r of missed) {
@@ -229,6 +269,15 @@ if (agreement < AGREEMENT_TARGET) {
 }
 if (flaggedButDrafted.length > 0) problems.push('a flag_for_yancey item was marked draftable');
 if (gate3Failures.length > 0) problems.push('a pricing request escaped flag_for_yancey');
+for (const r of gatedFailures) {
+  problems.push('GATE ESCAPED: ' + r.file + ' (' + r.fixture.gate + ') was not held');
+}
+if (classifierRate < AGREEMENT_TARGET) {
+  problems.push(
+    'the classifier itself fell below 90% on junk vs not-junk (' +
+      classifierRight + '/' + classifierScored.length + ')',
+  );
+}
 if (realFixtures < REQUIRED_REAL_FIXTURES) {
   problems.push(
     'only ' + realFixtures + '/' + REQUIRED_REAL_FIXTURES +

@@ -158,13 +158,20 @@ function buildClassifySystemPrompt(profile) {
 
 /**
  * @param {string} profile
- * @param {{ signature?: string, bookingLink?: string, maxWords?: number }} [options]
+ * @param {{ signOff?: string, signature?: string, bookingLink?: string,
+ *           maxWords?: number }} [options]
  * @returns {string}
  */
 function buildDraftSystemPrompt(profile, options) {
   const opts = options || {};
   const maxWords = opts.maxWords === undefined ? 150 : opts.maxWords;
   const bookingLink = String(opts.bookingLink || '').trim();
+  // Taken from config rather than hardcoded, so the sign-off the model writes
+  // and the one voiceGuard enforces cannot drift apart. They did: the prompt
+  // said "Yancey" while Yancey asked on 2026-08-28 for "Yancey Dawson", which
+  // would have made the guard rewrite the ending of every single draft.
+  const signOff = opts.signOff === undefined ? 'Thanks,' : String(opts.signOff);
+  const signature = opts.signature === undefined ? 'Yancey' : String(opts.signature);
 
   return [
     "Write Yancey Dawson's reply to the email below. You are writing as him.",
@@ -180,7 +187,7 @@ function buildDraftSystemPrompt(profile, options) {
     '  client contact -> "Hi [First],"; a group -> "Team,".',
     '- End with a concrete next step and a soft timeframe ("I\'ll schedule',
     '  something in a week or so and we can go from there"), plus room to push back.',
-    '- Sign off "Thanks," then "Yancey".',
+    '- Sign off "' + signOff + '" then "' + signature + '".',
     '',
     'HARD RULES:',
     '1. Never invent facts, figures, dates, deliverables, or commitments. If the',
@@ -192,7 +199,11 @@ function buildDraftSystemPrompt(profile, options) {
     '   the workbook and come back to you").',
     '4. No sales language, no superlatives, no "I hope this email finds you well".',
     '5. Under ' + maxWords + ' words unless the inbound message is genuinely detailed.',
-    bookingLink ? '6. When proposing a call you may offer this booking link: ' + bookingLink : '',
+    bookingLink
+      ? '6. When proposing a call you may offer this booking link: ' + bookingLink
+      : '6. Yancey does not use a booking link. Never offer one, never promise to' +
+        ' send a calendar link, and never write a placeholder for one. Propose' +
+        ' specific times, or say you will follow up with some.',
     '',
     'Output the reply body only. No subject line, no markdown, no code fences,',
     'no commentary about what you wrote.',

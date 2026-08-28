@@ -2,9 +2,9 @@
   "id": "opp-10",
   "source": "yancey-training-set",
   "yanceyLabel": "OPPORTUNITY",
-  "behavior": "draft",
-  "expected": "opportunity",
-  "note": "Chuck reviews the T+1 plan and raises an open question to track down. Direct reply expected.",
+  "behavior": "flag",
+  "expected": "flag_for_yancey",
+  "note": "Chuck reviews the T+1 plan and raises an open question to track down. Direct reply expected. Yancey labelled this OPPORTUNITY, and on 2026-08-28 asked that Chuck Coleman's mail always be flagged without a draft. Both are true: it is real work, and he wants to answer his President himself.",
   "message": {
     "id": "AAMkTRAINOPP10",
     "subject": "Re: T+1 Project Plan",
@@ -37,5 +37,6 @@
       "contentType": "text",
       "content": "I like it. Wondering if some of the deadlines should be adjusted. For example, setting a standard for uploading the files or changing columns seem like more immediate issues.\n\nAlso, did we get to the bottom of how many workbooks should be uploaded? I am fearing that's a Joe misunderstanding. Tracking that down should be on the plan\n\nOn Mar 3, 2024, at 11:45 AM, Yancey Dawson <YDawson@partnersperform.com> wrote:\n\nKathleen,\n\nPlease do a peer review of the T+1 project plan for me. Are there any tasks that are missing? If so, please add them and review the deadlines. Are the deadlines reasonable, or do some require more or less time? You'll notice that I'm pushing to finish everything by the end of March. I realize this is a tight deadline, but if we execute it well and the leadership supports it, I've seen tasks go extremely quickly.\n\nOur next steps will hopefully be setting up a kick-off meeting for next week and assigning tasks and activities on that call. After that, it's pressing the managers or group leaders and having our status call on Friday or Thursday, which is led by the team leads. I want them to be praised or explain why this straightforward task isn't finished.\n\nYancey Dawson\n<Project Management Template - Finalized T+1 Team.xlsx>\n"
     }
-  }
+  },
+  "gate": "always-flag"
 }

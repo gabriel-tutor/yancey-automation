@@ -61,12 +61,15 @@
         "wfT": "1fCjIsw2JjVGkNJb",
         "wfS": "CNttEItjnRC4RkZZ"
       },
-      "digestTo": "YDawson@partnersperform.com",
+      "digestTo": "gtutor@partnersperform.com",
       "mailboxLabel": "YDawson@partnersperform.com",
       "draftingMailbox": "YDawson@partnersperform.com",
       "outlookCredentialId": "gBDmBd3jHGBqqQjl",
       "sharepointCredential": null,
-      "sharepointCredentialType": null
+      "sharepointCredentialType": null,
+      "draftingEnabled": true,
+      "digestToIntended": "YDawson@partnersperform.com",
+      "_digestToNote": "Yancey asked for the daily summary at 07:30 Central. The schedule is correct and the timezone is set, but delivery still lands on Gabriel: Resend is on its sandbox sender and refuses any recipient except the account owner with a hard 550. Flip digestTo to digestToIntended and digestFrom to agent@partnersperform.com the moment agent.partnersperform.com is verified in Resend. Source is kept equal to what is deployed on purpose — a previous override lived only in the live workflow, so a rebuild would have pointed the digest at an address Resend rejects and broken it every morning."
     },
     "dev": {
       "label": "gtutor sandbox",
@@ -90,8 +93,18 @@
       "draftingMailbox": "gtutor@partnersperform.com",
       "outlookCredentialId": "vNJuWdSXhjzB0Jo1",
       "sharepointCredential": null,
-      "sharepointCredentialType": null
+      "sharepointCredentialType": null,
+      "draftingEnabled": true
     }
   },
-  "_sharepointNote": "Phase 2. The Outlook credential cannot reach SharePoint — WF-S0 measured 403 on all four Graph checks on 2026-08-28, and n8n's Outlook credential type requests mail scopes only at authorization time, so consent alone cannot widen it. When the new credential exists, set sharepointCredential + sharepointCredentialType on the target below, rebuild, and re-run WF-S0. See docs/PHASE2-SHAREPOINT.md."
+  "_sharepointNote": "Phase 2. The Outlook credential cannot reach SharePoint — WF-S0 measured 403 on all four Graph checks on 2026-08-28, and n8n's Outlook credential type requests mail scopes only at authorization time, so consent alone cannot widen it. When the new credential exists, set sharepointCredential + sharepointCredentialType on the target below, rebuild, and re-run WF-S0. See docs/PHASE2-SHAREPOINT.md.",
+  "policy": {
+    "_note": "Yancey's drafting rules, 2026-08-28. Read by both wf-a-classify.mjs and scripts/golden-set.mjs so the gate cannot test a policy that is not the one deployed.",
+    "internalDomains": [
+      "partnersperform.com"
+    ],
+    "alwaysFlagSenders": [
+      "ccoleman@partnersperform.com"
+    ]
+  }
 }
