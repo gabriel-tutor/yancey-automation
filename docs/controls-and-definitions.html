@@ -1,0 +1,536 @@
+<title>Controls and Definitions</title>
+<style>
+  :root {
+    --paper:      #F5F7F7;
+    --card:       #FFFFFF;
+    --ink:        #14181B;
+    --muted:      #586467;
+    --rule:       #DBE0E0;
+    --signal:     #0F6E6B;
+    --signal-bg:  #E6F0EF;
+    --hold:       #8A5A00;
+    --hold-bg:    #F7EEDC;
+    --go:         #1F6B3A;
+    --go-bg:      #E4F0E8;
+    --stop:       #97361F;
+    --stop-bg:    #F7E7E2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #101314;
+      --card:      #171B1D;
+      --ink:       #E8ECEC;
+      --muted:     #98A4A6;
+      --rule:      #2A3133;
+      --signal:    #57BAB4;
+      --signal-bg: #14312F;
+      --hold:      #D7A652;
+      --hold-bg:   #33280F;
+      --go:        #6FBE8B;
+      --go-bg:     #16301F;
+      --stop:      #DE8E77;
+      --stop-bg:   #351912;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #101314;
+    --card:      #171B1D;
+    --ink:       #E8ECEC;
+    --muted:     #98A4A6;
+    --rule:      #2A3133;
+    --signal:    #57BAB4;
+    --signal-bg: #14312F;
+    --hold:      #D7A652;
+    --hold-bg:   #33280F;
+    --go:        #6FBE8B;
+    --go-bg:     #16301F;
+    --stop:      #DE8E77;
+    --stop-bg:   #351912;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 16.5px/1.62 ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 47rem; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    letter-spacing: -0.01em;
+  }
+  code {
+    background: var(--signal-bg);
+    color: var(--signal);
+    padding: 0.12em 0.38em;
+    border-radius: 3px;
+  }
+
+  .eyebrow {
+    font: 600 0.75rem/1 ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--signal);
+    margin: 0 0 1.1rem;
+  }
+
+  h1 {
+    font: 600 2.55rem/1.1 Georgia, "Iowan Old Style", "Times New Roman", serif;
+    letter-spacing: -0.015em;
+    margin: 0 0 0.7rem;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-size: 1.12rem;
+    color: var(--muted);
+    margin: 0 0 1.4rem;
+    max-width: 40rem;
+  }
+
+  h2 {
+    font: 600 1.5rem/1.25 Georgia, "Iowan Old Style", "Times New Roman", serif;
+    letter-spacing: -0.01em;
+    margin: 3.6rem 0 0.4rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--rule);
+    text-wrap: balance;
+  }
+  h2 .n {
+    display: inline-block;
+    min-width: 1.6rem;
+    color: var(--signal);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    vertical-align: 0.18em;
+  }
+  h3 {
+    font: 600 1.02rem/1.35 ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+    margin: 1.9rem 0 0.4rem;
+  }
+
+  p { margin: 0 0 1rem; }
+  .lede { font-size: 1.05rem; }
+
+  .chip {
+    display: inline-block;
+    font: 600 0.7rem/1 ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.36em 0.6em;
+    border-radius: 3px;
+    vertical-align: 0.14em;
+    margin-left: 0.5rem;
+  }
+  .c-built { background: var(--go-bg);     color: var(--go); }
+  .c-fixed { background: var(--signal-bg); color: var(--signal); }
+  .c-live  { background: var(--signal-bg); color: var(--signal); }
+  .c-no    { background: var(--stop-bg);   color: var(--stop); }
+
+  blockquote {
+    margin: 0 0 1.2rem;
+    padding: 0.1rem 0 0.1rem 1.15rem;
+    border-left: 2px solid var(--signal);
+    color: var(--muted);
+    font-style: italic;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+
+  .answer {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--signal);
+    border-radius: 5px;
+    padding: 0.95rem 1.15rem;
+    margin: 0 0 1.2rem;
+    font-size: 1.04rem;
+  }
+  .answer strong { font-weight: 650; }
+
+  .flag {
+    background: var(--stop-bg);
+    border: 1px solid var(--stop);
+    border-radius: 5px;
+    padding: 1.1rem 1.25rem;
+    margin: 1.4rem 0;
+  }
+  .flag .hd {
+    font: 600 0.72rem/1 ui-sans-serif, sans-serif;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--stop);
+    margin: 0 0 0.6rem;
+  }
+  .flag p:last-child { margin-bottom: 0; }
+
+  .tablewrap { overflow-x: auto; margin: 1.2rem 0 1.4rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.94rem; }
+  th, td {
+    text-align: left;
+    padding: 0.62rem 0.8rem 0.62rem 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    font: 600 0.72rem/1 ui-sans-serif, sans-serif;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 0.5rem;
+  }
+  td:first-child { white-space: nowrap; padding-right: 1.2rem; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  ul { margin: 0 0 1.1rem; padding-left: 1.15rem; }
+  li { margin-bottom: 0.42rem; }
+
+  .foot {
+    margin-top: 4rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .foot code { font-size: 0.84em; }
+
+  @media (max-width: 34rem) {
+    h1 { font-size: 2rem; }
+    .wrap { padding: 2.5rem 1.15rem 4rem; }
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Upperform inbox assistant</p>
+  <h1>Controls and Definitions</h1>
+  <p class="standfirst">
+    Answers to your note of 28 August. Six things you asked to change or confirm,
+    then six you asked me to spell out. Everything described here is live now
+    unless it says otherwise.
+  </p>
+
+  <!-- ============ THE SIX ITEMS ============ -->
+
+  <h2><span class="n">1</span> Chuck Coleman<span class="chip c-live">Already live</span></h2>
+  <div class="answer">
+    <strong>Every email from <code>Ccoleman@partnersperform.com</code> is flagged for you and no
+    draft is written</strong> — regardless of what the message says.
+  </div>
+  <p>
+    This was already in place before your note. It is a sender rule, so it does not
+    depend on the assistant reading the message correctly; it applies first and
+    unconditionally.
+  </p>
+
+  <h2><span class="n">2</span> Pricing and commercial terms<span class="chip c-built">Changed</span></h2>
+  <blockquote>
+    <p>Any email involving pricing, fees, estimates, proposals, scope changes or
+    commercial terms should be held for my review, even if a price has already been
+    quoted.</p>
+  </blockquote>
+  <div class="answer">
+    <strong>The "already quoted" exception is gone.</strong> Previously, once a fee had
+    appeared in a thread, later messages in that thread could be drafted. That
+    carve-out has been removed entirely.
+  </div>
+  <p>
+    Two layers now hold commercial mail. A fixed list of unambiguous terms —
+    <span class="mono">fee, pricing, retainer, rate card, scope change, change order,
+    statement of work, MSA, commercial terms, day rate, purchase order</span> and
+    similar — flags the message on sight. Separately, the assistant is instructed in
+    your own words to hold anything <em>involving</em> pricing, estimates, proposals or
+    scope, and judges that on meaning.
+  </p>
+
+  <h3>Where I have been deliberately narrower than your sentence</h3>
+  <p>
+    You listed <em>estimates</em> and <em>proposals</em>. I have not matched those two
+    words literally, and you should know why, because it is a judgement call rather
+    than an oversight.
+  </p>
+  <p>
+    Two emails from the twenty you sent me contain them innocently. One is a deck
+    titled <em>"DRAFT Proposal for Kickoff Meeting"</em> — a slide deck, not a bid.
+    The other asks for a <em>"low to medium confidence estimate for the hypothesis
+    target"</em> — a statistical estimate about operations, not a price. Matching the
+    words literally would have held both for no reason.
+  </p>
+  <p>
+    So those words are handled by meaning rather than by pattern. A commercial
+    proposal is held; a slide deck called one is not. If you would rather have the
+    blunter version and accept the false alarms, that is a one-line change.
+  </p>
+
+  <h2><span class="n">3</span> Scheduling: Upperform, personal, vendor<span class="chip c-built">Changed</span></h2>
+  <div class="answer">
+    <strong>The test is the purpose of the meeting, not the fact that one is being
+    arranged.</strong>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Kind of scheduling</th><th>Treated as</th><th>Draft?</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Upperform project or engagement — working sessions, client calls, internal delivery</td>
+          <td><code>admin</code></td>
+          <td>Yes</td>
+        </tr>
+        <tr>
+          <td>Your own personal or business administration — tax, retirement, payroll, insurance, banking</td>
+          <td><code>noise</code></td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td>A vendor or salesperson proposing a call</td>
+          <td><code>noise</code></td>
+          <td>No</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    The vendor case is the one that needed stating, because a sales conversation
+    arrives wearing a calendar invite. The assistant is now told explicitly that a
+    named person proposing a specific time is still a sales conversation, and that
+    politeness and a real diary slot are not evidence of relevance. That instruction
+    is drawn from one of the emails you labelled JUNK yourself — the payroll rep who
+    was introduced by your own accountant and whom you had already replied to twice.
+  </p>
+
+  <h2><span class="n">4</span> "Processed as noise" section<span class="chip c-built">Changed</span></h2>
+  <div class="answer">
+    <strong>The morning summary now has a fourth section listing everything filtered
+    out, with the assistant's reasoning beside each one</strong> — so a misclassification
+    is visible rather than silent.
+  </div>
+  <p>
+    Each item appears in exactly one summary and is then closed, so the section shows
+    you what happened since yesterday rather than accumulating every newsletter you
+    have ever received. If a day is unusually noisy the list is capped at 25, and the
+    heading always carries the true total, so a truncated list can never read as
+    "that was all of it".
+  </p>
+  <p>
+    This is on for the rollout, as you asked. Turning it off later is a single
+    setting — <code>showNoise</code> — and nothing else changes.
+  </p>
+
+  <h2><span class="n">5</span> Confidence threshold<span class="chip c-built">Changed</span></h2>
+  <div class="answer">
+    <strong>Raised from 0.60 to 0.80.</strong> Anything the assistant is less certain of
+    than that is surfaced for your review with no draft.
+  </div>
+  <p>
+    In practice the assistant scores most mail well above this, so the floor is a
+    backstop rather than a routine gate. It is doing its job on the days it fires,
+    not on the days it does not.
+  </p>
+
+  <h2><span class="n">6</span> AI-Action, AI-Drafted, and failed drafts<span class="chip c-fixed">Clarified &amp; fixed</span></h2>
+  <p>
+    Asking this found a real defect, so the answer comes in two parts.
+  </p>
+
+  <h3>What the four labels mean</h3>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Category</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>AI-Processed</code></td><td>The assistant read it. Applied to everything it touches.</td></tr>
+        <tr><td><code>AI-Action</code></td><td>It needs you, and the assistant is handling it.</td></tr>
+        <tr><td><code>AI-Review</code></td><td>The assistant deliberately did not draft. Over to you.</td></tr>
+        <tr><td><code>AI-Drafted</code></td><td>A reply is waiting in your Drafts folder.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    <code>AI-Action</code> and <code>AI-Drafted</code> travel together: the first says the
+    message matters, the second says a draft exists for it. <code>AI-Action</code> and
+    <code>AI-Review</code> are opposites and never appear on the same message.
+  </p>
+
+  <h3>What was wrong</h3>
+  <p>
+    They <em>could</em> appear together, until you asked. A message classed as needing
+    action got <code>AI-Action</code>; if the draft then failed to generate, the assistant
+    added <code>AI-Review</code> without removing <code>AI-Action</code>, so it carried both
+    and told you two contradictory things. That is fixed — <code>AI-Action</code> is now
+    cleared whenever no draft is written.
+  </p>
+
+  <h3>What happens when a draft fails</h3>
+  <ul>
+    <li>The empty draft is deleted, so nothing half-written is left in your Drafts folder.</li>
+    <li>The message is tagged <code>AI-Review</code> and appears in your morning summary.</li>
+    <li>The failure is logged and an alert is raised to me, not to you.</li>
+  </ul>
+  <p>
+    A failed draft therefore looks exactly like a deliberate hold from your side. You
+    never have to know the difference, and nothing is lost.
+  </p>
+
+  <!-- ============ THE SIX QUESTIONS ============ -->
+
+  <h2>Are attachments read or processed?</h2>
+  <div class="answer">
+    <strong>No.</strong> The assistant records only that attachments exist. It never opens
+    or reads them.
+  </div>
+  <p>
+    Drafts acknowledge an attachment without pretending to have read it — "I'll review
+    the workbook and come back to you". This is deliberate: reading attachments would
+    mean pulling client documents through the model, which is a much larger question
+    than triaging mail.
+  </p>
+
+  <h2>Where are the decision logs, and who can reach them?</h2>
+  <div class="answer">
+    <strong>On the automation server, in a table called
+    <span class="mono">agent_email_log_yancey</span>.</strong> Gabriel can see it. Nobody else
+    has an account.
+  </div>
+  <p>
+    Each row holds the sender, subject, the label, the assistant's one-line reasoning,
+    the confidence score, which rule held it, and a link back to the message. It does
+    not hold the body of your mail. It exists so that any decision can be explained
+    after the fact rather than taken on trust.
+  </p>
+
+  <h2>How long is anything kept?</h2>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>What</th><th>Held for</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Run history — includes message text while a run is in progress</td>
+          <td>7 days, then deleted automatically</td>
+        </tr>
+        <tr>
+          <td>Decision log — sender, subject, label, reasoning</td>
+          <td>Indefinitely, unless you set a limit</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    The decision log is kept because it is the audit trail — deleting it would remove
+    your ability to ask why something was handled the way it was. Whether that record
+    should expire is your call rather than mine, so I have not picked a number. Say a
+    figure and it becomes a setting.
+  </p>
+
+  <h2>Copied, forwarded, BCC, aliases and shared mailboxes</h2>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Case</th><th>What happens</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>You are on <strong>To</strong></td><td>Normal handling.</td></tr>
+        <tr><td>You are on <strong>Cc</strong></td><td>Normal handling. Several emails you labelled as real work had you on Cc, so this is deliberate.</td></tr>
+        <tr><td><strong>Forwarded</strong> to you</td><td>Judged on the newest message. A thin "FYI" over live client work still counts as real work.</td></tr>
+        <tr><td><strong>BCC</strong></td><td>Classified and surfaced, never drafted. A bcc'd address is not visible in the message, so the assistant cannot confirm it was addressed to you.</td></tr>
+        <tr><td><strong>Alias</strong></td><td>Same as bcc — surfaced, not drafted — unless the alias is listed in the settings. Tell me any you use and they behave normally.</td></tr>
+        <tr><td><strong>Shared mailbox</strong></td><td>Not monitored at all. Only your own mailbox is read.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    The pattern is consistent: when the assistant cannot confirm a message was
+    addressed to you, it surfaces it rather than replying. That is a limitation
+    rather than a feature, and it fails in the safe direction.
+  </p>
+
+  <h2>How the morning summary arrives without send permission</h2>
+  <div class="answer">
+    <strong>It is not sent. It is written directly into your inbox.</strong>
+  </div>
+  <p>
+    You spotted the apparent contradiction in the earlier document, and you were
+    right to. The answer has since become simpler than it was: the summary is placed
+    into your mailbox using the same permission that writes your drafts. Nothing is
+    transmitted, no mail server is involved, and the assistant does not call any
+    send operation to produce it.
+  </p>
+  <p>
+    One useful consequence — because the summary is written into <em>your</em> mailbox
+    specifically, it cannot be misdirected to anyone else. There is no recipient
+    address that could be mistyped.
+  </p>
+
+  <h2>Has the send-permission safety test passed?</h2>
+
+  <div class="flag">
+    <p class="hd">No — and this is the one open item</p>
+    <p>
+      The test deliberately attempts to send a message and requires Microsoft to
+      refuse. Microsoft <strong>accepts</strong> it. The permission to send mail as you is
+      still granted on the underlying Microsoft application, so the test fails.
+    </p>
+  </div>
+
+  <p>
+    What this does and does not mean:
+  </p>
+  <ul>
+    <li><strong>No part of the assistant sends mail.</strong> There is no send step anywhere
+      in it. Every reply it writes sits in your Drafts folder until you press Send.</li>
+    <li><strong>But the permission exists</strong>, and I would rather it did not. A promise
+      that rests on the code being correct is weaker than one that rests on the
+      permission being absent.</li>
+  </ul>
+  <p>
+    Removing it needs a Microsoft 365 administrator on
+    <span class="mono">partnersperform.com</span> — it is not something I can do from
+    inside the tool. It is bundled into the same access request as the SharePoint
+    work so it is one conversation with them rather than two. I will re-run the test
+    the moment it is done and send you the result either way.
+  </p>
+
+  <!-- ============ CLOSING ============ -->
+
+  <h2>What this means day to day</h2>
+  <p>
+    Worth being direct about the shape of it. With your rules in place, most of what
+    the assistant does for you is <em>triage</em> — reading everything, labelling it,
+    and putting the handful that needs you in one place each morning. Drafting is now
+    deliberately narrow: it happens only for a colleague at
+    <span class="mono">partnersperform.com</span> who is not Chuck, on a message with
+    nothing commercial, legal, HR or approval-shaped in it, where the assistant is
+    confident and judges a reply is genuinely warranted.
+  </p>
+  <p>
+    Measured against the twenty emails you sent me, that combination produces very
+    few drafts — six of your ten work emails were from Chuck, one was from outside,
+    and on the rest the assistant judged no reply was needed. That is your
+    instruction working as written rather than a fault, and it is easy to widen once
+    you have watched it for a week. But you should hear the number from me now rather
+    than infer it from a quiet Drafts folder.
+  </p>
+
+  <div class="foot">
+    <p>
+      Checked against the fifteen emails you labelled: 100% agreement, twice in a row,
+      at the new 0.80 threshold — nothing real missed, nothing junk drafted. 436
+      automated tests pass.
+    </p>
+    <p>
+      Every setting named here — <code>showNoise</code>, the confidence floor, the
+      always-flag list, the follow-up window, aliases — is a value I can change in
+      minutes. Nothing above is baked in.
+    </p>
+  </div>
+
+</div>
