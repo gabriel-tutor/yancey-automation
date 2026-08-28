@@ -458,7 +458,13 @@ const tagBlockedForReview = node({
       sendBody: true,
       contentType: 'json',
       specifyBody: 'json',
-      jsonBody: ${E('{{ JSON.stringify({ categories: ($json.categories || []).filter(c => c !== "AI-Drafted" && c !== "AI-Review").concat(["AI-Review"]) }) }}')},
+      // AI-Action is stripped as well as the others. Yancey asked what the
+      // relationship between AI-Action and AI-Drafted is, and the honest answer
+      // only works if the categories are mutually exclusive: AI-Action means the
+      // assistant is handling it, AI-Review means it is back with him. A failed
+      // draft used to end up carrying both, which is precisely the confusion he
+      // was asking about.
+      jsonBody: ${E('{{ JSON.stringify({ categories: ($json.categories || []).filter(c => c !== "AI-Drafted" && c !== "AI-Review" && c !== "AI-Action").concat(["AI-Review"]) }) }}')},
       options: { timeout: 20000 }
     },
     ${OUTLOOK_CRED},

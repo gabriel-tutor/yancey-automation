@@ -577,6 +577,32 @@ function matchIndexes(text, pattern) {
  * Yancey's mail put the two 19 characters apart, while the false positives that
  * prompted this sat at 107 and 122. Sixty leaves margin on both sides.
  */
+/**
+ * Unambiguously commercial vocabulary — fires on its own, no second signal.
+ *
+ * Yancey, 2026-08-28: "Any email involving pricing, fees, estimates, proposals,
+ * scope changes or commercial terms should be held for my review, even if a
+ * price has already been quoted."
+ *
+ * Every entry here is a term that only appears when the conversation is *about*
+ * commercial terms. Four of the words he listed are deliberately NOT here —
+ * `estimate`, `proposal`, `price` and `cost` — because in his own mail they
+ * carry innocent meanings:
+ *
+ *   - "DRAFT Proposal for Kickoff Meeting Deck" is a deck, not a bid.
+ *   - "a low to medium confidence estimate for the hypothesis target" (opp-02)
+ *     is a statistical estimate, and that email is one he wants drafted.
+ *
+ * Matching those literally would hold two emails from his own labelled set for
+ * no reason. They stay behind the two-signal ask test below, which also needs a
+ * question form — and the classifier prompt carries his sentence in full, so
+ * the *semantic* judgement ("is this a commercial proposal or a slide deck?")
+ * is made where judgement belongs. This list is the deterministic backstop
+ * underneath it, not the whole rule.
+ */
+const COMMERCIAL_TERMS =
+  /\b(fee|fees|pricing|quotation|rate card|retainer|scope change|scope changes|change order|statement of work|scope of work|sow|msa|master service agreement|commercial terms|not to exceed|nte|time and materials|day rate|hourly rate|billing rate|fee schedule|purchase order)\b/i;
+
 const ASK_PROXIMITY = 60;
 
 /**
@@ -621,19 +647,32 @@ function asksForAPrice(haystack) {
  * @param {string} subject
  * @returns {{ triggered: boolean, reason: string }}
  */
+/**
+ * Hold anything commercial.
+ *
+ * The suppression that used to sit here — "a fee has already been quoted, so
+ * this thread has moved past originating a price" — is gone. Yancey removed it
+ * himself on 2026-08-28: hold it "even if a price has already been quoted".
+ * That is both what he asked for and the safer rule, since it deletes a whole
+ * class of judgement about whether a number in a thread was really a quote.
+ *
+ * `feeAlreadyQuoted` is kept and still exported because it is what the digest
+ * would need to explain *why* a thread is commercial, but nothing in the
+ * decision path consults it any more.
+ *
+ * @param {string} text
+ * @param {string} subject
+ * @returns {{ triggered: boolean, reason: string }}
+ */
 function pricingGuard(text, subject) {
   const haystack = String(subject || '') + '\n' + String(text || '');
-  if (!asksForAPrice(haystack)) return { triggered: false, reason: '' };
-  if (feeAlreadyQuoted(haystack)) {
-    return {
-      triggered: false,
-      reason: 'pricing discussed but a fee has already been quoted in-thread',
-    };
+  if (COMMERCIAL_TERMS.test(haystack)) {
+    return { triggered: true, reason: 'pricing, proposal, scope or commercial terms' };
   }
-  return {
-    triggered: true,
-    reason: 'asks for a fee/estimate and no fee has been quoted in-thread',
-  };
+  if (asksForAPrice(haystack)) {
+    return { triggered: true, reason: 'asks for a fee or an estimate' };
+  }
+  return { triggered: false, reason: '' };
 }
 
 /**
@@ -826,19 +865,29 @@ function sameAddress(left, right) {
  *
  * @param {unknown} toRecipients
  * @param {unknown} ccRecipients
- * @param {unknown} mailbox
+ * @param {unknown} mailbox one address, or several
  * @returns {boolean}
  */
 function addressedToMailbox(toRecipients, ccRecipients, mailbox) {
-  const box = String(mailbox || '').toLowerCase().trim();
-  if (box.length === 0) return false;
+  // Accepts one address or several, so aliases can be added without a code
+  // change. Yancey asked how alias and shared-mailbox traffic is handled: mail
+  // to an address not listed here is classified and surfaced, never drafted —
+  // which is also what happens to bcc, since a bcc'd address appears in neither
+  // list. That is the safe direction, but it is a real limitation, not a
+  // feature, so the list is config.
+  const boxes = (Array.isArray(mailbox) ? mailbox : [mailbox])
+    .map((m) => String(m || '').toLowerCase().trim())
+    .filter((m) => m.length > 0);
+  if (boxes.length === 0) return false;
 
   const lists = [toRecipients, ccRecipients];
   for (const list of lists) {
     if (!Array.isArray(list)) continue;
     for (const entry of list) {
       if (typeof entry !== 'string') continue;
-      if (sameAddress(entry, box)) return true;
+      for (const box of boxes) {
+        if (sameAddress(entry, box)) return true;
+      }
     }
   }
   return false;
@@ -1456,6 +1505,8 @@ function bucketDigestRows(rows, options) {
   const draftsWaiting = [];
   /** @type {any[]} */
   const followupsDue = [];
+  /** @type {any[]} */
+  const processedAsNoise = [];
   /** @type {string[]} */
   const resolvedIds = [];
   /** @type {string[]} */
@@ -1467,6 +1518,28 @@ function bucketDigestRows(rows, options) {
     if (row.resolved_at) continue;
 
     const received = toDate(row.received_at) || now;
+
+    // Yancey, 2026-08-28: "include emails classified as noise in a 'Processed as
+    // Noise' section... I want visibility into possible misclassifications while
+    // the system is learning."
+    //
+    // Noise is terminal — nothing to draft, nothing to chase — so each one is
+    // shown exactly once and then closed. That is what stops the section
+    // becoming every newsletter he has ever received, and what stops the log
+    // table growing without bound now that noise rows are fetched at all.
+    if (row.label === 'noise') {
+      processedAsNoise.push({
+        subject: row.subject,
+        sender: row.sender_name || row.sender,
+        reasoning: row.reasoning,
+        webLink: row.web_link,
+        receivedAt: received.getTime(),
+      });
+      resolvedIds.push(String(row.id));
+      resolvedMessageIds.push(String(row.message_id));
+      continue;
+    }
+
     const draftId = row.draft_id ? String(row.draft_id) : '';
     const status = String(row.status || '');
 
@@ -1535,17 +1608,20 @@ function bucketDigestRows(rows, options) {
     return (ra === undefined ? 3 : ra) - (rb === undefined ? 3 : rb);
   });
   followupsDue.sort((a, b) => b.quietDays - a.quietDays);
+  processedAsNoise.sort((a, b) => b.receivedAt - a.receivedAt);
 
   return {
     needsYou,
     draftsWaiting,
     followupsDue,
+    processedAsNoise,
     resolvedIds,
     resolvedMessageIds,
     stats: {
       needsYou: needsYou.length,
       draftsWaiting: draftsWaiting.length,
       followupsDue: followupsDue.length,
+      processedAsNoise: processedAsNoise.length,
       resolved: resolvedIds.length,
       autoClosed,
       scanned: (rows || []).length,
@@ -1655,7 +1731,8 @@ function describeGuards(guardFlags) {
 
 /**
  * @param {ReturnType<typeof bucketDigestRows>} buckets
- * @param {{ dateLabel: string, mailboxLabel?: string, mode?: string, errors?: any[] }} options
+ * @param {{ dateLabel: string, mailboxLabel?: string, mode?: string,
+ *           errors?: any[], showNoise?: boolean }} options
  * @returns {string}
  */
 function renderDigestHtml(buckets, options) {
@@ -1699,6 +1776,23 @@ function renderDigestHtml(buckets, options) {
   // Only claim shadow mode if nothing was actually drafted. The live digest
   // printed "No replies are being drafted" directly above a list of six
   // drafts, because this read a hand-set config string rather than the run.
+  // Capped so the first run after a quiet weekend cannot produce a page of
+  // newsletters. The count in the heading is the honest total either way — a
+  // truncated list that does not say it is truncated reads as "that was all of
+  // it", which is the opposite of the visibility he asked for.
+  const NOISE_SHOWN = 25;
+  const noiseTotal = (buckets.processedAsNoise || []).length;
+  const noiseRows = (buckets.processedAsNoise || [])
+    .slice(0, NOISE_SHOWN)
+    .map((r) => renderCard(r.subject, r.sender, '', r.reasoning, r.webLink));
+  if (noiseTotal > NOISE_SHOWN) {
+    noiseRows.push(
+      '<p style="margin:0;color:#6b7280;font-size:13px;">and ' +
+        (noiseTotal - NOISE_SHOWN) +
+        ' more not listed.</p>',
+    );
+  }
+
   const nothingDrafted = buckets.draftsWaiting.length === 0;
   const modeBanner =
     options.mode && options.mode !== 'live' && nothingDrafted
@@ -1738,6 +1832,13 @@ function renderDigestHtml(buckets, options) {
       emptyText: 'No threads have gone quiet past the threshold.',
       rows: followupRows,
     }),
+    options.showNoise
+      ? renderSection({
+          title: 'Processed as noise (' + noiseTotal + ')',
+          emptyText: 'Nothing was filtered out.',
+          rows: noiseRows,
+        })
+      : '',
     errorRows.length > 0
       ? renderSection({ title: 'Errors in the last 24h', emptyText: '', rows: errorRows })
       : '',
@@ -1755,7 +1856,7 @@ function renderDigestHtml(buckets, options) {
 
 /**
  * @param {ReturnType<typeof bucketDigestRows>} buckets
- * @param {{ dateLabel: string }} options
+ * @param {{ dateLabel: string, showNoise?: boolean }} options
  * @returns {string}
  */
 function renderDigestText(buckets, options) {
@@ -1773,6 +1874,15 @@ function renderDigestText(buckets, options) {
   for (const r of buckets.followupsDue) {
     lines.push('  - ' + (r.subject || '(no subject)') + ' — quiet ' + r.quietDays + ' business days');
   }
+
+  if (options.showNoise) {
+    const noise = buckets.processedAsNoise || [];
+    lines.push('', 'PROCESSED AS NOISE (' + noise.length + ')');
+    for (const r of noise.slice(0, 25)) {
+      lines.push('  - ' + (r.subject || '(no subject)') + ' — ' + (r.sender || ''));
+    }
+    if (noise.length > 25) lines.push('  and ' + (noise.length - 25) + ' more not listed.');
+  }
   lines.push(
     '',
     'The assistant never sends anything — only you press Send.',
@@ -1787,12 +1897,13 @@ function renderDigestText(buckets, options) {
  * term in these lists actually matches the word it was written for.
  */
 /** @type {{ PRICING_ASK: RegExp, PRICING_QUESTION: RegExp, FEE_STATEMENT: RegExp,
- *           SENSITIVE_TOPICS: RegExp } & Record<string, RegExp>} */
+ *           SENSITIVE_TOPICS: RegExp, COMMERCIAL_TERMS: RegExp } & Record<string, RegExp>} */
 const GUARD_PATTERNS = {
   PRICING_ASK,
   PRICING_QUESTION,
   FEE_STATEMENT,
   SENSITIVE_TOPICS,
+  COMMERCIAL_TERMS,
 };
 
 // The topic patterns are deliberately NOT merged in here. A top-level loop

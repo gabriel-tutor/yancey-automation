@@ -17,6 +17,7 @@ import {
   parseModelJson,
   pricingGuard,
   renderDigestHtml,
+  renderDigestText,
   normalizeErrorPayload,
   senderDomain,
   isInternalSender,
@@ -217,12 +218,15 @@ describe('pricingGuard — spec Gate 3', () => {
     expect(guard.triggered).toBe(true);
   });
 
-  it('stands down when Yancey already stated a figure in-thread', () => {
+  // Reversed by Yancey on 2026-08-28: hold it "even if a price has already been
+  // quoted". This used to assert the opposite, and it is kept pointing the other
+  // way rather than deleted so the change stays visible in the suite.
+  it('still fires even though a figure was already stated in-thread', () => {
     const guard = pricingGuard(
       'Following your $175-200K fixed-fee range, can you provide an estimate of the schedule?',
       'Scope',
     );
-    expect(guard.triggered).toBe(false);
+    expect(guard.triggered).toBe(true);
   });
 
   it('does not fire on ordinary delivery talk', () => {
@@ -573,18 +577,37 @@ describe('bucketDigestRows', () => {
   });
 
   it('treats a vanished draft as sent and marks the row resolved', () => {
-    expect(buckets.resolvedIds).toEqual(['3']);
-    expect(buckets.resolvedMessageIds).toEqual(['m3']);
+    // Noise rows are also closed now — each is shown once in "Processed as
+    // noise" and then never again, which is what keeps the section and the log
+    // table from growing without bound.
+    expect(buckets.resolvedIds).toContain('3');
+    expect(buckets.resolvedMessageIds).toContain('m3');
   });
 
   it('surfaces a thread that has gone quiet past the threshold', () => {
     expect(buckets.followupsDue.map((r) => r.subject)).toEqual(['Damage prevention proposal']);
   });
 
-  it('never shows noise or already-resolved rows', () => {
-    const all = JSON.stringify(buckets);
+  // Yancey asked on 2026-08-28 to see what was filtered out while the system is
+  // learning, so noise now has its own bucket instead of being dropped.
+  it('shows noise in its own bucket, never in Needs You', () => {
+    const all = JSON.stringify(buckets.needsYou);
     expect(all).not.toContain('Paychex');
-    expect(all).not.toContain('already handled');
+    expect(buckets.processedAsNoise.map((r) => r.subject).join(' ')).toContain('Paychex');
+  });
+
+  it('still never shows an already-resolved row', () => {
+    expect(JSON.stringify(buckets)).not.toContain('already handled');
+  });
+
+  it('closes each noise row so it appears in exactly one digest', () => {
+    const noiseIds = buckets.processedAsNoise.length;
+    expect(noiseIds).toBeGreaterThan(0);
+    const second = bucketDigestRows(
+      [{ id: 40, message_id: 'n1', subject: 'Paychex again', label: 'noise', received_at: now, resolved_at: now }],
+      { now, liveDraftIds: [], followupDays: 3 },
+    );
+    expect(second.processedAsNoise).toEqual([]);
   });
 
   it('sorts Needs You by urgency', () => {
@@ -604,6 +627,7 @@ describe('bucketDigestRows', () => {
       needsYou: 0,
       draftsWaiting: 0,
       followupsDue: 0,
+      processedAsNoise: 0,
       resolved: 0,
       autoClosed: 0,
       scanned: 0,
@@ -844,21 +868,22 @@ describe('pricingGuard suppression — only a quoted FEE stands the guard down',
     expect(pricingGuard(thread, 'ILI extension').triggered).toBe(true);
   });
 
-  it('IS stood down when Yancey already quoted a fee in the thread', () => {
-    // demo email #2: the figure sits next to fee-stating language.
+  it('holds a follow-up question even though the fee was already quoted', () => {
+    // demo email #2. The figure sits right next to fee-stating language, which
+    // used to stand the guard down. Yancey removed that: a quoted number does
+    // not release the next message, and arguably raises the stakes.
     const thread =
       'Can you provide a breakdown of what the fee covers across the five deliverables?' +
       '\n\nFrom: Yancey Dawson\nSubject: Preliminary estimate\n\n' +
       'The indicative range is $175K to $200K on a fixed-fee basis. The estimate is ' +
       'preliminary and non-binding; the final fee would be confirmed at scoping.';
     const guard = pricingGuard(thread, 'RE: Integrating Gas Control into T-Week Planning');
-    expect(guard.triggered).toBe(false);
-    expect(guard.reason).toContain('already');
+    expect(guard.triggered).toBe(true);
   });
 
-  it('is stood down by an hourly rate stated in-thread', () => {
+  it('holds a thread that states an hourly rate', () => {
     const thread = ASK + '\n\nAs discussed our blended hourly rate is $265 per hour.';
-    expect(pricingGuard(thread, 'Scope').triggered).toBe(false);
+    expect(pricingGuard(thread, 'Scope').triggered).toBe(true);
   });
 });
 
@@ -1033,9 +1058,18 @@ describe('sensitivityGuard — word stems that never matched', () => {
 
 describe('digest never claims shadow mode while drafts are sitting there', () => {
   const shell = {
+    processedAsNoise: [],
     resolvedIds: [],
     resolvedMessageIds: [],
-    stats: { needsYou: 0, draftsWaiting: 0, followupsDue: 0, resolved: 0, autoClosed: 0, scanned: 0 },
+    stats: {
+      needsYou: 0,
+      draftsWaiting: 0,
+      followupsDue: 0,
+      processedAsNoise: 0,
+      resolved: 0,
+      autoClosed: 0,
+      scanned: 0,
+    },
   };
   const buckets = {
     ...shell,
@@ -1303,7 +1337,10 @@ describe("Yancey's drafting rules", () => {
     const v = normalizeClassification(
       raw({}),
       ctx('scorkran@partnersperform.com', {
-        cleanText: 'Can you approve the change order before Thursday?',
+        // Deliberately not "change order" any more — that is now a commercial
+        // term and would be held by the pricing guard first, which would make
+        // this test pass for the wrong reason.
+        cleanText: 'Can you approve the revised T-Week plan before Thursday?',
       }),
     );
     expect(v.label).toBe('flag_for_yancey');
@@ -1346,5 +1383,72 @@ describe('sender domain matching fails closed', () => {
 
   it('matches the configured domain regardless of case or a leading @', () => {
     expect(isInternalSender('YDawson@partnersperform.com', ['@PartnersPerform.com'])).toBe(true);
+  });
+});
+
+describe("Yancey's 2026-08-28 controls", () => {
+  const shell = {
+    needsYou: [],
+    draftsWaiting: [],
+    followupsDue: [],
+    resolvedIds: [],
+    resolvedMessageIds: [],
+    stats: {
+      needsYou: 0, draftsWaiting: 0, followupsDue: 0,
+      processedAsNoise: 0, resolved: 0, autoClosed: 0, scanned: 0,
+    },
+  };
+  /** @param {number} n */
+  const noise = (n) =>
+    Array.from({ length: n }, (_, i) => ({
+      subject: 'Newsletter ' + i,
+      sender: 'news@vendor.example.com',
+      reasoning: 'promotional',
+      webLink: 'https://o/' + i,
+      receivedAt: i,
+    }));
+
+  it('shows the Processed as noise section for the rollout', () => {
+    const b = { ...shell, processedAsNoise: noise(2), stats: { ...shell.stats, processedAsNoise: 2 } };
+    const html = renderDigestHtml(b, { dateLabel: 'Friday', showNoise: true });
+    expect(html).toContain('Processed as noise (2)');
+    expect(html).toContain('Newsletter 0');
+  });
+
+  it('hides the section entirely once the flag is off', () => {
+    const b = { ...shell, processedAsNoise: noise(2), stats: { ...shell.stats, processedAsNoise: 2 } };
+    const html = renderDigestHtml(b, { dateLabel: 'Friday', showNoise: false });
+    expect(html).not.toContain('Processed as noise');
+    expect(html).not.toContain('Newsletter 0');
+  });
+
+  it('says so when the noise list is truncated', () => {
+    const b = { ...shell, processedAsNoise: noise(40), stats: { ...shell.stats, processedAsNoise: 40 } };
+    const html = renderDigestHtml(b, { dateLabel: 'Friday', showNoise: true });
+    // The heading carries the honest total; a silent truncation would read as
+    // "that was all of it", which is the opposite of the visibility he asked for.
+    expect(html).toContain('Processed as noise (40)');
+    expect(html).toContain('15 more not listed');
+    expect(html).not.toContain('Newsletter 30');
+  });
+
+  it('carries the noise section into the plain-text version too', () => {
+    const b = { ...shell, processedAsNoise: noise(1), stats: { ...shell.stats, processedAsNoise: 1 } };
+    expect(renderDigestText(b, { dateLabel: 'Friday', showNoise: true })).toContain('PROCESSED AS NOISE (1)');
+    expect(renderDigestText(b, { dateLabel: 'Friday' })).not.toContain('PROCESSED AS NOISE');
+  });
+
+  it('treats a configured alias as addressed to him', () => {
+    expect(addressedToMailbox(['yancey@partnersperform.com'], [], [
+      'YDawson@partnersperform.com',
+      'yancey@partnersperform.com',
+    ])).toBe(true);
+  });
+
+  // A bcc'd address appears in neither list, so it can never match. That is the
+  // safe direction — surfaced, not drafted — but it is a limitation worth
+  // pinning, because Yancey asked specifically how bcc is handled.
+  it('cannot see a bcc, so bcc mail is surfaced rather than drafted', () => {
+    expect(addressedToMailbox(['someone@sce.com'], [], ['YDawson@partnersperform.com'])).toBe(false);
   });
 });

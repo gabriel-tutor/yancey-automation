@@ -5,7 +5,11 @@ import { DEPLOY, E, GRAPH, POLICY, S, SDK_IMPORT, contextLoaderNodes, OUTLOOK_CR
 
 const CONFIG = {
   modelClassify: 'gpt-5.6-luna',
-  confidenceMin: 0.6,
+  // Yancey, 2026-08-28: "I would prefer to begin with a confidence threshold of
+  // 0.80 or higher. Anything below that should be held for review without a
+  // draft." Raised from 0.6. Anything under this is surfaced with
+  // `below_confidence_min` rather than replied to.
+  confidenceMin: 0.8,
   followupDays: 3,
   pollBatch: 25,
   lookbackHours: 6,
@@ -19,6 +23,10 @@ const CONFIG = {
   // stop matching this and the agent falls back to labelling only. Update it
   // deliberately at handover — never leave it blank, which blocks all drafting.
   draftingMailbox: TARGET.draftingMailbox,
+  // Aliases Yancey also receives on. Mail addressed to an address that is not
+  // here (including anything bcc'd, which appears in no recipient list) is
+  // classified and surfaced but never drafted.
+  draftingAliases: TARGET.draftingAliases || [],
   // Yancey, 2026-08-28: "Please always flag emails from Chuck Coleman and
   // anyone outside of partnersperform.com without drafting a response."
   //
@@ -104,7 +112,9 @@ const nowIso = new Date().toISOString();
 const authorised = addressedToMailbox(
   src.toRecipients,
   src.ccRecipients,
-  String(cfg.draftingMailbox || '')
+  [String(cfg.draftingMailbox || '')].concat(
+    Array.isArray(cfg.draftingAliases) ? cfg.draftingAliases : []
+  )
 );
 
 const c = normalizeClassification($json, {

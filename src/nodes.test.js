@@ -246,8 +246,10 @@ describe("WF-A Apply Classification under Yancey's rules", () => {
     const out = runWith({
       ...base,
       senderEmail: 'dyoes@partnersperform.com',
-      cleanText: 'Can you approve the change order before Thursday?',
-      threadText: 'Can you approve the change order before Thursday?',
+      // "change order" is now a commercial term and would be held by the
+      // pricing guard first, so this uses a purely internal approval ask.
+      cleanText: 'Can you approve the revised T-Week plan before Thursday?',
+      threadText: 'Can you approve the revised T-Week plan before Thursday?',
     });
     expect(out.json.label).toBe('flag_for_yancey');
     expect(out.json.guardFlags).toContain('sensitivity:approval');

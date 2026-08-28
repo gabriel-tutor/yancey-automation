@@ -17,6 +17,11 @@ const CONFIG = {
   // 01:30 his time.
   followupDays: 3,
   autoCloseDays: 21,
+  // Yancey, 2026-08-28: "For the initial rollout, please include emails
+  // classified as noise in a 'Processed as Noise' section of the morning
+  // summary. I want visibility into possible misclassifications while the
+  // system is learning." Set false to retire the section once he is satisfied.
+  showNoise: true,
   // Drafting is on in production, so the shadow-mode banner must not appear.
   mode: 'live',
   mailboxLabel: TARGET.mailboxLabel,
@@ -59,11 +64,14 @@ const buckets = bucketDigestRows(rows, {
   autoCloseDays: Number(cfg.autoCloseDays) || 21
 });
 
+const showNoise = cfg.showNoise !== false;
+
 const html = renderDigestHtml(buckets, {
   dateLabel,
   mailboxLabel: String(cfg.mailboxLabel || ''),
   mode: String(cfg.mode || 'live'),
-  errors: errors.slice(0, 5)
+  errors: errors.slice(0, 5),
+  showNoise
 });
 
 // Delivered by writing the message straight into the mailbox rather than
@@ -91,7 +99,7 @@ return [{
     subject: 'Inbox digest — ' + buckets.stats.needsYou + ' need you, ' +
       buckets.stats.draftsWaiting + ' drafts waiting',
     html,
-    text: renderDigestText(buckets, { dateLabel }),
+    text: renderDigestText(buckets, { dateLabel, showNoise }),
     stats: buckets.stats,
     draftsComplete,
     errorCount: errors.length,
@@ -209,9 +217,12 @@ const fetchLogRows = node({
       dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.emailLog)}, cachedResultName: ${S(TABLES.emailLogName)} },
       matchType: 'allConditions',
       filters: {
+        // The label-neq-noise condition that used to sit here is gone: noise
+        // rows have to be fetched for the "Processed as noise" section. They are
+        // closed in the same run, so each appears exactly once.
+        // (No backticks in this comment - it lives inside a template literal.)
         conditions: [
-          { keyName: 'resolved_at', condition: 'isEmpty' },
-          { keyName: 'label', condition: 'neq', keyValue: 'noise' }
+          { keyName: 'resolved_at', condition: 'isEmpty' }
         ]
       },
       returnAll: true

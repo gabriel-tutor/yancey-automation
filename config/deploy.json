@@ -74,7 +74,8 @@
       "sharepointCredential": null,
       "sharepointCredentialType": null,
       "draftingEnabled": true,
-      "_digestToNote": "Delivered by writing the message into the mailbox via Graph, not by email, so no verified domain is needed and Resend is out of the picture entirely. The POST targets /me, so the digest always lands in the mailbox the credential owns - digestTo is only the displayed To: header and cannot misroute it. digestFrom is the display identity and is listed in WF-A's ignoreSenders, so the agent does not classify its own digest."
+      "_digestToNote": "Delivered by writing the message into the mailbox via Graph, not by email, so no verified domain is needed and Resend is out of the picture entirely. The POST targets /me, so the digest always lands in the mailbox the credential owns - digestTo is only the displayed To: header and cannot misroute it. digestFrom is the display identity and is listed in WF-A's ignoreSenders, so the agent does not classify its own digest.",
+      "draftingAliases": []
     },
     "dev": {
       "label": "gtutor sandbox",
@@ -99,7 +100,8 @@
       "outlookCredentialId": "vNJuWdSXhjzB0Jo1",
       "sharepointCredential": null,
       "sharepointCredentialType": null,
-      "draftingEnabled": true
+      "draftingEnabled": true,
+      "draftingAliases": []
     }
   },
   "_sharepointNote": "Phase 2. The Outlook credential cannot reach SharePoint — WF-S0 measured 403 on all four Graph checks on 2026-08-28, and n8n's Outlook credential type requests mail scopes only at authorization time, so consent alone cannot widen it. When the new credential exists, set sharepointCredential + sharepointCredentialType on the target below, rebuild, and re-run WF-S0. See docs/PHASE2-SHAREPOINT.md.",
@@ -110,6 +112,12 @@
     ],
     "alwaysFlagSenders": [
       "ccoleman@partnersperform.com"
-    ]
+    ],
+    "_confidenceNote": "Yancey set confidenceMin to 0.80 on 2026-08-28, up from 0.60. Anything the classifier is less sure of than that is surfaced with below_confidence_min rather than replied to."
+  },
+  "retention": {
+    "_note": "Answering Yancey's question of 2026-08-28. n8n execution history — which holds full message bodies while a run is in flight — is pruned after 168 hours (7 days) by EXECUTIONS_DATA_PRUNE and EXECUTIONS_DATA_MAX_AGE on the VPS. The decision log (agent_email_log_yancey) holds subject, sender, label, reasoning and links, and is retained indefinitely so the audit trail survives; rows are closed after autoCloseDays but never deleted. Deleting a client's decision record is his call, not ours, so logRetentionDays defaults to 0 (never). Set it to a number of days to enable purging of closed rows.",
+    "executionHistoryDays": 7,
+    "logRetentionDays": 0
   }
 }
