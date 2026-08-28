@@ -39,8 +39,10 @@ meeting is much better if it has already landed.
 > could technically reach any SharePoint site in the company. The safety would
 > then rest on my code being careful rather than on the permission itself.
 >
-> I would rather build it the narrow way. If Option A, just let me know which
-> library — the one you showed me on the call, or a different one.
+> I would rather build it the narrow way. If Option A, let me know which teams
+> to include — from what I can see there is at least "Task Management" and
+> "Upperform Partners", and each one is granted separately, so it is worth
+> naming them all now rather than coming back to you twice.
 >
 > I have also asked them to remove one leftover permission from the email
 > assistant while they are in there. It is not being used and nothing is wrong,

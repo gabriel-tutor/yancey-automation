@@ -92,9 +92,10 @@ Trade-offs, stated rather than buried:
 - `Sites.Selected` is app-only, so it uses a client-credentials flow rather than
   the authorization-code flow n8n's SharePoint credential expects. The HTTP
   Request nodes get a generic OAuth2 credential configured for client
-  credentials. The organizer design was already raw-HTTP-against-Graph — the
-  native SharePoint node has no rename, no move, no folder ops and no `delta`,
-  so it was never going to carry this — so nothing is lost.
+  credentials, and n8n's native SharePoint node becomes unusable. See
+  "What the native node can and cannot do" below — the honest accounting is
+  that this costs us two operations out of roughly eight, which is not enough
+  to trade a bounded blast radius for.
 - File changes appear in version history as the app, not as a person. For an
   audit trail that is arguably better, but Yancey should hear it before he sees
   it.
@@ -103,6 +104,131 @@ Trade-offs, stated rather than buried:
 Fallback if app-only proves awkward: delegated `Sites.ReadWrite.All` +
 `Files.ReadWrite.All` + `offline_access`, with the wider blast radius accepted
 and mitigated only by the dry-run and approval gates in the design.
+
+---
+
+## What the native node can and cannot do
+
+Checked against the node's type definitions rather than assumed, because an
+earlier draft of this document got it wrong in the direction that would have
+embarrassed us in front of the client.
+
+**It can rename.** `file:update` takes an optional `fileName` ("if not
+specified, the original file name will be used") and `changeFileContent`
+defaults to `false`, so a name change without touching content is a supported
+operation. Half of Yancey's ask — *"I want to see if it can rename things"* —
+is a first-class feature of a node that ships with n8n.
+
+**It cannot move, and it cannot enumerate.** The eleven actions are file
+download/update/upload, list-item create/upsert/delete/get/getAll/update, and
+list get/getAll. There is no folder resource, no destination parameter on
+`file:update`, no create-folder, and no `delta`. The `getFolders`/`getFiles`
+search-list methods exist only to populate UI pickers, not as data operations.
+
+So the other half of the ask — *"organize it in a way"* — needs raw HTTP
+against Graph regardless. Inventory (`/drive/root/delta`), folder creation, and
+`PATCH parentReference` for moves all have to be written by hand. The design was
+already raw-HTTP for those stages; what changes is only that we should stop
+describing the native node as useless. It is not. It is half of the job, and
+worth pointing at when explaining why the other half needs custom work.
+
+One genuinely useful thing it does give us: `item:create` / `item:update` /
+`item:getAll` against a SharePoint List is exactly the approval-queue mechanism
+in Stage 3. If we end up on the delegated fallback rather than `Sites.Selected`,
+that stage gets simpler.
+
+---
+
+## What the libraries actually look like
+
+Observed 2026-08-28 from Teams in the browser, where Gabriel's admin rights do
+work. Two channels of two teams — a partial sample, not an inventory. Treat
+everything here as a strong signal and none of it as a count.
+
+**These are Teams-backed sites, not one document library.** "Task Management"
+and "Upperform Partners" are separate teams, so separate SharePoint sites, with
+channels as folders inside each team's Documents library. The spec's "one site
+collection in v1" needs restating: it is one *team* in v1, and a `Sites.Selected`
+grant is per-site, so the request should name each team we intend to touch.
+
+### Yancey has already built a taxonomy, and it is a good one
+
+`Power BI Task Management` contains, all created by Yancey Dawson on 3 April
+2025:
+
+```
+1. Assigned Tasks
+2. In Progress
+3. Under Review
+4. Completed Tasks
+```
+
+Numbered so they sort in process order. Whatever we propose should extend this,
+not replace it — he will recognise his own scheme, and a proposal that quietly
+overwrites it reads as the tool not having looked.
+
+**It has already drifted**, which is the argument for the work: sitting
+unnumbered alongside those four are `Resources and References` and `PD alignment
+Excel and Power BI - Karen`. A person's name in a folder name is the classic
+signal of a structure that stopped being maintained.
+
+### The demonstrable problem is version sprawl
+
+Three files in `Web Excel`, all modified 21 July, same base name:
+
+```
+OM_Savings_Idea_Capture_FinalVersion.xlsx    Jeremiah Rosales
+OM_Savings_Idea_Capture_v4.xlsx              Charles Coleman
+OM_Savings_Idea_Capture_WithCostBucke….xlsx  Jeremiah Rosales
+```
+
+A "FinalVersion" and a "v4" co-existing, by different authors, on the same day.
+That is the single most persuasive thing to open Thursday with, because it needs
+no explanation — and it involves the President, so it is visibly not a junior
+filing problem.
+
+Across the sample there are **at least six competing idioms for the same
+concept**: `v1`, `v4`, `FinalVersion`, `Latest_`, `Draft_`, `WithCostBuckets`.
+Separators are equally mixed — `OM_Savings_Idea_Capture` (underscores),
+`Draft_Assessment Tool_6 Walkthru_26-Jan-…` (underscores, spaces and hyphens in
+one name), `… - Karen` (spaced hyphen). Dates appear inline in at least one
+format. Owner initials appear in `Latest_ActionTracker_YD.xlsx`.
+
+This is exactly the shape of problem a deterministic pass handles well: the
+inconsistency is mechanical, so most of the value lands without the model
+needing to be clever about content.
+
+### The spec's DocType vocabulary is wrong for this content
+
+§3 assumes a consulting document library — Proposal, SOW, Contract, Report,
+Deck, Invoice, Playbook, Template, Notes, Data, Misc. What is actually here is
+an operational workspace: `.xlsx` trackers, dashboards and one `.pbix`.
+`DIMP_Dashboard`, `Electric_Operations_Daily_Review_Dashboard`,
+`Daily_Employee_Project_Time_Tracking`, `Mooyah_Cleaning_Gantt`,
+`TCO Pilot Program Oversight Dashboard`, `Latest_ActionTracker`.
+
+Dashboard, Tracker and Gantt are not in the vocabulary and are most of what is
+there. Revisit the closed list against the real inventory before proposing it —
+a taxonomy whose top category is `Misc` will not survive the meeting.
+
+### One thing that must not be automated
+
+The four numbered folders are **workflow states, not document categories**.
+Moving a file from `2. In Progress` to `3. Under Review` is a status change with
+business meaning — it says a person finished something. An organizer that
+"tidies" across those folders would silently be changing task status.
+
+Renaming inside them is fine. Moving between them is not a filing decision and
+should be out of scope for automated moves, or gated far harder than a plain
+library. Worth saying out loud on Thursday: it demonstrates that the tool
+distinguishes what folders *mean* from what they are called, which is the
+distinction that makes "let the AI do it" a comfortable thing to agree to.
+
+### Note on confidentiality
+
+This section names real Upperform files and staff. Same class of material as
+`fixtures/golden/`, and the same mitigation applies: this repository has no git
+remote and should not acquire one.
 
 ---
 
@@ -120,24 +246,38 @@ split them.
 
 ## What Thursday looks like
 
-**If the access lands first:** the meeting is concrete. Run WF-S0, enumerate his
-actual document library, and put a taxonomy proposal in front of him built from
-his real folders and real filenames — which is the one thing that makes the
-"can it rename things?" conversation productive rather than hypothetical. The
-design's prerequisite is a taxonomy sign-off, and that is far easier to get when
-he is looking at his own files.
+Browser access changes this materially. The taxonomy proposal no longer waits
+on the API grant, because the content can be read by eye — and a proposal built
+from `OM_Savings_Idea_Capture_FinalVersion.xlsx` is worth more in that meeting
+than one built from a seeded dev library, grant or no grant.
 
-**If it does not:** the meeting is a demo against a seeded library in the dev
-tenant, plus the access request explained in person. Workable, and noticeably
-weaker — he cannot sign off a taxonomy for files he is not looking at.
+So Thursday is concrete either way. What the grant changes is only whether we
+can *show it running*.
 
-The lead time is the whole argument for sending the request now rather than
-after Thursday.
+**With access:** run WF-S0 live, enumerate the library, and demonstrate a
+dry-run rename plan against real files. He sees the thing work.
+
+**Without:** present the proposal against the real filenames, screenshots and
+all, and demo the mechanism against a seeded dev library. He sees what it would
+do, and signs off the taxonomy — which is the actual prerequisite and the thing
+that gates every later stage.
+
+Either way the access request should go now: it is on the critical path for
+building, just no longer for the meeting. Sending it also stops Thursday
+becoming the place we ask, which would put the whole of Phase 2 a week behind
+for a reason Yancey would rightly find avoidable.
 
 ## Open
 
-- [ ] Send Yancey the access request (see `docs/access-request-sharepoint.md`)
+- [ ] Send Yancey the access request (see `docs/access-request-sharepoint.md`),
+      naming both teams rather than "one site"
+- [ ] Build the naming-convention proposal from the observed filenames —
+      does not depend on the grant
+- [ ] Revisit the §3 DocType vocabulary against what is actually in the
+      libraries (Dashboard / Tracker / Gantt are missing and are most of it)
 - [ ] Decide app-only vs delegated once the admin replies
 - [ ] Register/extend the Entra app; add the credential in n8n
 - [ ] Re-run WF-S0 to confirm PASS
 - [ ] Taxonomy sign-off from Yancey — prerequisite, not a formality
+- [ ] Confirm with Yancey that the four numbered status folders are out of
+      scope for automated moves
