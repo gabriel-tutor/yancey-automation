@@ -1263,6 +1263,77 @@ scheduled dev digest is not wanted. Run them manually.
 `dev WF-A` has `draftingEnabled: false` and `draftingMailbox` set to gtutor, so
 the interlock fails closed even if the flag is flipped without thinking.
 
+## Production status, 2026-08-28
+
+### Live on Yancey's mailbox
+
+| | |
+|---|---|
+| WF-A · Poll & Classify | **active**, every 2 minutes |
+| WF-B · Draft Reply | **active**, called by WF-A |
+| WF-C · Daily Digest | **active**, weekdays 07:30 Central |
+| WF-E · Error Handler | **active**, proven to deliver |
+
+`draftingEnabled: true`, `draftingMailbox: YDawson@partnersperform.com`. It is
+classifying his real mail and writing drafts he is sending — his Drafts folder
+came back empty on the last check, which means the replies are being used.
+
+### What is proven, and how
+
+```
+Gate 1  agreement with Yancey's own labels   100%  (15/15, three runs)
+        real work missed                     0
+        junk drafted                         0
+Gate 3  pricing cases held                   2/2
+        269 unit tests, typecheck clean
+```
+
+The error path was proven end to end by deliberately failing a throwaway
+workflow: the row carried the workflow, execution id, failing node, message and
+stack, and SMTP accepted the alert. Before that fix every error row read
+"unknown workflow / Unknown error".
+
+### Closed today
+
+`mode` was still `shadow` on WF-C while drafting was on, so the daily digest
+would have printed *"No replies are being drafted"* above a list of drafts, and
+headed it *"(dev mailbox)"*. Both were wrong and both were client-facing. Now
+`live`, labelled with his address.
+
+### Three things are NOT closed
+
+**1. `Mail.Send` is granted on Yancey's mailbox.** WF-T:
+`noSendInvariantProven: false`, send attempt returns `202 Accepted`. A brand
+new credential authorised from scratch inherited it too, which rules out the
+n8n scope settings and points at **tenant-level admin consent on the Entra app
+registration**. It needs an Entra admin on partnersperform.com to remove the
+admin-consented `Mail.Send`, then both preflights re-run.
+
+Nothing in the agent calls `sendMail` — WF-B only ever calls `createReply`, and
+that is covered by tests. So the guarantee currently rests on the code rather
+than on the permission being absent. That is a weaker promise than the client
+explainer describes, and the explainer says so.
+
+**2. The digest cannot reach Yancey.** `digestTo` is deliberately still
+`gtutor@`. The Resend sandbox only delivers to the account owner, so pointing it
+at him would 550 rather than arrive. Verify a sending domain
+(`agent.partnersperform.com`), update `digestFrom`, then switch `digestTo`.
+
+**3. The 2–3 day shadow period was skipped.** Spec §12 step 4 wants
+classify-only on the live mailbox first, so he can correct mislabels before
+anything is written in his name. Drafting was on from the swap. Not a defect —
+but it was a side effect rather than a decision, and it is worth telling him
+that is what happened.
+
+### One known deviation
+
+WF-C's `Build Digest` node in n8n is one commit behind source: the fix that
+derives the shadow banner from the run rather than from config is not deployed.
+`mode: live` makes the banner unreachable, so the defect cannot surface, and
+deploying a 12,000-character node body to an active production workflow was not
+worth the risk on the morning of a client meeting. Deploy it with the `digestTo`
+change, which requires rebuilding WF-C anyway.
+
 ## Open items still owed by Yancey
 
 From the spec §13 and the client doc: exact signature block for first contacts,
