@@ -361,7 +361,20 @@ const tagInOutlook = node({
       contentType: 'json',
       specifyBody: 'json',
       jsonBody: ${E('{{ JSON.stringify({ categories: $json.categories }) }}')},
-      options: { timeout: 20000 }
+      // Graph caps concurrent writes per mailbox. A batch of 13 messages
+      // returned 429 ApplicationThrottled here in the dev sandbox, and
+      // retryOnFail alone does not help: every request hits the ceiling
+      // together, backs off together, and hits it again. Serialising is what
+      // actually fixes it.
+      //
+      // This mattered more than a failed tag. The run dies at this node, so
+      // the log rows below it are never written and those messages simply do
+      // not appear in the next digest — a burst after a quiet weekend would
+      // have looked like the agent ignoring the inbox.
+      options: {
+        timeout: 20000,
+        batching: { batch: { batchSize: 1, batchInterval: 300 } }
+      }
     },
     credentials: { microsoftOutlookOAuth2Api: newCredential(${S(OUTLOOK_CREDENTIAL)}) },
     position: [2400, 0]
