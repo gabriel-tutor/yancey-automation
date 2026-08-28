@@ -5,7 +5,7 @@ idempotency gate. This is the fresh set, and it demonstrates the work done on
 27 Aug rather than repeating round 1.
 
 Four Gmail drafts are already sitting in `gabdotcode01@gmail.com`, addressed to
-`gtutor@partnersperform.com`. Send them together — they arrive in one 2-minute
+`gtutor@partnersperform.com`. Send them together — they arrive in one
 poll and light up three different Outlook categories at once.
 
 | # | Subject | Lands as | Why it is in the set |

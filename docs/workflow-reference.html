@@ -137,7 +137,7 @@
     <p>Only WF&#8209;A and WF&#8209;C hold schedules. WF&#8209;B is called, WF&#8209;E is invoked on failure, and the last two are hand-run diagnostics that never belong on a client mailbox unattended. <b>WF&#8209;A, WF&#8209;B and WF&#8209;E are published and running against the dev mailbox now</b> &mdash; a sub-workflow must be published before anything referencing it can be, which is why WF&#8209;B went first.</p>
   </div>
   <div class="board">
-    <div class="unit"><span class="id">WF-A</span><span class="nm">Poll &amp; Classify</span><span class="mt">schedule &middot; every 2 min<br>dSGzw1yk46JTHD3Z</span><span class="pill p-live">live &middot; drafting on</span></div>
+    <div class="unit"><span class="id">WF-A</span><span class="nm">Poll &amp; Classify</span><span class="mt">schedule &middot; every minute<br>dSGzw1yk46JTHD3Z</span><span class="pill p-live">live &middot; drafting on</span></div>
     <div class="unit"><span class="id">WF-B</span><span class="nm">Draft Reply</span><span class="mt">called by WF-A<br>Rjpk5KuPopQCpCQL</span><span class="pill p-live">published</span></div>
     <div class="unit"><span class="id">WF-C</span><span class="nm">Digest &amp; Follow-ups</span><span class="mt">weekdays 07:30 CT<br>vCbgJoNqfuVOqWGH</span><span class="pill p-hold">not published</span></div>
     <div class="unit"><span class="id">WF-E</span><span class="nm">Error Handler</span><span class="mt">on failure of A/B/C<br>XSKk6eHTFGqftrUM</span><span class="pill p-live">published</span></div>
@@ -148,7 +148,7 @@
   <div class="figwrap" style="margin-top:20px">
     <figure>
       <div class="scroll">
-        <svg viewBox="0 0 1040 340" role="img" aria-label="System map. A two-minute schedule drives WF-A, which calls WF-B per draftable message. A weekday schedule drives WF-C. Both read and write two shared data tables. Failures in A, B and C route to WF-E.">
+        <svg viewBox="0 0 1040 340" role="img" aria-label="System map. A one-minute schedule drives WF-A, which calls WF-B per draftable message. A weekday schedule drives WF-C. Both read and write two shared data tables. Failures in A, B and C route to WF-E.">
           <defs>
             <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="currentColor"/></marker>
             <marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="#2E5F8A"/></marker>
@@ -157,7 +157,7 @@
 
           <text x="16" y="26" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".5">TRIGGERS</text>
           <rect x="16" y="40" width="128" height="46" rx="2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-dasharray="4 3"/>
-          <text x="80" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">every 2 min</text>
+          <text x="80" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">every minute</text>
           <text x="80" y="76" text-anchor="middle" font-size="10.5" font-family="ui-monospace, Menlo, monospace" fill="currentColor" opacity=".55">schedule</text>
 
           <rect x="16" y="212" width="128" height="46" rx="2" fill="none" stroke="currentColor" stroke-width="1.25" stroke-dasharray="4 3"/>
@@ -227,7 +227,7 @@
     <p>Sixteen nodes. The two amber rows are the idempotency gates: without both, a restart would reclassify the whole inbox and bill you for it.</p>
   </div>
   <div class="chain">
-    <div class="link"><div class="n">1</div><div class="b"><div class="nd">Every 2 Minutes</div><div class="ds">Schedule trigger, pinned to <code>America/Chicago</code> so date maths matches Yancey&rsquo;s day, not the datacenter&rsquo;s.</div></div></div>
+    <div class="link"><div class="n">1</div><div class="b"><div class="nd">Every Minute</div><div class="ds">Schedule trigger, pinned to <code>America/Chicago</code> so date maths matches Yancey&rsquo;s day, not the datacenter&rsquo;s.</div></div></div>
     <div class="link"><div class="n">2</div><div class="b"><div class="nd">Config</div><div class="ds">Every tunable in one Set node. Nothing else in the workflow should need editing.</div></div></div>
     <div class="link"><div class="n">3</div><div class="b"><div class="nd">Load Business Profile &rarr; Extract Profile Text</div><div class="ds">Reads <code>/data/context/business-profile.md</code> from the read-only mount. Both continue on error, so a broken mount degrades to a built-in fallback rather than halting the poll.</div></div></div>
     <div class="link"><div class="n">4</div><div class="b"><div class="nd">Resolve Context</div><div class="ds">Builds the classifier system prompt from the profile and computes the Graph <code>$filter</code> window. Emits <code>profileSource</code> &mdash; if that reads <code>fallback</code>, the mount is broken.</div></div></div>
@@ -412,7 +412,7 @@
     <table>
       <thead><tr><th>Key</th><th>Where</th><th>Now</th><th>What it does</th></tr></thead>
       <tbody>
-        <tr><td class="k">draftingEnabled</td><td>WF-A</td><td class="v">true</td><td>The shadow-mode switch, and it is <b>on</b> &mdash; drafts are being written unattended every 2 minutes. Must be <code>false</code> before the credential points at Yancey.</td></tr>
+        <tr><td class="k">draftingEnabled</td><td>WF-A</td><td class="v">true</td><td>The shadow-mode switch, and it is <b>on</b> &mdash; drafts are being written unattended every minute. Must be <code>false</code> before the credential points at Yancey.</td></tr>
         <tr><td class="k">draftingMailbox</td><td>WF-A</td><td class="v">gtutor@&hellip;</td><td>The interlock. A message only drafts if this address is on its to or cc, so re-pointing the Outlook credential at Yancey stops drafting rather than redirecting it. <b>Change it in the same action as the credential.</b> Blank blocks all drafting.</td></tr>
         <tr><td class="k">confidenceMin</td><td>WF-A</td><td class="v">0.6</td><td>Below this the item is surfaced rather than drafted, flagged <code>below_confidence_min</code>.</td></tr>
         <tr><td class="k">lookbackHours</td><td>WF-A</td><td class="v">6</td><td>Graph <code>$filter</code> window. Wider means re-reading mail the gates will drop anyway.</td></tr>
@@ -464,7 +464,7 @@
   </div>
   <div class="prose">
     <p>Hand-editing a Code node in n8n works until the next <code>npm run build</code> overwrites it. The chain is <code>src/agent-lib.js</code> &rarr; tree-shaken per node by esbuild &rarr; inlined into the generated SDK source &rarr; deployed. Two hundred and sixty-nine tests cover it: the library itself, a parity suite proving the tree-shaken subset that ships behaves like the module under test, a vocabulary sweep that walks every term in every guard, and &mdash; added after two bugs shipped through the gap &mdash; a suite that executes the Code node <em>bodies</em> with stubbed <code>$</code> and <code>$input</code>, because until then they were only ever strings that nothing ran.</p>
-    <p>Three things change without touching code at all: the business profile (edit on the VPS, picked up on the next 2-minute poll &mdash; no restart), anything in a Config node, and the Outlook categories themselves.</p>
+    <p>Three things change without touching code at all: the business profile (edit on the VPS, picked up on the next 1-minute poll &mdash; no restart), anything in a Config node, and the Outlook categories themselves.</p>
   </div>
 </section>
 

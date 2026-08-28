@@ -158,8 +158,8 @@ const everyTwoMinutes = trigger({
   type: 'n8n-nodes-base.scheduleTrigger',
   version: 1.3,
   config: {
-    name: 'Every 2 Minutes',
-    parameters: { rule: { interval: [{ field: 'minutes', minutesInterval: 2 }] } },
+    name: 'Every Minute',
+    parameters: { rule: { interval: [{ field: 'minutes', minutesInterval: 1 }] } },
     position: [0, 0]
   },
   output: [{}]
@@ -484,7 +484,7 @@ const callDraftWorkflow = node({
 });
 
 const noteHeader = sticky(
-  ${S('## WF-A · Poll & Classify\n\nRuns every 2 minutes. Reads the inbox, classifies each new message, paints the Outlook category, writes a log row, and (once drafting is switched on) hands the message to WF-B.\n\n**Everything tunable lives in Config** — model, confidence floor, poll size, always-flag senders, and `draftingEnabled`. Nothing else in this workflow should need editing.')},
+  ${S('## WF-A · Poll & Classify\n\nRuns every minute. Reads the inbox, classifies each new message, paints the Outlook category, writes a log row, and (once drafting is switched on) hands the message to WF-B.\n\n**Everything tunable lives in Config** — model, confidence floor, poll size, always-flag senders, and `draftingEnabled`. Nothing else in this workflow should need editing.')},
   [everyTwoMinutes, config, loadProfileFile, extractProfileText, resolveContext],
   { color: 4, width: 960, height: 260 },
 );

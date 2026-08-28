@@ -1,7 +1,7 @@
 # Demo emails — proving v3 is smarter than v2
 
 Send each from `gabdotcode01@gmail.com` to `gtutor@partnersperform.com`.
-WF-A polls every 2 minutes. Watch the Outlook category that lands on each one.
+WF-A polls every minute. Watch the Outlook category that lands on each one.
 
 The point of this set: **tests 1–3 are ones the previous version got wrong.**
 

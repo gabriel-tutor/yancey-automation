@@ -91,7 +91,7 @@ ssh root@31.220.53.70
 nano /root/context/business-profile.md
 ```
 
-WF-A reads the file fresh on every run, so the next 2-minute poll picks it up.
+WF-A reads the file fresh on every run, so the next 1-minute poll picks it up.
 That is the tuning loop for shadow mode. Keep `context/business-profile.md` in
 this repo in sync, or the handover copy drifts from what is actually running.
 
@@ -447,7 +447,7 @@ wrong, and Resend's 550 named the right one.
 ### End-to-end validation on genuinely delivered mail, 2026-08-26
 
 Four emails sent from an external Gmail account to the dev mailbox, with WF-A
-published and running on its 2-minute schedule. No manual runs, nothing pinned.
+published and running on its 1-minute schedule. No manual runs, nothing pinned.
 
 | Email | Label | Conf | Draft | guard_flags |
 |---|---|---|---|---|
@@ -621,7 +621,7 @@ for (const n of JSON.parse(row.nodes)) console.log(n.name, n.parameters.jsCode?.
 ## Live run of the demo set (2026-08-27)
 
 All five demo emails sent from Gmail into the dev mailbox and picked up
-automatically on the 2-minute schedule. Every outcome matched what
+automatically on the 1-minute schedule. Every outcome matched what
 `docs/demo-emails.md` predicted.
 
 | Subject | Label | Conf | Draft | guard_flags |
@@ -1257,7 +1257,7 @@ binding. Credentials have to be attached by id with `setNodeCredential`.
 
 `dev WF-B` and `dev WF-E` are published because a sub-workflow and an error
 workflow have to be. Neither self-triggers. `dev WF-A` and `dev WF-C` are
-deliberately **unpublished** — publishing WF-A starts a 2-minute poll, and a
+deliberately **unpublished** — publishing WF-A starts a 1-minute poll, and a
 scheduled dev digest is not wanted. Run them manually.
 
 `dev WF-A` has `draftingEnabled: false` and `draftingMailbox` set to gtutor, so
@@ -1269,7 +1269,7 @@ the interlock fails closed even if the flag is flipped without thinking.
 
 | | |
 |---|---|
-| WF-A · Poll & Classify | **active**, every 2 minutes |
+| WF-A · Poll & Classify | **active**, every minute |
 | WF-B · Draft Reply | **active**, called by WF-A |
 | WF-C · Daily Digest | **active**, weekdays 07:30 Central |
 | WF-E · Error Handler | **active**, proven to deliver |
@@ -1396,6 +1396,55 @@ Three things remain, none of them code:
    rather than on the permission being absent.
 2. **Digest delivery** needs a verified sending domain.
 3. **Gate 2** needs Yancey's five voice ratings.
+
+## Polling moved to one minute (2026-08-28)
+
+Yancey asked in the meeting whether it could be faster. Measured before
+answering, because "just lower the number" is not an answer:
+
+| Interval | Average wait | Worst case | Execution data | Retained (7d) |
+|---|---|---|---|---|
+| 2 min | ~60s | 120s | 31 MB/day | 218 MB |
+| **1 min** | **~30s** | **60s** | **62 MB/day** | **436 MB** |
+| 30 s | ~15s | 30s | 124 MB/day | 871 MB |
+
+Every poll stores 44 KB whether or not anything arrived, because `Fetch Inbox`
+pulls the full `lookbackHours` window each time and the gates discard what has
+already been seen. Disk is not the constraint — 92 GB free.
+
+**The model spend does not change.** Classification only runs on genuinely new
+mail, so a faster poll adds Graph calls (free, far below throttling limits) and
+nothing else. Idle polls finish in 213 ms.
+
+Confirmed live rather than assumed:
+
+```
+12:29:10 -> 60s
+12:28:10 -> 60s
+12:27:10 -> 60s
+12:26:10 -> 120s   <- before the change
+```
+
+### If he wants genuinely instant
+
+Polling is the wrong tool past this point. **Microsoft Graph change
+notifications** push a webhook the moment mail arrives — seconds, event-driven,
+no idle polling at all. n8n is already on a public HTTPS URL so it is feasible.
+The real cost is lifecycle: mail subscriptions expire and must be renewed every
+~3 days, there is a validation handshake on creation, and a slow fallback poll
+is still wanted to catch anything missed. That is a Phase 2 piece of work, not
+a config change.
+
+Worth saying plainly to him: operationally, a draft appearing in 30 seconds
+rather than 2 minutes does not change his day — he is not watching the inbox.
+It changes how responsive the thing *feels*, which is a real reason, just not a
+technical one.
+
+### 30 seconds, if asked
+
+Fine on disk, but pair it with `saveDataSuccessExecution: none` on WF-A. At
+2,880 runs a day the execution list becomes unusable for debugging, drowned in
+idle polls — which is the actual cost, not storage.
 
 ## Open items still owed by Yancey
 
