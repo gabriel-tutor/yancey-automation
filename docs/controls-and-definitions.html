@@ -403,8 +403,11 @@
     also what makes a photographed document or a screenshot readable. Plain text, CSV and
     similar are decoded directly. Anything it cannot open — a Power BI file, an old
     <span class="mono">.xls</span>, an archive, a video — is named in the summary as not
-    read, rather than passed over in silence. Only the first few attachments on a message
-    are opened, nothing above 8&nbsp;MB is touched, and signature images are skipped.
+    read, rather than passed over in silence. Only the first few attachments on a
+    message are opened, and only the first three of those that need the model —
+    everything past that is named rather than read. Nothing above 25&nbsp;MB is
+    touched. Signature logos are recognised and skipped without being opened, so
+    the assistant does not spend a reading on being told what a company logo is.
   </p>
   <p>
     Turning it on is a one-line configuration change and a redeploy. Turning it off again

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  triageAll,
   triageAttachment,
   describeSize,
   condense,
@@ -105,10 +106,91 @@ describe('triage — which attachments get opened', () => {
     expect(v.reason).toContain('.qqq');
   });
 
+  // A signature logo that arrives without an inline marker — which is exactly
+  // what forwarding produces — used to cost a vision call to be told it was a
+  // logo, and ate part of the prompt budget saying so.
+  it('skips a signature logo that arrived without an inline marker', () => {
+    const v = triageAttachment(att({ name: 'image001.png', contentType: 'image/png', size: 18 * 1024, isInline: false }));
+    expect(v.route).toBe('skip');
+    expect(v.reason).toContain('signature/logo');
+  });
+
+  it('skips the logo Outlook itself attaches', () => {
+    const v = triageAttachment(att({ name: 'Outlook-Logo  Desc.png', contentType: 'image/png', size: 18 * 1024, isInline: false }));
+    expect(v.route).toBe('skip');
+  });
+
+  // The whole point of the name check is that it must not swallow a real one.
+  it('still opens a small screenshot that has a real name', () => {
+    const v = triageAttachment(att({ name: 'Screenshot 2026-09-02 at 10.14.21.png', contentType: 'image/png', size: 30 * 1024, isInline: false }));
+    expect(v.route).toBe('image');
+  });
+
+  it('never spends a model call on a tracking pixel', () => {
+    const v = triageAttachment(att({ name: 'beacon.gif', contentType: 'image/gif', size: 43, isInline: false }));
+    expect(v.route).toBe('skip');
+  });
+
   it('has no extension mapped to two different routes', () => {
     for (const ext of Object.keys(KNOWN_UNREADABLE)) {
       expect(BY_EXTENSION[ext], ext + ' is both readable and unreadable').toBeUndefined();
     }
+  });
+});
+
+/**
+ * Caps that only mean anything across a whole message: how many attachments
+ * are opened at all, and how many may cost a model call. A 22 MB PDF takes
+ * about 21 seconds, and WF-A waits for the answer before it classifies, so an
+ * unbounded number of them holds up the poller.
+ */
+describe('triageAll — what one message is allowed to cost', () => {
+  /** @param {string} name @param {number} [size] */
+  const pdf = (name, size) => att({ name, contentType: 'application/pdf', size: size || 900_000 });
+
+  it('opens only the first few files that need the model', () => {
+    const out = triageAll([pdf('a.pdf'), pdf('b.pdf'), pdf('c.pdf'), pdf('d.pdf')], { maxModelCalls: 2 });
+    expect(out.map((v) => v.route)).toEqual(['pdf', 'pdf', 'skip', 'skip']);
+  });
+
+  it('names the ones it did not open rather than dropping them', () => {
+    const out = triageAll([pdf('a.pdf'), pdf('b.pdf')], { maxModelCalls: 1 });
+    expect(out[1]?.reason).toContain('only the first 1');
+    expect(out[1]?.label).toContain('b.pdf');
+  });
+
+  // Office files are unzipped in process and cost milliseconds, so they must
+  // not consume a budget that exists to bound model calls.
+  it('does not charge office files against the model budget', () => {
+    const out = triageAll(
+      [att({ name: 'deck.pptx', contentType: '' }), att({ name: 'book.xlsx', contentType: '' }), pdf('late.pdf')],
+      { maxModelCalls: 1 },
+    );
+    expect(out.map((v) => v.route)).toEqual(['office', 'office', 'pdf']);
+  });
+
+  // Nor should something that was skipped anyway.
+  it('does not charge a skipped logo against the model budget', () => {
+    const out = triageAll(
+      [att({ name: 'image001.png', contentType: 'image/png', size: 9000 }), pdf('real.pdf')],
+      { maxModelCalls: 1 },
+    );
+    expect(out.map((v) => v.route)).toEqual(['skip', 'pdf']);
+  });
+
+  it('still refuses everything past the attachment cap', () => {
+    const out = triageAll([pdf('a.pdf'), pdf('b.pdf'), pdf('c.pdf')], { maxAttachments: 2, maxModelCalls: 9 });
+    expect(out[2]?.route).toBe('skip');
+    expect(out[2]?.reason).toContain('beyond the first 2');
+  });
+
+  it('reports which of them need their bytes fetched', () => {
+    const out = triageAll([pdf('a.pdf'), att({ name: 'thing.pbix', contentType: '' })]);
+    expect(out.map((v) => v.needsBytes)).toEqual([true, false]);
+  });
+
+  it('survives a message with nothing attached', () => {
+    expect(triageAll([])).toEqual([]);
   });
 });
 

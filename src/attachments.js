@@ -25,6 +25,34 @@ const MAX_BYTES = 25 * 1024 * 1024;
  */
 const INLINE_IMAGE_FLOOR = 40 * 1024;
 
+/**
+ * No image this small holds anything a person could read — tracking pixels,
+ * bullets, spacers, icons. Skipped whatever it is called and however it
+ * arrived.
+ */
+const TINY_IMAGE_BYTES = 12 * 1024;
+
+/**
+ * A signature logo only counts as inline while the message still carries the
+ * cid reference. Forwarding strips it, and plenty of clients attach the logo
+ * outright, so the flag alone is not enough: measured in dev, an 18 KB SCE
+ * logo cost a vision call to be told it was a logo. Names are the other half
+ * of the signal.
+ */
+const DECORATIVE_IMAGE_WORD = /\b(logo|signature|banner|letterhead|footer|badge)\b/i;
+const GENERIC_IMAGE_NAME = /^(image|img|inline|att|attachment|pixel|spacer|icon)[-_ ]*\d*\.[a-z0-9]+$/i;
+
+/** How many attachments on one message are opened at all. */
+const MAX_ATTACHMENTS = 8;
+
+/**
+ * How many of them may cost a model call. A 22 MB PDF takes about 21 seconds
+ * and WF-A waits for the answer before it classifies, so this is what stops one
+ * message holding up the poller. Mail servers cap a message near 25 MB anyway,
+ * which does most of the work; this is the belt to that pair of braces.
+ */
+const MAX_MODEL_CALLS = 3;
+
 /** Total characters of attachment text allowed into the prompt. */
 const TOTAL_CHAR_BUDGET = 6000;
 
@@ -115,8 +143,14 @@ function triageAttachment(att, limits) {
   }
 
   const looksImage = type.startsWith('image/') || BY_EXTENSION[ext] === 'image';
-  if (att.isInline && looksImage && size < inlineFloor) {
-    return { route: 'skip', reason: 'inline image below the signature/logo threshold', ext, label };
+  if (looksImage) {
+    const decorative = DECORATIVE_IMAGE_WORD.test(name) || GENERIC_IMAGE_NAME.test(name);
+    if (size < inlineFloor && (att.isInline || decorative)) {
+      return { route: 'skip', reason: 'signature/logo image below the reading threshold', ext, label };
+    }
+    if (size < TINY_IMAGE_BYTES) {
+      return { route: 'skip', reason: 'image too small to hold anything readable', ext, label };
+    }
   }
 
   if (KNOWN_UNREADABLE[ext]) {
@@ -231,14 +265,72 @@ function summariseAttachments(items, limits) {
   return { text: lines.join('\n\n'), read, skipped, failed };
 }
 
+/**
+ * Triage a whole message. The per-attachment call cannot see the two limits
+ * that only mean anything across the set — how many files are opened at all,
+ * and how many of them may cost a model call — so they live here rather than
+ * loose in a workflow node where nothing would test them.
+ *
+ * @param {any[]} attachments Graph attachment metadata, in the order listed
+ * @param {{ maxBytes?: number, inlineImageFloor?: number,
+ *           maxAttachments?: number, maxModelCalls?: number }} [limits]
+ * @returns {Array<{ route: string, reason: string, ext: string, label: string,
+ *                   needsBytes: boolean, index: number }>}
+ */
+function triageAll(attachments, limits) {
+  const opts = limits || {};
+  const maxAttachments = opts.maxAttachments === undefined ? MAX_ATTACHMENTS : opts.maxAttachments;
+  const maxModelCalls = opts.maxModelCalls === undefined ? MAX_MODEL_CALLS : opts.maxModelCalls;
+  const list = Array.isArray(attachments) ? attachments : [];
+
+  const out = [];
+  let modelCalls = 0;
+
+  for (let i = 0; i < list.length; i += 1) {
+    const verdict = triageAttachment(list[i] || {}, opts);
+    let route = verdict.route;
+    let reason = verdict.reason;
+
+    if (i >= maxAttachments) {
+      route = 'skip';
+      reason = 'beyond the first ' + maxAttachments + ' attachments on this message';
+    } else if (route === 'pdf' || route === 'image') {
+      // Only a file that would actually reach the model is charged for one.
+      // Office files are unzipped in process, and anything already skipped
+      // costs nothing at all.
+      if (modelCalls >= maxModelCalls) {
+        route = 'skip';
+        reason = 'only the first ' + maxModelCalls + ' files that need reading are opened per message';
+      } else {
+        modelCalls += 1;
+      }
+    }
+
+    out.push({
+      route,
+      reason,
+      ext: verdict.ext,
+      label: verdict.label,
+      needsBytes: route === 'text' || route === 'office' || route === 'pdf' || route === 'image',
+      index: i,
+    });
+  }
+
+  return out;
+}
+
 export {
   MAX_BYTES,
+  MAX_ATTACHMENTS,
+  MAX_MODEL_CALLS,
+  TINY_IMAGE_BYTES,
   INLINE_IMAGE_FLOOR,
   TOTAL_CHAR_BUDGET,
   PER_ITEM_CHAR_BUDGET,
   BY_EXTENSION,
   KNOWN_UNREADABLE,
   triageAttachment,
+  triageAll,
   describeSize,
   condense,
   summariseAttachments,

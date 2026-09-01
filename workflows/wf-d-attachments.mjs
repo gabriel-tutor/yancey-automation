@@ -18,6 +18,9 @@ const CONFIG = {
   // Attachments per message. Beyond this the rest are named but not opened —
   // a forty-file dump is a filing exercise, not something to read at 07:30.
   maxAttachments: 8,
+  // How many of them may cost a model call. Office files are free; PDFs and
+  // images are not, and WF-A waits for the answer before it classifies.
+  maxModelCalls: 3,
 };
 
 const TRIAGE = `
@@ -25,12 +28,6 @@ const cfg = $('Config').first().json;
 const req = $('Attachment Request').first().json;
 const listed = $input.first().json;
 const all = Array.isArray(listed.value) ? listed.value : [];
-
-const limits = {
-  maxBytes: Number(cfg.maxBytes) || 26214400,
-  inlineImageFloor: Number(cfg.inlineImageFloor) || 40960
-};
-const maxCount = Number(cfg.maxAttachments) || 8;
 
 // Nothing attached: still emit one item so the summary node always runs and
 // the caller always gets a reply, rather than the branch going quiet.
@@ -42,31 +39,31 @@ if (all.length === 0) {
   }}];
 }
 
-const out = [];
-for (let i = 0; i < all.length; i++) {
-  const a = all[i] || {};
-  const verdict = i < maxCount
-    ? triageAttachment(a, limits)
-    : { route: 'skip', reason: 'beyond the first ' + maxCount + ' attachments on this message', ext: '', label: String(a.name || 'attachment') };
+// Every decision about what to open lives in src/attachments.js, where it is
+// tested. This node only carries the Graph fields through.
+const verdicts = triageAll(all, {
+  maxBytes: Number(cfg.maxBytes) || 26214400,
+  inlineImageFloor: Number(cfg.inlineImageFloor) || 40960,
+  maxAttachments: Number(cfg.maxAttachments) || 8,
+  maxModelCalls: Number(cfg.maxModelCalls) || 3
+});
 
-  const needsBytes = verdict.route === 'text' || verdict.route === 'office'
-    || verdict.route === 'pdf' || verdict.route === 'image';
-
-  out.push({ json: {
+return verdicts.map(function (v) {
+  const a = all[v.index] || {};
+  return { json: {
     messageId: String(req.messageId || ''),
     messageIdEnc: String(req.messageIdEnc || ''),
     attachmentId: String(a.id || ''),
     name: String(a.name || 'attachment'),
     contentType: String(a.contentType || ''),
     size: Number(a.size) || 0,
-    label: verdict.label,
-    route: verdict.route,
-    reason: verdict.reason,
-    needsBytes: needsBytes,
-    index: i
-  }});
-}
-return out;
+    label: v.label,
+    route: v.route,
+    reason: v.reason,
+    needsBytes: v.needsBytes,
+    index: v.index
+  }};
+});
 `;
 
 const EXTRACT = `
@@ -429,7 +426,7 @@ const noteHeader = sticky(
 );
 
 const noteCost = sticky(
-  ${S('### Only two routes cost anything\n\nOffice files and text are read in process and cost nothing but milliseconds. PDFs and images go to the model, so the cheap classifier model is used rather than the drafting one.\n\n`maxAttachments` caps how many are opened per message; the rest are named. `maxBytes` refuses anything large. Inline images below `inlineImageFloor` are signatures and logos and are skipped without a call.')},
+  ${S('### Only two routes cost anything\n\nOffice files and text are read in process and cost nothing but milliseconds. PDFs and images go to the model, so the cheap classifier model is used rather than the drafting one.\n\n`maxAttachments` caps how many are opened per message and `maxModelCalls` caps how many of those may cost a model call; the rest are named. `maxBytes` refuses anything large. Inline images below `inlineImageFloor` are signatures and logos and are skipped without a call.')},
   [needsModel, askModel, readModel],
   { color: 5, width: 700, height: 260 },
 );
