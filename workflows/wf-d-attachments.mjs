@@ -7,8 +7,9 @@ const CONFIG = {
   // Cheap model. Describing a slide or a screenshot is not a hard task, and
   // this runs on every attachment that is not plain text.
   modelAttachments: 'gpt-5.6-luna',
-  // Anything larger is named in the summary but not opened.
-  maxBytes: 8 * 1024 * 1024,
+  // Anything larger is named in the summary but not opened. Measured, not
+  // guessed: a 22 MB PDF reads in about 21 seconds.
+  maxBytes: 25 * 1024 * 1024,
   // Inline images below this are signatures, logos and tracking pixels.
   inlineImageFloor: 40 * 1024,
   // Characters of attachment text allowed into the classifier prompt in total.
@@ -26,7 +27,7 @@ const listed = $input.first().json;
 const all = Array.isArray(listed.value) ? listed.value : [];
 
 const limits = {
-  maxBytes: Number(cfg.maxBytes) || 8388608,
+  maxBytes: Number(cfg.maxBytes) || 26214400,
   inlineImageFloor: Number(cfg.inlineImageFloor) || 40960
 };
 const maxCount = Number(cfg.maxAttachments) || 8;

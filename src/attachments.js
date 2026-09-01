@@ -9,8 +9,15 @@
  * classifier without drowning the email itself.
  */
 
-/** Attachments larger than this are recorded but not opened. */
-const MAX_BYTES = 8 * 1024 * 1024;
+/**
+ * Attachments larger than this are recorded but not opened.
+ *
+ * 8 MB was a guess and it was too low: a real 22 MB PDF was refused in dev,
+ * then read end to end in 21 seconds once the ceiling was lifted. 25 MB keeps
+ * us under the model's 32 MB limit for a PDF while clearing the size most mail
+ * servers will accept in the first place.
+ */
+const MAX_BYTES = 25 * 1024 * 1024;
 
 /**
  * Inline images below this are signatures, logos and tracking pixels. Opening

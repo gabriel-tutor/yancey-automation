@@ -76,6 +76,19 @@ describe('triage — which attachments get opened', () => {
     expect(v.reason).toContain('limit');
   });
 
+  // The ceiling used to be 8 MB, which refused a real 22 MB PDF that turned out
+  // to read fine in 21 seconds. Pinned so it is not quietly lowered back to a
+  // number nobody measured.
+  it('opens a PDF the size of a real scanned deck', () => {
+    const v = triageAttachment(att({ name: 'Upperform Partners.pdf', size: 22 * 1024 * 1024 }));
+    expect(v.route).toBe('pdf');
+  });
+
+  it('says how big the limit was when it refuses', () => {
+    const v = triageAttachment(att({ name: 'huge.pdf', size: 40 * 1024 * 1024 }));
+    expect(v.reason).toContain('25 MB');
+  });
+
   it('skips Graph attachment kinds that have no bytes', () => {
     const item = triageAttachment(att({ name: 'Fwd', '@odata.type': '#microsoft.graph.itemAttachment' }));
     expect(item.route).toBe('skip');
