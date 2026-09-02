@@ -1836,56 +1836,85 @@ serve two environments, the seeder never appears under production, there is no
 top-level block to inherit from, every named workflow has a generator, and the
 conventions are written into `config/deploy.json` rather than left to memory.
 
-### Seven archived, three kept
+### Ten archived, and the rule kept rather than softened
 
-Ten were queued. Three of them should not have been, and the correction is worth
-recording because it is a distinction that will come up again.
+Twenty-four workflows became fifteen, and every one is now generated from
+`workflows/*.mjs`. There are no hand-built exceptions left.
 
-**Archived (7):**
+**Archived (10):**
 
 | Workflow | Why |
 |---|---|
 | `zz · WF-F duplicate` | abandoned after two minutes; nothing referenced it |
-| `WF-S0 · SharePoint access probe · dev` | **would give the wrong answer today** — probed SharePoint with the Outlook credential and concluded access was blocked |
+| `WF-S0 · SharePoint access probe · dev` | **would give the wrong answer today** — probed SharePoint with the Outlook credential |
 | `WF-S9 · Find the Task Management site` | answered; the host is in `deploy.json` |
-| `WF-S3 · Exercise WF-D and Show It · dev` | inspected a run, from before execution data could be fetched |
-| `WF-S4 · Check What WF-A Logged · dev` | read the log table, which the Data tables tab shows directly |
-| `WF-S5 · Check the Draft WF-B Wrote · dev` | read a draft, which the Drafts folder shows directly |
-| `WF-S6 · Exercise WF-B With Attachments · dev` | drove a sub-workflow directly; running WF-A · dev on seeded mail does the same |
+| `WF-S3`, `WF-S4`, `WF-S5`, `WF-S6` | inspected a run, a log table or a draft, from before execution data could be fetched directly |
+| `Tool · Seed Attachment Fixtures · dev` | folded into WF-S |
+| `Tool · Seed PDF Fixtures · dev` | folded into WF-S |
+| `Tool · SharePoint Permissions (read-only)` | replaced by the generated WF-P |
 
-**Kept (3), renamed `Tool ·`:**
-
-The line between them is not how they were built or what they are named. It is
+The line between archiving and keeping is not how a workflow was built. It is
 whether something else now does the job:
 
 > Reading execution data replaced everything that **inspected** a run.
 > Nothing replaces something that **creates the condition** to inspect.
 
-`WF-S` seeds six plain messages and no attachments at all, so without a seeder
-that carries them, WF-D cannot be exercised end to end in the sandbox — there is
-no other way to get an attachment in front of it. PDFs matter more still: they
-are one of only two kinds that leave the server for OpenAI, which makes that the
-path most worth being able to re-test after any change.
+Three were kept on that basis and then, rather than living as documented
+exceptions to "everything is generated", were folded into the repo properly.
 
-| Tool | Was | Why kept |
-|---|---|---|
-| `Tool · Seed Attachment Fixtures · dev` | WF-S1 | the only source of attachment mail in the sandbox |
-| `Tool · Seed PDF Fixtures · dev` | WF-S7 | the only fixture for the vision path |
-| `Tool · SharePoint Permissions (read-only)` | WF-S8 | SharePoint is the newest integration and refused writes today in a way that took real work to diagnose |
+### The seeder now covers every path WF-D takes
 
-The `Tool ·` prefix is load-bearing: a `WF-` name is a promise that the repo
-generates it and that the next build will overwrite any hand edit. These three
-have no generator, so wearing a `WF-` code would have been a lie. They are
-listed under `diagnostics` in `config/deploy.json`, and `src/deployment.test.js`
-requires each to say what it is and why it is kept, and forbids a `WF-` name.
+`WF-S · Seed Test Inbox · dev` plants eight fixtures. Two carry attachments: a
+.docx, .xlsx and .pptx that are read in process and never leave the server, a
+PDF that goes to the model for vision, and a signature image below the reading
+threshold that the triage skips unread. That is every branch of the attachment
+code, exercisable from one workflow.
 
-`workflows/wf-s0-probe.mjs` is deleted outright rather than archived: a generator
-that rebuilds a workflow whose premise was disproved is worse than no probe.
+The files are **built, not pasted.** `src/office-fixtures.js` writes stored-method
+ZIPs, a structurally complete single-page PDF with a resolvable cross-reference
+table, and a 1×1 PNG — a few hundred bytes each, from text you can read in the
+source. A pasted .docx once went in with the right length and a valid ZIP
+signature and inflated to nothing, and it read exactly like a broken decoder
+rather than a broken fixture. Every fixture is round-tripped through the real
+extractors in the test suite, and the CRC-32 is checked against Node's own
+implementation rather than a constant copied in by hand.
 
-**A known simplification, not done.** The two seeders overlap with
-`wf-s-seed.mjs` and would be better folded into it, so one generated seeder
-covers plain, Office and PDF fixtures. They work; rebuilding a working seeder to
-save a row in a list is the wrong trade today.
+Verified live: eight messages planted, all `201 Created`, `hasAttachments` true
+on both, `isDraft` false so they behave like received mail.
+
+### WF-P, and the diagnostic that had to explain itself
+
+`WF-P · SharePoint Permissions (read-only)` replaces the hand-built probe. Three
+GETs, nothing written. It reports the gap between `effectiveBasePermissions`
+(what the token can do) and `getusereffectivepermissions` (what the person may
+do); when the second is wider, the OAuth scope is the limiter.
+
+Running it caught something the hand-built version had hidden. The second
+endpoint now returns **403**, because reading another user's entitlement needs
+`EnumeratePermissions` and an ordinary site member does not hold it. The verdict
+said `PERSON UNREADABLE`, which reads like a broken probe rather than a known
+limit. It now names the status code and the reason, and the conclusion adapts:
+when the token can write there is nothing to explain, and when the person cannot
+be read the app scope is still the first thing to check, because it is the usual
+cause.
+
+### One more hazard class closed
+
+`src/generated-ascii.test.js` builds every generator and asserts that every Code
+node body is pure ASCII. `src/bundle.test.js` already did this for the shared
+helpers and found a literal non-breaking space in a normaliser and the euro and
+sterling signs in the guard that decides whether an invented fee reaches a
+draft — but it covered only the helpers, not the part written directly in a
+generator. That is where the next ones were: four em dashes in the seeder's
+fixture subjects, three in WF-C including **the digest subject line Yancey reads
+every morning**, and six in WF-T.
+
+They were already written as escapes in the source, which looks safe and is not.
+Inside a template literal JavaScript decodes `\u2014` at evaluation time, so a
+literal em dash landed in the generated node anyway; `\\u2014` is what emits an
+escape. Nothing but a check on the output would have caught it, because the
+input looked correct. Verified afterwards that the digest subject still renders
+as a real em dash, so nothing Yancey sees changed.
 
 ## Still open
 

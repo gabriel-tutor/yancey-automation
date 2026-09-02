@@ -46,9 +46,9 @@ OPENAI_API_KEY=sk-... npm run gate1
 
 ## Live workflows
 
-Seventeen. Fourteen are generated from `workflows/*.mjs` and carry a `WF-`
-name; three are hand-built tools that create test conditions no generated
-workflow can, and carry a `Tool ·` name so the difference is visible.
+Fifteen, and every one is generated from `workflows/*.mjs`. There are no
+exceptions: a workflow in n8n with no generator here is scaffolding, and
+scaffolding is archived once the answer it was built for is written down.
 
 **Production** — tagged `prod`:
 
@@ -61,6 +61,7 @@ workflow can, and carry a `Tool ·` name so the difference is visible.
 | WF-E · Error Handler | `XSKk6eHTFGqftrUM` | on failure | `prod` `email-agent` |
 | WF-F · Organise Documents | `qh29SRwChF2g9bYB` | manual | `prod` `documents` |
 | WF-T · Preflight (scope proof) | `1fCjIsw2JjVGkNJb` | manual | `prod` `email-agent` `diagnostic` |
+| WF-P · SharePoint Permissions (read-only) | `c6gA3jbwVxR4cWoY` | manual | `prod` `documents` `diagnostic` |
 
 **Dev sandbox** — tagged `dev`, pointed at the `gtutor` mailbox:
 
@@ -77,16 +78,18 @@ workflow can, and carry a `Tool ·` name so the difference is visible.
 WF-F has no dev copy: there is no second SharePoint library to point one at, and
 it changes nothing unless deliberately armed.
 
-**Hand-built tools** — no generator, nothing rebuilds them:
+`WF-S · Seed Test Inbox · dev` plants eight fixtures, two of them carrying
+attachments — a .docx, .xlsx and .pptx read in process, a PDF that goes to the
+model for vision, and a signature image small enough that the triage skips it.
+Those files are built by `src/office-fixtures.js` from readable text, not pasted
+in as base64, and every one is round-tripped through the real extractors in the
+test suite.
 
-| Tool | ID | Why it is kept |
-|---|---|---|
-| Tool · Seed Attachment Fixtures · dev | `43a7JCG1nkt9j2Nk` | WF-S seeds six plain messages and no attachments, so this is the only way to put one in front of WF-D in the sandbox |
-| Tool · Seed PDF Fixtures · dev | `TeBnHLSFVbfwW0KQ` | PDFs are one of only two kinds that leave the server for OpenAI — the path most worth re-testing |
-| Tool · SharePoint Permissions (read-only) | `K7871Mqqho6nPSuq` | reports the gap between what the token can do and what the person may do |
-
-They are recorded under `diagnostics` in `config/deploy.json`, so the repo knows
-about every workflow in the instance even where it does not build one.
+Two generators refuse to build for the wrong target, and they mirror each other:
+`wf-s-seed.mjs` refuses production because it writes fabricated mail into
+whatever mailbox the target names, and `wf-p-permissions.mjs` refuses any target
+with no SharePoint credential, because a probe that cannot reach SharePoint
+reports a refusal that means nothing. A build that skips one of these is working.
 
 ### The conventions, and why each one
 

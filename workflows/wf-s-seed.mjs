@@ -1,6 +1,81 @@
 import { E, GRAPH, S, SDK_IMPORT, OUTLOOK_CREDENTIAL, SUFFIX, TABLES, TARGET } from './shared.mjs';
+import {
+  docxFixture,
+  pdfFixture,
+  pngFixture,
+  pptxFixture,
+  toBase64,
+  xlsxFixture,
+} from '../src/office-fixtures.js';
+
+/**
+ * Attachments for the fixtures, built at build time from text you can read
+ * rather than pasted in as base64.
+ *
+ * There used to be two extra hand-built seeders for this — one for attachments,
+ * one for PDFs — because the generated seeder carried none. Folding them in
+ * leaves one seeder that covers every path WF-D takes: Word, PowerPoint and
+ * Excel read in process, a PDF that goes to the model for vision, and an image
+ * small enough that the triage skips it unread.
+ *
+ * @param {string} name
+ * @param {string} contentType
+ * @param {Uint8Array} bytes
+ */
+const attach = (name, contentType, bytes) => ({
+  '@odata.type': '#microsoft.graph.fileAttachment',
+  name,
+  contentType,
+  contentBytes: toBase64(bytes),
+});
+
+const OOXML = 'application/vnd.openxmlformats-officedocument';
+
+const FIXTURES = {
+  docx: attach(
+    'Crossarm-Capitalization_2026-09-01_Draft_v0.1.docx',
+    OOXML + '.wordprocessingml.document',
+    docxFixture([
+      'Crossarm capitalization — field notes',
+      'Four hundred and twelve poles surveyed in the northern district.',
+      'Recommend treating the replacement programme as capital, not O&M.',
+    ]),
+  ),
+  xlsx: attach(
+    'Crossarm-Survey_2026-09-01_Draft_v0.1.xlsx',
+    OOXML + '.spreadsheetml.sheet',
+    xlsxFixture('Survey', [
+      ['District', 'Poles', 'Status'],
+      ['Northern', '412', 'In progress'],
+      ['Southern', '188', 'Complete'],
+    ]),
+  ),
+  pptx: attach(
+    'Momentum-Room_2026-09-01_Draft_v0.1.pptx',
+    OOXML + '.presentationml.presentation',
+    pptxFixture([
+      ['Momentum Room — crossarm programme'],
+      ['CAIDI trend, twelve months'],
+      ['Next steps and owners'],
+    ]),
+  ),
+  pdf: attach(
+    'DIMP-Field-Report_2026-09-01_Draft_v0.1.pdf',
+    'application/pdf',
+    pdfFixture([
+      'DIMP field report - northern district',
+      'Pigging complete on eleven of fourteen segments.',
+      'Two cross bores identified and cleared.',
+      'No further action requested at this time.',
+    ]),
+  ),
+  // Below the reading threshold, so the triage should skip it and say so
+  // rather than spend a model call being told what a logo is.
+  logo: attach('signature.png', 'image/png', pngFixture()),
+};
 
 const BUILD_MESSAGES = `
+const FIXTURES = ${JSON.stringify(FIXTURES)};
 // Representative fixtures planted straight into the inbox via Graph. We cannot
 // *send* mail (no Mail.Send, by design), but Mail.ReadWrite lets us create a
 // message directly in a folder, which is enough to exercise the pipeline.
@@ -12,7 +87,7 @@ const BUILD_MESSAGES = `
 const messages = [
   {
     label: 'expects: opportunity -> draft written (internal colleague, the path that still works)',
-    subject: 'Vector CI working session \u2014 crossarm workbook',
+    subject: 'Vector CI working session \\u2014 crossarm workbook',
     fromName: 'Shawn Corkran',
     fromAddress: 'scorkran@partnersperform.com',
     body: [
@@ -26,8 +101,8 @@ const messages = [
     ].join('\\n')
   },
   {
-    label: 'expects: flag_for_yancey -> NO draft (always_flag_sender \u2014 Chuck)',
-    subject: 'Pulse rollout \u2014 next steps',
+    label: 'expects: flag_for_yancey -> NO draft (always_flag_sender \\u2014 Chuck)',
+    subject: 'Pulse rollout \\u2014 next steps',
     fromName: 'Charles Coleman',
     fromAddress: 'ccoleman@partnersperform.com',
     body: [
@@ -73,7 +148,7 @@ const messages = [
   },
   {
     label: 'expects: flag_for_yancey -> NO draft (pricing guard AND external_sender)',
-    subject: 'ILI program \u2014 northern district',
+    subject: 'ILI program \\u2014 northern district',
     fromName: 'Kris Murray',
     fromAddress: 'kris.murray@nisource.com',
     body: [
@@ -103,6 +178,36 @@ const messages = [
       'You are receiving this because you subscribed to GridSignal updates.',
       'Unsubscribe | Manage preferences'
     ].join('\\n')
+  },
+  {
+    label: 'expects: opportunity -> draft written; docx, xlsx and pptx all read in process, none leaving the server',
+    subject: 'Crossarm pack for Thursday',
+    fromName: 'Shawn Corkran',
+    fromAddress: 'scorkran@partnersperform.com',
+    attachments: [FIXTURES.docx, FIXTURES.xlsx, FIXTURES.pptx],
+    body: [
+      'Yancey,',
+      '',
+      'Notes, survey and the deck attached. Anything you want changed before',
+      'Thursday?',
+      '',
+      'Shawn'
+    ].join('\\n')
+  },
+  {
+    label: 'expects: opportunity -> draft written; the PDF is read by the model, signature.png is skipped unread',
+    subject: 'DIMP field report',
+    fromName: 'Darryl Yoes',
+    fromAddress: 'dyoes@partnersperform.com',
+    attachments: [FIXTURES.pdf, FIXTURES.logo],
+    body: [
+      'Yancey,',
+      '',
+      'Field report attached. Nothing needed from you unless something looks',
+      'wrong in it.',
+      '',
+      'Darryl'
+    ].join('\\n')
   }
 ];
 
@@ -112,6 +217,7 @@ return messages.map(m => ({
     payload: {
       subject: m.subject,
       body: { contentType: 'Text', content: m.body },
+      attachments: m.attachments || [],
       from: { emailAddress: { name: m.fromName, address: m.fromAddress } },
       sender: { emailAddress: { name: m.fromName, address: m.fromAddress } },
       // Must be the mailbox this target drafts into, or the authorisation

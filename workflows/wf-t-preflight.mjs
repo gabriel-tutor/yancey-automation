@@ -37,10 +37,10 @@ function expectOk(name, node, why) {
   return passed;
 }
 
-const readOk    = expectOk('Read inbox',    'Read Inbox',    'Mail.Read — WF-A can poll');
-const draftsOk  = expectOk('List drafts',   'List Drafts',   'Mail.Read — WF-C can reconcile');
-const createOk  = expectOk('Create draft',  'Create Draft',  'Mail.ReadWrite — WF-B can write a reply');
-const deleteOk  = expectOk('Delete draft',  'Delete Draft',  'Mail.ReadWrite — WF-B can bin a blocked draft');
+const readOk    = expectOk('Read inbox',    'Read Inbox',    'Mail.Read \\u2014 WF-A can poll');
+const draftsOk  = expectOk('List drafts',   'List Drafts',   'Mail.Read \\u2014 WF-C can reconcile');
+const createOk  = expectOk('Create draft',  'Create Draft',  'Mail.ReadWrite \\u2014 WF-B can write a reply');
+const deleteOk  = expectOk('Delete draft',  'Delete Draft',  'Mail.ReadWrite \\u2014 WF-B can bin a blocked draft');
 
 // The send check is the whole point, so it is graded strictly. Only an explicit
 // authorization refusal counts. Anything else means Graph rejected the request
@@ -53,7 +53,7 @@ if (send.code >= 200 && send.code < 300) {
   sendDetail = 'Microsoft ACCEPTED the send. This credential holds Mail.Send.';
 } else if (send.code === 401 || send.code === 403) {
   sendResult = 'PASS';
-  sendDetail = 'Refused: ' + send.errCode + (send.errMsg ? ' — ' + send.errMsg : '');
+  sendDetail = 'Refused: ' + send.errCode + (send.errMsg ? ' \\u2014 ' + send.errMsg : '');
 } else {
   sendResult = 'INCONCLUSIVE';
   sendDetail = 'Graph rejected the request with ' + send.code + ' ' + send.errCode +
@@ -62,7 +62,7 @@ if (send.code >= 200 && send.code < 300) {
 
 checks.push({
   check: 'Attempt to SEND',
-  proves: 'Mail.Send is NOT granted — the core invariant',
+  proves: 'Mail.Send is NOT granted \\u2014 the core invariant',
   expected: '401 or 403 from Microsoft',
   statusCode: send.code,
   result: sendResult,
@@ -144,13 +144,13 @@ const ${varName} = node({
 
 export async function build() {
   const createBody = S(JSON.stringify({
-    subject: 'PREFLIGHT probe — safe to delete',
+    subject: 'PREFLIGHT probe \\u2014 safe to delete',
     body: { contentType: 'Text', content: 'Created and deleted by WF-T to prove draft write access.' },
     toRecipients: [],
   }));
 
   const sendBody = E(
-    '{{ JSON.stringify({ message: { subject: "PREFLIGHT — this must never arrive", ' +
+    '{{ JSON.stringify({ message: { subject: "PREFLIGHT \\u2014 this must never arrive", ' +
       'body: { contentType: "Text", content: "If this message exists, the Entra app holds Mail.Send and the no-send invariant is broken." }, ' +
       'toRecipients: [{ emailAddress: { address: $("Config").first().json.expectedMailbox } }] }, ' +
       'saveToSentItems: false }) }}',

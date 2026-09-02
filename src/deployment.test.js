@@ -25,6 +25,7 @@ const GENERATORS = {
   wfE: 'wf-e-errors.mjs',
   wfF: 'wf-f-organizer.mjs',
   wfT: 'wf-t-preflight.mjs',
+  wfP: 'wf-p-permissions.mjs',
   wfS: 'wf-s-seed.mjs',
 };
 
@@ -102,51 +103,24 @@ describe('the deployment map', () => {
     expect(deploy.workflows).toBeUndefined();
   });
 
+  /**
+   * Three workflows were once hand-built, and the honest way to keep them was
+   * to write their generators rather than to soften the rule they broke. This
+   * fails if a diagnostics escape hatch is ever reintroduced.
+   */
+  it('keeps no hand-built exceptions', () => {
+    expect(deploy.diagnostics).toBeUndefined();
+  });
+
+  it('names the SharePoint probe under the target that owns the library', () => {
+    expect(deploy.targets.prod.workflows.wfP).toBeTruthy();
+    expect(deploy.targets.dev.workflows.wfP).toBeUndefined();
+  });
+
   it('writes the conventions down rather than leaving them to memory', () => {
     expect(deploy._conventions).toBeDefined();
-    for (const key of ['naming', 'tags', 'archiving', 'everything_is_generated']) {
+    for (const key of ['naming', 'tags', 'archiving', 'everything_is_generated', 'guards']) {
       expect(String(deploy._conventions[key] || '').length, key).toBeGreaterThan(40);
-    }
-  });
-});
-
-/**
- * The hand-built tools. These exist because a generated workflow cannot create
- * a test condition — WF-S seeds no attachments, so without a seeder that does,
- * WF-D cannot be exercised end to end in the sandbox at all.
- *
- * They were nearly archived on the argument that everything should be
- * generated. That argument was right about production and wrong about the
- * sandbox: reading execution data replaced the helpers that inspected a run,
- * but nothing replaces a seeder. What the repo must not do is forget they
- * exist, which is what this block is for.
- */
-describe('the hand-built tools', () => {
-  const entries = Object.entries(deploy.diagnostics || {}).filter(([key]) => !key.startsWith('_'));
-
-  it('are listed at all, so no workflow in the instance is unaccounted for', () => {
-    expect(entries.length).toBeGreaterThan(0);
-  });
-
-  it.each(entries.map(([key]) => key))('%s says what it is and why it is kept', (key) => {
-    const tool = deploy.diagnostics[key];
-    expect(String(tool.id || '').length, key + '.id').toBeGreaterThan(8);
-    expect(String(tool.why || '').length, key + '.why').toBeGreaterThan(40);
-  });
-
-  // A WF- name is a promise that the repo generates it. These are not
-  // generated, so they must not wear one.
-  it.each(entries.map(([key]) => key))('%s is named Tool, not WF-', (key) => {
-    expect(deploy.diagnostics[key].name).toMatch(/^Tool · /);
-  });
-
-  it('never reuses the id of a generated workflow', () => {
-    const generated = new Set();
-    for (const target of targets) {
-      for (const id of Object.values(deploy.targets[target].workflows)) generated.add(id);
-    }
-    for (const [key, tool] of entries) {
-      expect(generated.has(tool.id), key + ' shares an id with a generated workflow').toBe(false);
     }
   });
 });

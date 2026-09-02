@@ -76,14 +76,14 @@ const html = renderDigestHtml(buckets, {
 
 // Delivered by writing the message straight into the mailbox rather than
 // emailing it. Mail.ReadWrite is the permission that already writes Yancey's
-// drafts, so this needs nothing new — and because the POST targets /me, the
+// drafts, so this needs nothing new - and because the POST targets /me, the
 // digest can only ever land in the mailbox the credential owns. It cannot be
 // misaddressed to a third party the way an SMTP recipient can.
 //
 // The 0x0E07 extended property clears MSGFLAG_UNSENT, without which Graph files
 // a POSTed message as a draft instead of as received mail.
 const graphPayload = {
-  subject: 'Inbox digest — ' + buckets.stats.needsYou + ' need you, ' +
+  subject: 'Inbox digest \\u2014 ' + buckets.stats.needsYou + ' need you, ' +
     buckets.stats.draftsWaiting + ' drafts waiting',
   body: { contentType: 'HTML', content: html },
   from: { emailAddress: { name: 'Upperform inbox assistant', address: String(cfg.digestFrom || '') } },
@@ -96,7 +96,7 @@ const graphPayload = {
 return [{
   json: {
     graphPayload,
-    subject: 'Inbox digest — ' + buckets.stats.needsYou + ' need you, ' +
+    subject: 'Inbox digest \\u2014 ' + buckets.stats.needsYou + ' need you, ' +
       buckets.stats.draftsWaiting + ' drafts waiting',
     html,
     text: renderDigestText(buckets, { dateLabel, showNoise }),
