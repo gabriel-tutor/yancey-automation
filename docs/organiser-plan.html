@@ -1,0 +1,774 @@
+<title>Task Management Rename Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&family=Spectral:wght@500;600&display=swap">
+
+<style>
+  :root {
+    --paper: #f6f7f8;
+    --card: #ffffff;
+    --ink: #16202b;
+    --muted: #5d6b78;
+    --rule: #dde3e8;
+    --rule-soft: #eaeef1;
+    --accent: #0f6e6e;
+    --accent-wash: #e6f1f0;
+    --warn: #8f5c18;
+    --warn-wash: #f6efe3;
+    --good: #2f6a3e;
+    --good-wash: #e8f1ea;
+
+    --display: 'Spectral', Georgia, 'Times New Roman', serif;
+    --body: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #101519;
+      --card: #161d23;
+      --ink: #e4eaef;
+      --muted: #8d9ca8;
+      --rule: #253039;
+      --rule-soft: #1d252c;
+      --accent: #55c4bb;
+      --accent-wash: #16302f;
+      --warn: #d8a244;
+      --warn-wash: #2e2618;
+      --good: #79bd8b;
+      --good-wash: #17281c;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #101519;
+    --card: #161d23;
+    --ink: #e4eaef;
+    --muted: #8d9ca8;
+    --rule: #253039;
+    --rule-soft: #1d252c;
+    --accent: #55c4bb;
+    --accent-wash: #16302f;
+    --warn: #d8a244;
+    --warn-wash: #2e2618;
+    --good: #79bd8b;
+    --good-wash: #17281c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  header { display: flex; flex-direction: column; gap: 0.85rem; }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-size: 1.08rem;
+    color: var(--muted);
+    max-width: 40rem;
+    margin: 0;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .stat {
+    background: var(--card);
+    padding: 1.1rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .stat b {
+    font-family: var(--display);
+    font-size: 1.9rem;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat span {
+    font-size: 0.74rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .stat.ready b { color: var(--accent); }
+  .stat.refused b { color: var(--warn); }
+  .stat.correct b { color: var(--good); }
+
+  section { display: flex; flex-direction: column; gap: 1.25rem; }
+
+  h2 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  h3 {
+    font-family: var(--body);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0.5rem 0 0;
+  }
+
+  p { margin: 0; max-width: 42rem; }
+  .lede { color: var(--muted); }
+
+  .rows { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .row {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.95rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .row.ready { border-left: 3px solid var(--accent); }
+  .row.refused { border-left: 3px solid var(--warn); }
+  .row.correct { border-left: 3px solid var(--good); }
+
+  .names {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.35rem 0.9rem;
+    align-items: baseline;
+  }
+
+  @media (max-width: 40rem) {
+    .names { grid-template-columns: 1fr; }
+    .arrow { transform: rotate(90deg); justify-self: start; }
+  }
+
+  .fname {
+    font-family: var(--mono);
+    font-size: 0.83rem;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .fname.from { color: var(--muted); }
+  .fname.to { color: var(--accent); font-weight: 500; }
+
+  .arrow { color: var(--muted); font-size: 0.9rem; }
+
+  .where {
+    font-size: 0.74rem;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .why {
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--warn-wash);
+    border-radius: 3px;
+    padding: 0.55rem 0.7rem;
+    max-width: none;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+  .chip {
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 0.12rem 0.6rem;
+    background: var(--paper);
+  }
+
+  .note {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .note h2 { font-size: 1.15rem; }
+
+  .safety { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .safety div {
+    display: grid;
+    grid-template-columns: 11rem 1fr;
+    gap: 0.2rem 1.1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .safety div:last-child { border-bottom: 0; padding-bottom: 0; }
+  .safety dt, .safety b { font-weight: 600; font-size: 0.9rem; }
+  .safety span { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 34rem) {
+    .safety div { grid-template-columns: 1fr; }
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--accent-wash);
+    color: var(--accent);
+    padding: 0.08em 0.34em;
+    border-radius: 2px;
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 1.5rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Upperform &middot; document organiser</div>
+    <h1>Task Management Rename Plan</h1>
+    <p class="standfirst">
+      Every file in the Task Management library, checked against the naming convention.
+      Nothing here has happened yet — this is the plan to read before it does.
+    </p>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <section>
+    <h2>Ready to rename</h2>
+    <p class="lede">
+      These follow from the convention with no guesswork beyond the assumptions listed on each.
+      Where the name carries no date, the file's own timestamp is used and says so.
+    </p>
+    <div class="rows" id="ready"></div>
+  </section>
+
+  <section>
+    <h2>Already correct</h2>
+    <p class="lede">Left alone.</p>
+    <div class="rows" id="correct"></div>
+  </section>
+
+  <section>
+    <h2>Not renamed, and why</h2>
+    <p class="lede">
+      Each of these could be renamed. None of them should be, without you deciding first.
+      The reason is written out in full rather than reduced to a code.
+    </p>
+    <div id="refused"></div>
+  </section>
+
+  <div class="note">
+    <h2>What stops this going wrong</h2>
+    <div class="safety">
+      <div>
+        <b>Off by default</b>
+        <span>Renaming is switched off. A rename breaks every saved link, Teams tab and Power BI source pointing at the old name, so a person reads this page first.</span>
+      </div>
+      <div>
+        <b>Capped per run</b>
+        <span>Even switched on, one run touches a handful of files — small enough to check by eye and undo by hand.</span>
+      </div>
+      <div>
+        <b>Never overwrites</b>
+        <span>The move uses <code>flags=0</code>. If anything already sits on the new name the call fails rather than destroying it.</span>
+      </div>
+      <div>
+        <b>Never collides</b>
+        <span>Two files that would land on the same name are both refused, not silently merged.</span>
+      </div>
+      <div>
+        <b>Never invents a status</b>
+        <span>A status says whether a document is approved. Where the name doesn't carry one, the weakest — Draft — is assumed, and the assumption is shown.</span>
+      </div>
+      <div>
+        <b>Never guesses a date</b>
+        <span>An eight-digit run like <code>04042025</code> is never read. Day-first and month-first disagree, and being right by luck is not being right.</span>
+      </div>
+      <div>
+        <b>Leaves Power BI alone</b>
+        <span>A <code>.pbix</code> keeps the paths of the files it reads inside itself, where nothing outside can see them. Reports are never renamed in a sweep, and neither is a workbook sharing a report's folder or opening with a report's words.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <h2>What it can't know</h2>
+    <p>
+      The organiser can see file names, folders and timestamps. It cannot open a Power BI
+      report to read which workbooks feed it. So it refuses where a dependency is visible
+      from the outside — a shared folder, a shared opening — and it will miss one where a
+      report reads from a workbook whose name looks unrelated.
+    </p>
+    <p>
+      Two of the files above are workbooks that no report obviously touches. If either
+      <em>is</em> a source for something, say so and it stays as it is.
+    </p>
+  </div>
+
+  <footer>
+    <div>Generated from the library listing the organiser actually read — no file name on this page was typed by hand.</div>
+    <div id="stamp"></div>
+  </footer>
+</div>
+
+<script type="application/json" id="data">
+{
+  "library": "Documents",
+  "site": "/sites/TaskManagement",
+  "generated": "2026-09-02",
+  "scanned": 21,
+  "rows": [
+    {
+      "current": "Task Management Channel Guide_YD_04042025.docx",
+      "folder": "Power BI Task Management/Resources and References",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "the name contains 04042025, which is a date under one convention and a different date under another — renaming would leave two dates in the name",
+      "category": "ambiguous-date",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Daily_Employee_Project_Time_Trackingv1.xlsx",
+      "folder": "Power BI Task Management",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "the name looks like it already carries a version but not in a form that can be read — renaming would leave two",
+      "category": "unreadable-version",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
+      "folder": "Power BI Task Management/Resources and References",
+      "compliant": true,
+      "proposed": "",
+      "blocked": "",
+      "category": "",
+      "assumptions": []
+    },
+    {
+      "current": "Power BI TCO Pilot_YD_04072025.xlsx",
+      "folder": "Power BI Task Management/1. Assigned Tasks",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "the name contains 04072025, which is a date under one convention and a different date under another — renaming would leave two dates in the name",
+      "category": "ambiguous-date",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Screenshot 2025-04-06 at 6.42.39 PM.png",
+      "folder": "Power BI Task Management/1. Assigned Tasks/Task 1",
+      "compliant": false,
+      "proposed": "Screenshot-at-6-42-39-PM_2025-04-06_Draft_v0.1.png",
+      "blocked": "",
+      "category": "",
+      "assumptions": [
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "TCO Pilot Program Oversight Dashboard Data.xlsx",
+      "folder": "Power BI Task Management",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "opens with the same words as the report TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
+      "category": "feeds-a-report",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix",
+      "folder": "Power BI Task Management/4. Completed Tasks",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "the name contains 14042025, which is a date under one convention and a different date under another — renaming would leave two dates in the name",
+      "category": "ambiguous-date",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Screenshot 2025-04-14 at 9.06.08 AM.png",
+      "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
+      "compliant": false,
+      "proposed": "Screenshot-at-9-06-08-AM_2025-04-14_Draft_v0.1.png",
+      "blocked": "",
+      "category": "",
+      "assumptions": [
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Metrics .xlsx",
+      "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
+      "compliant": false,
+      "proposed": "Metrics_2025-04-15_Draft_v0.1.xlsx",
+      "blocked": "",
+      "category": "",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Screenshot 2025-04-06 at 6.34.18 PM.png",
+      "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
+      "compliant": false,
+      "proposed": "Screenshot-at-6-34-18-PM_2025-04-06_Draft_v0.1.png",
+      "blocked": "",
+      "category": "",
+      "assumptions": [
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Screenshot 2025-04-06 at 6.34.50 PM.png",
+      "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
+      "compliant": false,
+      "proposed": "Screenshot-at-6-34-50-PM_2025-04-06_Draft_v0.1.png",
+      "blocked": "",
+      "category": "",
+      "assumptions": [
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Screenshot 2025-04-06 at 6.35.10 PM.png",
+      "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
+      "compliant": false,
+      "proposed": "Screenshot-at-6-35-10-PM_2025-04-06_Draft_v0.1.png",
+      "blocked": "",
+      "category": "",
+      "assumptions": [
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "NiSource Metric Dashboard.pbix",
+      "folder": "Power BI Task Management/2. In Progress",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
+      "category": "is-a-report",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "ALL STATES E-1 Table - 2025 Draft.xlsx",
+      "folder": "Power BI Task Management/1. Assigned Tasks/DIMP Folder",
+      "compliant": false,
+      "proposed": "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
+      "blocked": "",
+      "category": "",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "DEL - asme.b31.8s.2004.pdf",
+      "folder": "Power BI Task Management/1. Assigned Tasks/DIMP Folder",
+      "compliant": false,
+      "proposed": "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
+      "blocked": "",
+      "category": "",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "DIMP E-1.xlsx",
+      "folder": "Power BI Task Management/2. In Progress",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "opens with the same words as the report DIMP E-1 Performance Measures.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
+      "category": "feeds-a-report",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "DIMP E-1 Performance Measures.pbix",
+      "folder": "Power BI Task Management/2. In Progress",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
+      "category": "is-a-report",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "DIMP E-1 Proposed Data.xlsx",
+      "folder": "Power BI Task Management/2. In Progress",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "opens with the same words as the report DIMP E-1 Performance Measures.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
+      "category": "feeds-a-report",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "NIPSCO_Master Roster_2025.xlsx",
+      "folder": "Power BI Task Management/2. In Progress",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "shares a folder with the report NiSource Metric Dashboard.pbix, which may read from it — a .pbix hides its source paths inside the file, so a rename can break a dashboard unseen",
+      "category": "feeds-a-report",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Performance Management System.xlsx",
+      "folder": "Power BI Task Management/PD alignment Excel and Power BI - Karen",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "opens with the same words as the report Performance Management System.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
+      "category": "feeds-a-report",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    },
+    {
+      "current": "Performance Management System.pbix",
+      "folder": "Power BI Task Management/PD alignment Excel and Power BI - Karen",
+      "compliant": false,
+      "proposed": "",
+      "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
+      "category": "is-a-report",
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ]
+    }
+  ]
+}
+</script>
+
+<script>
+  (function () {
+    var data = JSON.parse(document.getElementById('data').textContent);
+    var rows = data.rows || [];
+
+    var GROUPS = [
+      {
+        key: 'ambiguous-date',
+        title: 'The name already carries a date that cannot be read',
+        blurb: 'An eight-digit run is one date under a day-first convention and a different one under a month-first convention. Renaming would leave two dates in the name, one of them possibly wrong.'
+      },
+      {
+        key: 'unreadable-version',
+        title: 'The name already carries a version that cannot be read',
+        blurb: 'Renaming would leave two version numbers in the name.'
+      },
+      {
+        key: 'is-a-report',
+        title: 'It is a Power BI report',
+        blurb: 'A report is referenced by path wherever it has been published or set to refresh, and none of that is visible from the library. Rename these deliberately, not in a sweep.'
+      },
+      {
+        key: 'feeds-a-report',
+        title: 'A Power BI report may be reading it',
+        blurb: 'Renaming the workbook a report reads from breaks the refresh, and nothing on the outside of either file shows it happened.'
+      },
+      { key: 'collision', title: 'Two files would end up with the same name', blurb: 'Both are refused rather than one being destroyed.' },
+      { key: 'not-a-document', title: 'Not a document', blurb: 'No file extension, so it is a folder or something the convention was not written for.' },
+      { key: 'other', title: 'Refused', blurb: '' }
+    ];
+
+    function el(tag, cls, text) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text !== undefined) n.textContent = text;
+      return n;
+    }
+
+    function where(row) {
+      return el('div', 'where', row.folder);
+    }
+
+    function chips(list) {
+      var box = el('div', 'chips');
+      (list || []).forEach(function (a) { box.appendChild(el('span', 'chip', a)); });
+      return box;
+    }
+
+    function renameRow(row, kind) {
+      var card = el('div', 'row ' + kind);
+      var names = el('div', 'names');
+      names.appendChild(el('div', 'fname from', row.current));
+      if (row.proposed) {
+        names.appendChild(el('div', 'arrow', '→'));
+        names.appendChild(el('div', 'fname to', row.proposed));
+      }
+      card.appendChild(names);
+      card.appendChild(where(row));
+      if (row.blocked) {
+        card.appendChild(el('div', 'why', row.blocked));
+      } else if ((row.assumptions || []).length) {
+        card.appendChild(chips(row.assumptions));
+      }
+      return card;
+    }
+
+    var ready = rows.filter(function (r) { return r.proposed; });
+    var correct = rows.filter(function (r) { return r.compliant; });
+    var refused = rows.filter(function (r) { return r.blocked; });
+
+    var stats = [
+      { n: data.scanned, label: 'files scanned', cls: '' },
+      { n: ready.length, label: 'ready to rename', cls: 'ready' },
+      { n: refused.length, label: 'left alone, with a reason', cls: 'refused' },
+      { n: correct.length, label: 'already correct', cls: 'correct' }
+    ];
+    var statBox = document.getElementById('stats');
+    stats.forEach(function (s) {
+      var d = el('div', 'stat ' + s.cls);
+      d.appendChild(el('b', '', String(s.n)));
+      d.appendChild(el('span', '', s.label));
+      statBox.appendChild(d);
+    });
+
+    var meta = document.getElementById('meta');
+    [data.site, 'library: ' + data.library, 'as at ' + data.generated].forEach(function (m) {
+      meta.appendChild(el('div', '', m));
+    });
+
+    var readyBox = document.getElementById('ready');
+    ready.forEach(function (r) { readyBox.appendChild(renameRow(r, 'ready')); });
+
+    var correctBox = document.getElementById('correct');
+    correct.forEach(function (r) { correctBox.appendChild(renameRow(r, 'correct')); });
+
+    var refusedBox = document.getElementById('refused');
+    GROUPS.forEach(function (g) {
+      var members = refused.filter(function (r) { return r.category === g.key; });
+      if (!members.length) return;
+      refusedBox.appendChild(el('h3', '', g.title));
+      if (g.blurb) {
+        var p = el('p', 'lede', g.blurb);
+        p.style.marginBottom = '0.5rem';
+        refusedBox.appendChild(p);
+      }
+      var box = el('div', 'rows');
+      box.style.marginBottom = '1.5rem';
+      members.forEach(function (r) { box.appendChild(renameRow(r, 'refused')); });
+      refusedBox.appendChild(box);
+    });
+
+    document.getElementById('stamp').textContent =
+      data.scanned + ' files in ' + data.site + '/' + data.library + ', planned ' + data.generated + '.';
+  })();
+</script>
