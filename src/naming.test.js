@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyProposals, buildNamingRequest, namingCandidates } from './naming.js';
+import { applyApprovedPlan, applyProposals, buildNamingRequest, namingCandidates } from './naming.js';
 import { planRenames } from './filenames.js';
 import { reportsIn } from './library.js';
 
@@ -249,5 +249,90 @@ describe('the request sent to the model', () => {
 
   it('does not store the request on the provider', () => {
     expect(buildNamingRequest([]).store).toBe(false);
+  });
+});
+
+/**
+ * The review page is what a person approves. If arming the switch re-runs the
+ * model, what gets applied is not what was approved — and the model is not
+ * deterministic: two runs an hour apart over the same unchanged library
+ * proposed `Time-Zone-Conversion-Table` and then `Timezone-Conversion-Table`.
+ * These hold the approved list to being the authority, and hold it to the same
+ * guards a fresh proposal has to pass.
+ */
+describe('applying a plan that was actually approved', () => {
+  /** @param {any[]} rows */
+  const withModelNames = (rows) =>
+    applyProposals(
+      rows,
+      [
+        { file: 'Metrics .xlsx', project: '', document: 'Whatever-The-Model-Says-Today', status: '', date: '2026-01-01', version: '', category: '', why: '' },
+        { file: 'Screenshot 2025-04-06 at 6.34.18 PM.png', project: '', document: 'Also-Not-Approved', status: '', date: '2026-01-01', version: '', category: '', why: '' },
+      ],
+      { files: FILES, reports: REPORTS },
+    );
+
+  it('applies the approved name, not the one this run proposed', () => {
+    const rows = withModelNames(freshRows());
+    applyApprovedPlan(rows, [{ from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost-Analysis_2026-03-02_Review_v0.4.xlsx' }], { reports: REPORTS });
+    const row = rows.find((r) => r.current === 'Metrics .xlsx');
+    expect(row?.proposed).toBe('NIPSCO_Idling-Cost-Analysis_2026-03-02_Review_v0.4.xlsx');
+    expect(row?.namedBy).toBe('approved');
+  });
+
+  it('leaves alone anything the run proposed but nobody approved', () => {
+    const rows = withModelNames(freshRows());
+    applyApprovedPlan(rows, [{ from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx' }], { reports: REPORTS });
+    const other = rows.find((r) => r.current.indexOf('6.34.18') !== -1);
+    expect(other?.proposed).toBe('');
+    expect(other?.blocked).toContain('not on the approved list');
+  });
+
+  it('still refuses a guarded file, even when it is on the list', () => {
+    const rows = freshRows();
+    applyApprovedPlan(rows, [{ from: 'NiSource Metric Dashboard.pbix', to: 'NIPSCO_Metric-Dashboard_2026-01-01_Final_v1.0.pbix' }], { reports: REPORTS });
+    const row = rows.find((r) => r.current.endsWith('.pbix'));
+    expect(row?.proposed).toBe('');
+  });
+
+  it('refuses an approved name that would change the file extension', () => {
+    const rows = freshRows();
+    applyApprovedPlan(rows, [{ from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.pdf' }], { reports: REPORTS });
+    const row = rows.find((r) => r.current === 'Metrics .xlsx');
+    expect(row?.proposed).toBe('');
+    expect(row?.blocked).toContain('file extension');
+  });
+
+  it('refuses an approved name that does not satisfy the convention', () => {
+    const rows = freshRows();
+    applyApprovedPlan(rows, [{ from: 'Metrics .xlsx', to: 'Idling Cost Final_Final.xlsx' }], { reports: REPORTS });
+    const row = rows.find((r) => r.current === 'Metrics .xlsx');
+    expect(row?.proposed).toBe('');
+    expect(row?.blocked).toContain('does not satisfy the convention');
+  });
+
+  it('refuses both when the approved list lands two files on one name', () => {
+    const rows = freshRows();
+    applyApprovedPlan(
+      rows,
+      [
+        { from: 'Screenshot 2025-04-06 at 6.34.18 PM.png', to: 'NIPSCO_Chart_2026-01-01_Draft_v0.1.png' },
+        { from: 'Screenshot 2025-04-06 at 6.34.50 PM.png', to: 'NIPSCO_Chart_2026-01-01_Draft_v0.1.png' },
+      ],
+      { reports: REPORTS },
+    );
+    for (const row of rows.filter((r) => r.current.indexOf('Screenshot') !== -1)) {
+      expect(row.proposed).toBe('');
+      expect(row.blocked).toContain('same name');
+    }
+  });
+
+  it('marks a file compliant when the approved name is what it is already called', () => {
+    const already = [{ name: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', path: ROOT + '/Task 2/SCE_Plan_2026-04-15_Draft_v0.1.docx', modified: '2026-04-15T10:00:00Z' }];
+    const rows = planRenames(already, {});
+    const name = String(already[0]?.name);
+    applyApprovedPlan(rows, [{ from: name, to: name }], { reports: [] });
+    expect(rows[0]?.compliant).toBe(true);
+    expect(rows[0]?.proposed).toBe('');
   });
 });

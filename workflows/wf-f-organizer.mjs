@@ -46,6 +46,21 @@ const CONFIG = {
   // and undo by hand.
   maxChangesPerRun: 5,
 
+  // The plan a person has read and signed off, as [{ from, to }].
+  //
+  // The model is not deterministic, and the difference matters. Two runs an
+  // hour apart over the same unchanged library proposed
+  // Time-Zone-Conversion-Table and then Timezone-Conversion-Table, and
+  // Net-Profit-Period-Dashboard and then Profit-Performance-Dashboard. Both are
+  // reasonable. Neither is the one on the page that was approved. So when this
+  // list is filled in, arming the switch applies exactly these names and
+  // ignores what this run's model call said - a review that does not bind to
+  // what gets applied is a demonstration, not an approval.
+  //
+  // Leave it empty and the switches apply whatever the current run proposes,
+  // which is fine for a sandbox and wrong for a library someone relies on.
+  approvedPlan: [],
+
   // readContents is the consent switch. With it off the model sees only names,
   // folders and kinds, and nothing from inside a document leaves the tenant.
   // With it on, Office files are unzipped on the server and only their text
@@ -280,6 +295,16 @@ applyProposals(rows, proposals, {
   assumeStatus: cfg.assumeStatus === '' ? '' : String(cfg.assumeStatus || 'Draft')
 });
 
+// What a person signed off beats what this run happens to say. Every guard
+// still runs over it: the file must still exist, still be un-guarded, keep its
+// extension, satisfy the convention and not collide.
+const approved = Array.isArray(cfg.approvedPlan) ? cfg.approvedPlan : [];
+let planNote = 'this run proposed these names';
+if (approved.length > 0) {
+  applyApprovedPlan(rows, approved, { reports: reports });
+  planNote = 'applying the approved plan of ' + approved.length + ', not this run';
+}
+
 const toRename = rows.filter(function (r) { return r.proposed; });
 const movable = rows.filter(function (r) { return r.placement === 'move' && r.destination; });
 
@@ -293,6 +318,8 @@ const summary = {
   unfiled: rows.filter(function (r) { return r.placement === 'unfiled'; }).length,
   movesProposed: movable.length,
   namedByModel: rows.filter(function (r) { return r.namedBy === 'model'; }).length,
+  approvedCount: approved.length,
+  planNote: planNote,
   modelNote: modelNote,
   readContents: cfg.readContents === true,
   applyRenames: cfg.applyRenames === true,
@@ -429,7 +456,9 @@ return [{ json: {
   scanned: r.scanned,
   compliant: r.compliant,
   naming: r.modelNote,
+  plan: r.planNote,
   namedByModel: r.namedByModel,
+  approvedCount: r.approvedCount,
   readContents: r.readContents,
   toRename: toRename,
   toMove: toMove,

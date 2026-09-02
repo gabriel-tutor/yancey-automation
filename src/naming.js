@@ -311,8 +311,17 @@ export function applyProposals(rows, proposals, options) {
     }
   }
 
-  // Names are only unique inside a folder, and the model can still land two
-  // files on one name. Both are refused rather than one being destroyed.
+  refuseCollisions(rows);
+  return rows;
+}
+
+/**
+ * Names are only unique inside a folder, and a model can land two files on one
+ * name exactly as a rule can. Both are refused rather than one being destroyed.
+ *
+ * @param {any[]} rows
+ */
+function refuseCollisions(rows) {
   /** @type {Record<string, number>} */
   const wanted = {};
   for (const row of rows) {
@@ -331,6 +340,86 @@ export function applyProposals(rows, proposals, options) {
       row.proposed = '';
     }
   }
+  return rows;
+}
 
+/**
+ * Apply a plan a person has already read and approved, instead of whatever this
+ * run's model call happens to say.
+ *
+ * This exists because the model is not deterministic and the difference matters.
+ * Two runs an hour apart over the same unchanged library proposed
+ * `Time-Zone-Conversion-Table` and then `Timezone-Conversion-Table`, and
+ * `Net-Profit-Period-Dashboard` and then `Profit-Performance-Dashboard`. Both
+ * are reasonable names. Neither is the one on the page Yancey approved — and a
+ * review that does not bind to what gets applied is not an approval, it is a
+ * demonstration. So arming the switch stops asking the model anything and does
+ * exactly what was signed off.
+ *
+ * Every guard still runs. An approved line is a request, not an instruction:
+ * the file must still exist, still be un-guarded, keep its extension, satisfy
+ * the convention, and not collide.
+ *
+ * @param {any[]} rows plan rows, already carrying this run's proposals
+ * @param {Array<{ from: string, to: string }>} approved the signed-off plan
+ * @param {{ reports?: any[] }} [options]
+ */
+export function applyApprovedPlan(rows, approved, options) {
+  const opts = options || {};
+  const allowed = new Set(namingCandidates(rows, opts.reports || []).map((r) => String(r.current)));
+  const byFrom = new Map(
+    (Array.isArray(approved) ? approved : [])
+      .filter((a) => a && a.from && a.to)
+      .map((a) => [String(a.from), String(a.to)]),
+  );
+
+  for (const row of rows) {
+    const to = byFrom.get(String(row.current));
+
+    // Nothing outside the approved list is touched, whatever this run proposed.
+    if (!to) {
+      if (row.proposed) {
+        row.blocked = 'not on the approved list, so this run leaves it alone';
+        row.proposed = '';
+      }
+      continue;
+    }
+
+    row.namedBy = 'approved';
+
+    if (!allowed.has(String(row.current))) {
+      row.blocked = row.blocked || 'approved, but it is guarded now and cannot be renamed in a sweep';
+      row.proposed = '';
+      continue;
+    }
+
+    // A rename must not change what kind of file something is. Nothing in the
+    // convention needs it, and a .xlsx that becomes a .pdf is not a rename.
+    if (splitExtension(to).extension.toLowerCase() !== splitExtension(String(row.current)).extension.toLowerCase()) {
+      row.blocked = 'the approved name changes the file extension, which a rename must not do';
+      row.proposed = '';
+      continue;
+    }
+
+    const problems = diagnose(to);
+    if (problems.length > 0) {
+      row.blocked = 'the approved name does not satisfy the convention — ' + problems[0];
+      row.proposed = '';
+      continue;
+    }
+
+    if (to === row.current) {
+      row.compliant = true;
+      row.proposed = '';
+      row.blocked = '';
+      continue;
+    }
+
+    row.proposed = to;
+    row.blocked = '';
+    row.compliant = false;
+  }
+
+  refuseCollisions(rows);
   return rows;
 }
