@@ -111,7 +111,7 @@ export async function subset(needs) {
 export async function codeNode(needs, body) {
   const helpers = await subset(needs);
   return [
-    '// ---- shared helpers (generated from src/ — edit there, not here) ----',
+    '// ---- shared helpers (generated from src/ - edit there, not here) ----',
     helpers,
     '// ---- end shared helpers ----',
     '',

@@ -201,7 +201,10 @@ function diagnose(value) {
  */
 function tidySection(value) {
   return String(value || '')
-    .replace(/[‐-―]/g, '-')
+    // Written as escapes, not literal dashes: this file is bundled into n8n
+    // Code nodes as text, and a mangled character class here would silently stop
+    // normalising the very dashes it exists to normalise.
+    .replace(/[\u2010-\u2015]/g, '-')
     .replace(/[^A-Za-z0-9_\s-]/g, ' ')
     .trim()
     .replace(/\s+/g, '-')
@@ -313,6 +316,13 @@ function planRename(file, options) {
 
   const { stem, extension } = splitExtension(current);
 
+  // Every one of his four examples names a document, and a document has an
+  // extension. An entry without one is a folder — renaming which would move
+  // everything beneath it — or something this convention was never written for.
+  if (!extension) {
+    return { ...base, blocked: 'has no file extension, so it is a folder or not a document — the convention names documents' };
+  }
+
   const dateMatch = YEAR_FIRST_DATE.exec(stem);
   const modified = spec.modified ? String(spec.modified).slice(0, 10) : '';
   let date = '';
@@ -414,9 +424,46 @@ function planRename(file, options) {
 }
 
 /**
- * Plan a whole library at once, which is the only level at which collisions are
- * visible. Two files renamed onto one name would destroy one of them, so both
- * are refused rather than either being guessed at.
+ * A .pbix is a Power BI report, and it stores the paths of the files it reads
+ * from inside itself. Nothing on the outside of a workbook says whether a
+ * report depends on it, so a rename can break a dashboard invisibly. These
+ * three signals are the ones that can be read from a library listing.
+ */
+const POWER_BI_REPORT = /\.pbix$/i;
+const COULD_FEED_A_REPORT = /\.(xlsx|xlsm|xlsb|xls|csv|tsv|txt|json|xml|parquet)$/i;
+
+// "DIMP E-1.xlsx" against "DIMP E-1 Performance Measures.pbix" is three words
+// of agreement, which is a pairing. "Metrics" against "NiSource Metric
+// Dashboard" is none, which is a coincidence of vocabulary.
+const SHARED_WORDS_MEANING_PAIRED = 3;
+
+/** @param {string} path */
+function folderOf(path) {
+  const cut = String(path || '').lastIndexOf('/');
+  return cut === -1 ? '' : String(path).slice(0, cut);
+}
+
+/** @param {string} name */
+function wordsOf(name) {
+  return splitExtension(String(name || ''))
+    .stem.toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+}
+
+/** @param {string[]} a @param {string[]} b */
+function sharedOpening(a, b) {
+  let n = 0;
+  while (n < a.length && n < b.length && a[n] === b[n]) n += 1;
+  return n;
+}
+
+/**
+ * Plan a whole library at once, which is the only level at which collisions and
+ * Power BI dependencies are visible. Two files renamed onto one name would
+ * destroy one of them, so both are refused rather than either being guessed at.
+ * A workbook a report reads from would break that report silently, so where a
+ * .pbix is present the rename is refused and the report is named.
  *
  * @param {Array<{ name: string, path?: string, modified?: string }>} files
  * @param {{ assumeStatus?: string | null,
@@ -427,6 +474,43 @@ function planRename(file, options) {
 function planRenames(files, options) {
   const list = Array.isArray(files) ? files : [];
   const rows = list.map((f) => planRename(f, options));
+
+  // Power BI first, because a file refused here has no proposal left to collide.
+  const reports = rows.filter((r) => POWER_BI_REPORT.test(r.current));
+  for (const row of rows) {
+    if (!row.proposed) continue;
+
+    if (POWER_BI_REPORT.test(row.current)) {
+      row.blocked =
+        'a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep';
+      row.proposed = '';
+      continue;
+    }
+
+    if (!COULD_FEED_A_REPORT.test(row.current)) continue;
+
+    const mine = wordsOf(row.current);
+    const named = reports.find(
+      (rep) => sharedOpening(mine, wordsOf(rep.current)) >= SHARED_WORDS_MEANING_PAIRED,
+    );
+    if (named) {
+      row.blocked =
+        'opens with the same words as the report ' +
+        named.current +
+        ', so that report very likely reads from it — renaming breaks the refresh until the report is repointed';
+      row.proposed = '';
+      continue;
+    }
+
+    const neighbour = reports.find((rep) => folderOf(rep.path) === folderOf(row.path));
+    if (neighbour) {
+      row.blocked =
+        'shares a folder with the report ' +
+        neighbour.current +
+        ', which may read from it — a .pbix hides its source paths inside the file, so a rename can break a dashboard unseen';
+      row.proposed = '';
+    }
+  }
 
   // Every name that would exist afterwards, including the ones already correct
   // which keep theirs — renaming onto an existing file is a collision too.

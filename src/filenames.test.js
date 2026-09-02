@@ -335,3 +335,94 @@ describe('a name that already carries something unreadable', () => {
     expect(out.blocked).toBe('');
   });
 });
+
+/**
+ * The Task Management library is a Power BI working area — its top folder is
+ * literally "Power BI Task Management", and four .pbix reports sit among the
+ * workbooks they read from. A .pbix stores its data-source paths inside the
+ * file, so renaming a workbook breaks the report's refresh, and nothing on the
+ * outside of either file says which workbooks a given report reads.
+ *
+ * The tool cannot see inside a .pbix. So where a report is present it declines,
+ * and says which report and why, rather than renaming and finding out later.
+ */
+describe('planRenames — files a Power BI report may be reading', () => {
+  /** @param {string} folder @param {string} name */
+  const at = (folder, name) => ({
+    name,
+    path: '/sites/TaskManagement/Shared Documents/' + folder + '/' + name,
+    modified: '2026-07-09T10:00:00Z',
+  });
+
+  it('refuses to rename a report and its like-named workbook, naming the counterpart', () => {
+    const out = planRenames(
+      [at('PD alignment', 'Performance Management System.pbix'), at('PD alignment', 'Performance Management System.xlsx')],
+      {},
+    );
+    expect(out.every((r) => r.proposed === '')).toBe(true);
+    expect(out.every((r) => r.blocked !== '')).toBe(true);
+    const workbook = out.find((r) => r.current.endsWith('.xlsx'));
+    expect(workbook?.blocked).toContain('Performance Management System.pbix');
+  });
+
+  it('refuses a workbook sharing a report folder, even with an unrelated name', () => {
+    const out = planRenames(
+      [at('2. In Progress', 'NiSource Metric Dashboard.pbix'), at('2. In Progress', 'NIPSCO_Master Roster_2025.xlsx')],
+      {},
+    );
+    const roster = out.find((r) => r.current.indexOf('Roster') !== -1);
+    expect(roster?.proposed).toBe('');
+    expect(roster?.blocked).toContain('NiSource Metric Dashboard.pbix');
+  });
+
+  // The pairing that folder proximity misses: the data sits at the top of the
+  // library and the report two folders away, but the names say they belong together.
+  it('refuses a workbook whose name opens the same way as a report elsewhere', () => {
+    const out = planRenames(
+      [
+        at('4. Completed Tasks', 'TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix'),
+        at('', 'TCO Pilot Program Oversight Dashboard Data.xlsx'),
+      ],
+      {},
+    );
+    const data = out.find((r) => r.current.indexOf('Data.xlsx') !== -1);
+    expect(data?.proposed).toBe('');
+    expect(data?.blocked).toContain('TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix');
+  });
+
+  it('still renames a screenshot beside a report, which no report reads from', () => {
+    const out = planRenames(
+      [at('Task 2', 'DIMP E-1 Performance Measures.pbix'), at('Task 2', 'Screenshot 2025-04-06 at 6.34.18 PM.png')],
+      {},
+    );
+    const shot = out.find((r) => r.current.endsWith('.png'));
+    expect(shot?.blocked).toBe('');
+    expect(shot?.proposed).toBe('Screenshot-at-6-34-18-PM_2025-04-06_Draft_v0.1.png');
+  });
+
+  it('leaves a workbook alone when no report is anywhere in the library', () => {
+    const out = planRenames([at('Resources', 'Working TimesKV.xlsx')], {});
+    expect(out[0]?.blocked).toBe('');
+    expect(out[0]?.proposed).toBe('Working-TimesKV_2026-07-09_Draft_v0.1.xlsx');
+  });
+
+  it('does not treat a merely similar name as a pairing', () => {
+    const out = planRenames(
+      [at('2. In Progress', 'NiSource Metric Dashboard.pbix'), at('Task 2', 'Metrics .xlsx')],
+      {},
+    );
+    const metrics = out.find((r) => r.current.indexOf('Metrics') !== -1);
+    expect(metrics?.blocked).toBe('');
+  });
+});
+
+describe('planRename — things that are not documents', () => {
+  it('refuses a folder rather than renaming everything beneath it', () => {
+    const out = planRename(
+      { name: '1. Assigned Tasks', path: '/lib/1. Assigned Tasks', modified: '2025-04-04T10:00:00Z' },
+      {},
+    );
+    expect(out.proposed).toBe('');
+    expect(out.blocked).toContain('no file extension');
+  });
+});

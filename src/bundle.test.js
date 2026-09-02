@@ -107,3 +107,23 @@ describe('tree-shaken Code node helpers', () => {
     expect(prompt).toContain('=== END BUSINESS PROFILE ===');
   });
 });
+
+/**
+ * Every subset reaches n8n as text inside a JSON tool call, and this project has
+ * already lost invisible characters that way once. A literal em dash in a
+ * comment is survivable; one inside a regex character class is not — it stops
+ * matching what it was written to match, and nothing fails loudly. Keeping the
+ * generated code to ASCII removes the whole class of problem rather than
+ * relying on noticing it.
+ */
+describe('generated Code node helpers travel safely', () => {
+  it.each(Object.keys(HELPERS))('%s is pure ASCII', (nodeKey) => {
+    const source = helpersFor(nodeKey);
+    const offenders = [...source.matchAll(/[^\x00-\x7F]/g)].map((m) => ({
+      char: m[0],
+      codePoint: 'U+' + (m[0]?.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0'),
+      near: source.slice(Math.max(0, (m.index ?? 0) - 40), (m.index ?? 0) + 40),
+    }));
+    expect(offenders).toEqual([]);
+  });
+});

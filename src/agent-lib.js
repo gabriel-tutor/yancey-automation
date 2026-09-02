@@ -73,7 +73,7 @@ function htmlToText(html) {
   out = decodeEntities(out);
 
   out = out.replace(/\r\n?/g, '\n');
-  out = out.replace(/ /g, ' ');
+  out = out.replace(/\u00a0/g, ' ');
   out = out.replace(/[ \t]+\n/g, '\n');
   out = out.replace(/[ \t]{2,}/g, ' ');
   out = out.replace(/\n{3,}/g, '\n\n');
@@ -1309,7 +1309,7 @@ const FORBIDDEN_OPENERS = [
   /i trust this (e-?mail|message) finds you well[.,!]?/gi,
 ];
 
-const CURRENCY_TOKEN = /[$€£]\s?\d[\d,]*(?:\.\d+)?\s*(?:k|m|mm|million|thousand)?|\b\d[\d,]*(?:\.\d+)?\s?(?:usd|dollars?)\b/gi;
+const CURRENCY_TOKEN = /[$\u20ac\u00a3]\s?\d[\d,]*(?:\.\d+)?\s*(?:k|m|mm|million|thousand)?|\b\d[\d,]*(?:\.\d+)?\s?(?:usd|dollars?)\b/gi;
 const PERCENT_TOKEN = /\b\d[\d,]*(?:\.\d+)?\s?%/g;
 const DATE_TOKEN =
   /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?\b|\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/gi;
