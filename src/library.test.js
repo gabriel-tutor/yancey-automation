@@ -212,3 +212,19 @@ describe('planPlacements', () => {
     expect(rows.filter((r) => r.verdict === 'unfiled').length).toBe(1);
   });
 });
+
+describe('what counts as evidence', () => {
+  // A caller who gives names but no paths has said nothing about folders. Two
+  // files with no folder do not share one, and refusing a rename on that basis
+  // would be refusing it for no reason.
+  it('does not pair a file to a report just because neither has a path', () => {
+    const reports = [{ name: 'NiSource Metric Dashboard.pbix' }];
+    expect(reportReading('Unrelated Roster.xlsx', '', reports)).toBeNull();
+  });
+
+  it('still pairs by folder when there really is one', () => {
+    const reports = [{ name: 'NiSource Metric Dashboard.pbix', path: '/lib/2. In Progress/x.pbix' }];
+    const found = reportReading('Unrelated Roster.xlsx', '/lib/2. In Progress/Unrelated Roster.xlsx', reports);
+    expect(found?.because).toBe('folder');
+  });
+});

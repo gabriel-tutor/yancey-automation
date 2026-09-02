@@ -123,7 +123,10 @@ export function reportReading(name, path, reports) {
   const named = list.find((r) => sharedOpening(mine, wordsOf(r.name)) >= SHARED_WORDS_MEANING_PAIRED);
   if (named) return { report: named.name, because: 'name' };
 
-  const neighbour = list.find((r) => folderOf(r.path || '') === folderOf(path));
+  // Two files with no path do not share a folder, they share the absence of
+  // one. Pairing on that would refuse renames on no evidence at all.
+  const folder = folderOf(path);
+  const neighbour = folder ? list.find((r) => folderOf(r.path || '') === folder) : undefined;
   if (neighbour) return { report: neighbour.name, because: 'folder' };
 
   return null;

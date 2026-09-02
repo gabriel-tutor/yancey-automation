@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { planRenames } from '../src/filenames.js';
-import { categoriseAll, planPlacements } from '../src/library.js';
+import { categoriseAll, folderOf, planPlacements } from '../src/library.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const listingPath = join(root, 'fixtures/sharepoint/task-management-listing.json');
@@ -65,8 +65,7 @@ function refusalGroup(blocked) {
  * @returns {string}
  */
 function folderLabel(path) {
-  const withoutFile = String(path).slice(0, String(path).lastIndexOf('/'));
-  const trimmed = withoutFile.replace(/^\/sites\/TaskManagement\/Shared Documents\/?/, '');
+  const trimmed = folderOf(path).replace(/^\/sites\/TaskManagement\/Shared Documents\/?/, '');
   return trimmed || '(library root)';
 }
 
