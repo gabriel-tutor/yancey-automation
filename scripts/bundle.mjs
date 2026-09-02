@@ -6,7 +6,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 
 /**
- * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[], filenames?: string[] }} HelperNeeds
+ * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[], filenames?: string[], library?: string[] }} HelperNeeds
  */
 
 /** @type {Record<string, string>} */
@@ -19,10 +19,13 @@ const SOURCES = {
   attachments: './src/attachments.js',
   // Yancey's document naming convention, sent 28 August 2026.
   filenames: './src/filenames.js',
+  // What a document is and where it sits — the judgements that only make
+  // sense across a whole library rather than one name at a time.
+  library: './src/library.js',
 };
 
-/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments' | 'filenames'>} */
-const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments', 'filenames'];
+/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments' | 'filenames' | 'library'>} */
+const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments', 'filenames', 'library'];
 
 
 /**

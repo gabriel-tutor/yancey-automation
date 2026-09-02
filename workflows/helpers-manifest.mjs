@@ -35,5 +35,5 @@ export const HELPERS = {
 
   // The file organiser. Deciding what a document should be called is the whole
   // of the judgement, so it lives in src/filenames.js where it is tested.
-  'wf-f/Plan Renames': { filenames: ['planRenames'] },
+  'wf-f/Plan Renames': { filenames: ['planRenames'], library: ['categoriseAll', 'planPlacements'] },
 };

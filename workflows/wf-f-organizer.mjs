@@ -57,9 +57,31 @@ const rows = planRenames(files, {
   assumeVersion: cfg.assumeVersion || null
 });
 
+// What each document is, and whether it is where it should be. Keyed by path
+// rather than by position, so the three passes cannot drift out of step.
+const extra = {};
+for (const c of categoriseAll(files)) {
+  extra[c.path] = { category: c.category, categoryWhy: c.evidence };
+}
+for (const pl of planPlacements(files)) {
+  const entry = extra[pl.path] || (extra[pl.path] = {});
+  entry.folder = pl.folder;
+  entry.placement = pl.verdict;
+  entry.placementWhy = pl.reason;
+}
+for (const r of rows) {
+  const found = extra[r.path] || {};
+  r.category = found.category || '';
+  r.categoryWhy = found.categoryWhy || '';
+  r.folder = found.folder || '';
+  r.placement = found.placement || '';
+  r.placementWhy = found.placementWhy || '';
+}
+
 const compliant = rows.filter(function (r) { return r.compliant; });
 const proposals = rows.filter(function (r) { return r.proposed; });
 const blocked = rows.filter(function (r) { return !r.compliant && !r.proposed; });
+const unfiled = rows.filter(function (r) { return r.placement === 'unfiled'; });
 
 const summary = {
   library: String(cfg.libraryTitle || ''),
@@ -68,6 +90,7 @@ const summary = {
   compliant: compliant.length,
   proposed: proposals.length,
   blocked: blocked.length,
+  unfiled: unfiled.length,
   applyRenames: cfg.applyRenames === true,
   cap: Number(cfg.maxRenamesPerRun) || 5,
   rows: rows
@@ -141,6 +164,7 @@ parts.push('scanned=' + r.scanned);
 parts.push('compliant=' + r.compliant);
 parts.push('proposed=' + r.proposed);
 parts.push('blocked=' + r.blocked);
+parts.push('unfiled=' + (r.unfiled === undefined ? '?' : r.unfiled));
 
 if (r.renamed) {
   parts.push('RENAMED=' + r.renamed.length);

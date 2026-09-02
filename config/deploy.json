@@ -11,7 +11,8 @@
     "wfC": "vCbgJoNqfuVOqWGH",
     "wfE": "XSKk6eHTFGqftrUM",
     "wfT": "1fCjIsw2JjVGkNJb",
-    "wfS": "CNttEItjnRC4RkZZ"
+    "wfS": "CNttEItjnRC4RkZZ",
+    "wfF": "qh29SRwChF2g9bYB"
   },
   "n8nBaseUrl": "https://n8n-wevu.srv1921545.hstgr.cloud",
   "credentials": {
@@ -67,18 +68,23 @@
         "wfD": "ZYV9V281C1Kojzpz",
         "wfE": "XSKk6eHTFGqftrUM",
         "wfT": "1fCjIsw2JjVGkNJb",
-        "wfS": "CNttEItjnRC4RkZZ"
+        "wfS": "CNttEItjnRC4RkZZ",
+        "wfF": "qh29SRwChF2g9bYB"
       },
       "digestTo": "YDawson@partnersperform.com",
       "mailboxLabel": "YDawson@partnersperform.com",
       "draftingMailbox": "YDawson@partnersperform.com",
       "outlookCredentialId": "gBDmBd3jHGBqqQjl",
-      "sharepointCredential": null,
-      "sharepointCredentialType": null,
+      "sharepointCredential": "Microsoft SharePoint account",
+      "sharepointCredentialType": "microsoftSharePointOAuth2Api",
       "draftingEnabled": true,
       "_digestToNote": "Delivered by writing the message into the mailbox via Graph, not by email, so no verified domain is needed and Resend is out of the picture entirely. The POST targets /me, so the digest always lands in the mailbox the credential owns - digestTo is only the displayed To: header and cannot misroute it. digestFrom is the display identity and is listed in WF-A's ignoreSenders, so the agent does not classify its own digest.",
       "draftingAliases": [],
-      "_wfDNote": "Attachment reading switched on in production on 2026-09-02 at the account owner's instruction. Yancey had previously been told in writing that attachments are never opened, so the Controls and Definitions doc was rewritten in the same pass to say what is read, what is not, and that PDFs and images are the only kinds that leave the server. Clearing this key is the whole off switch: WF-A only reads attachments when its target names a wfD."
+      "_wfDNote": "Attachment reading switched on in production on 2026-09-02 at the account owner's instruction. Yancey had previously been told in writing that attachments are never opened, so the Controls and Definitions doc was rewritten in the same pass to say what is read, what is not, and that PDFs and images are the only kinds that leave the server. Clearing this key is the whole off switch: WF-A only reads attachments when its target names a wfD.",
+      "sharepointCredentialId": "We80s2s9pbxJWWp2",
+      "sharepointSite": "/sites/TaskManagement",
+      "sharepointHost": "https://upperformpartners.sharepoint.com",
+      "_wfFNote": "WF-F reviews the Task Management library: it categorises every document, checks each name against Yancey's convention, and reviews where each file sits. It rests with applyRenames false, so a run produces a review and changes nothing; arming it is a deliberate edit to the Config node and the cap limits one run to a handful of files. It proposes no moves at all - a move changes a path exactly as a rename changes a name, so it breaks a Power BI refresh the same way, and moving anything between the numbered stage folders would assert how far work has got, which no file records. Six renames were applied on 2026-09-02 after the plan was read; the record and the undo list are in fixtures/sharepoint/renames-applied.json and on the review page."
     },
     "dev": {
       "label": "gtutor sandbox",
@@ -108,7 +114,7 @@
       "draftingAliases": []
     }
   },
-  "_sharepointNote": "Phase 2. The Outlook credential cannot reach SharePoint — WF-S0 measured 403 on all four Graph checks on 2026-08-28, and n8n's Outlook credential type requests mail scopes only at authorization time, so consent alone cannot widen it. When the new credential exists, set sharepointCredential + sharepointCredentialType on the target below, rebuild, and re-run WF-S0. See docs/PHASE2-SHAREPOINT.md.",
+  "_sharepointNote": "Phase 2, resolved 2026-09-02. The earlier 403s came from probing SharePoint with the *Outlook* credential, which proves nothing: the SharePoint node has its own credential type, microsoftSharePointOAuth2Api, targeting the SharePoint resource rather than Microsoft Graph. The permissions that matter live under Office 365 SharePoint Online (00000003-0000-0ff1-ce00-000000000000), not Graph Sites.*, on the same Entra app already used for Outlook. No new app and no admin were needed. Host is upperformpartners.sharepoint.com, not partnersperform. Writing was blocked because AllSites.Write sat unconsented while the credential asked for .default, which means 'whatever is already consented' and so hands back a weaker token in silence rather than an error - reconnecting changes nothing. Naming the scope explicitly forces the consent prompt. Do not press Grant admin consent on that page: it would also grant AllSites.FullControl, which is tenant-wide full control for a workflow that renames files.",
   "policy": {
     "_note": "Yancey's drafting rules, 2026-08-28. Read by both wf-a-classify.mjs and scripts/golden-set.mjs so the gate cannot test a policy that is not the one deployed.",
     "internalDomains": [

@@ -1,5 +1,25 @@
 # Access request — SharePoint (draft for Gabriel to send)
 
+> ## Not needed — withdrawn 2 September 2026
+>
+> **Do not send this.** It asks a tenant administrator for an Entra change that
+> turned out to be unnecessary.
+>
+> The request was written on the belief that the automation could not reach
+> SharePoint. That belief came from probing SharePoint with the Outlook
+> credential, which was never going to work and proved nothing. The n8n
+> SharePoint node has its own credential type on the same Entra app, and the
+> permissions it needs — `AllSites.Read` and `AllSites.Write` under Office 365
+> SharePoint Online — require no admin consent. Gabriel granted them himself at
+> sign-in.
+>
+> Reading and writing both work. Six files were renamed on 2 September 2026.
+>
+> Kept as a record of what was almost asked for, and as a reminder to measure
+> the right thing before asking anyone for access. See
+> `docs/PHASE2-SHAREPOINT.md` for the correction.
+
+
 Two parts. The first is for Yancey and stays in plain language. The second is a
 block he can forward untouched to whoever administers Upperform's Microsoft 365
 tenant — Yancey may or may not be that person, and asking him to translate would

@@ -1,0 +1,70 @@
+[
+  {
+    "from": "Working TimesKV.xlsx",
+    "to": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
+    "assumptions": [
+      "date taken from the file timestamp, not the name",
+      "status assumed to be Draft, the name does not say",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-02",
+    "run": "8383"
+  },
+  {
+    "from": "Screenshot 2025-04-06 at 6.42.39 PM.png",
+    "to": "Screenshot_2025-04-06_Draft_v0.1.png",
+    "assumptions": [
+      "no project prefix, the library does not say which project this belongs to",
+      "status assumed to be Draft, the name does not say",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-02",
+    "run": "8456"
+  },
+  {
+    "from": "Screenshot 2025-04-14 at 9.06.08 AM.png",
+    "to": "Screenshot_2025-04-14_Draft_v0.1.png",
+    "assumptions": [
+      "no project prefix, the library does not say which project this belongs to",
+      "status assumed to be Draft, the name does not say",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-02",
+    "run": "8456"
+  },
+  {
+    "from": "Metrics .xlsx",
+    "to": "Metrics_2025-04-15_Draft_v0.1.xlsx",
+    "assumptions": [
+      "no project prefix, the library does not say which project this belongs to",
+      "date taken from the file timestamp, not the name",
+      "status assumed to be Draft, the name does not say",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-02",
+    "run": "8456"
+  },
+  {
+    "from": "ALL STATES E-1 Table - 2025 Draft.xlsx",
+    "to": "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
+    "assumptions": [
+      "no project prefix, the library does not say which project this belongs to",
+      "date taken from the file timestamp, not the name",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-02",
+    "run": "8456"
+  },
+  {
+    "from": "DEL - asme.b31.8s.2004.pdf",
+    "to": "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
+    "assumptions": [
+      "no project prefix, the library does not say which project this belongs to",
+      "date taken from the file timestamp, not the name",
+      "status assumed to be Draft, the name does not say",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-02",
+    "run": "8456"
+  }
+]

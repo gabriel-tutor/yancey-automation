@@ -1,5 +1,49 @@
 # Phase 2 — SharePoint organizer: access comes first
 
+> ## Superseded — 2 September 2026
+>
+> **The conclusion below is wrong, and this file is kept only because the
+> measurements in it are real and worth not repeating.**
+>
+> Everything from "the automation's token cannot reach SharePoint" onwards was
+> reasoned from a probe that used the **Outlook** credential against SharePoint
+> endpoints. A mail credential returning 403 on SharePoint proves that a mail
+> credential cannot read SharePoint. It does not prove SharePoint is out of
+> reach, and it was read as if it did.
+>
+> What is actually true:
+>
+> - The n8n SharePoint node has **its own credential type**,
+>   `microsoftSharePointOAuth2Api`, which targets the SharePoint resource rather
+>   than Microsoft Graph. Graph's `Sites.*` permissions are irrelevant to it.
+> - The permissions that matter sit under **Office 365 SharePoint Online**
+>   (`00000003-0000-0ff1-ce00-000000000000`), on **the same Entra app already
+>   used for Outlook**. No new app registration. No `Sites.Selected`. **No
+>   admin.**
+> - The host is **`upperformpartners.sharepoint.com`**, not `partnersperform`.
+> - Reading and writing both work. WF-F reviews the Task Management library and
+>   renamed six files on 2 September 2026.
+>
+> The one real trap was the scope. The credential asks for `.default`, which
+> means *whatever this app is already consented for* — so a permission that has
+> been added but not consented yields a quietly weaker token instead of an
+> error, and reconnecting the credential picks up nothing new. Naming the scope
+> explicitly is what forces Entra to prompt:
+>
+> ```
+> openid offline_access https://upperformpartners.sharepoint.com/AllSites.Read https://upperformpartners.sharepoint.com/AllSites.Write
+> ```
+>
+> Two endpoints tell the two possible causes apart, and are worth keeping:
+> `_api/web/effectiveBasePermissions` reports what *the token* can do, and
+> `_api/web/getusereffectivepermissions(@u)` reports what *the person* is
+> entitled to. When the second is wider than the first, the scope is the
+> limiter and no amount of site permission will help.
+>
+> See `docs/organiser-plan.html` for what the organiser now does, and
+> `config/deploy.json` under `_sharepointNote` for the operational summary.
+
+
 Yancey's ask, verbatim from the 2026-08-28 call:
 
 > I want to organize it and I want to see if it can rename things and I want to

@@ -17,6 +17,8 @@
  */
 
 /** The four he listed, in his order. Anything else is not a status. */
+import { folderOf, isReport, reportReading, reportsIn, splitExtension } from './library.js';
+
 const STATUSES = ['Draft', 'Review', 'Final', 'Archived'];
 
 /**
@@ -42,19 +44,6 @@ const VERSION_SHAPE = /^v(\d+)\.(\d+)$/;
  */
 const ALLOWED_STEM = /^[A-Za-z0-9._-]+$/;
 
-/**
- * @param {string} value
- * @returns {{ stem: string, extension: string }}
- */
-function splitExtension(value) {
-  const name = String(value || '');
-  const dot = name.lastIndexOf('.');
-  // A trailing dot, or a dot inside the version (v0.1), is not an extension.
-  if (dot <= 0 || dot === name.length - 1) return { stem: name, extension: '' };
-  const extension = name.slice(dot + 1);
-  if (!/^[A-Za-z0-9]+$/.test(extension)) return { stem: name, extension: '' };
-  return { stem: name.slice(0, dot), extension };
-}
 
 /**
  * Real calendar date, not just the right shape. 2026-02-31 passes a regex.
@@ -443,41 +432,6 @@ function planRename(file, options) {
 }
 
 /**
- * A .pbix is a Power BI report, and it stores the paths of the files it reads
- * from inside itself. Nothing on the outside of a workbook says whether a
- * report depends on it, so a rename can break a dashboard invisibly. These
- * three signals are the ones that can be read from a library listing.
- */
-const POWER_BI_REPORT = /\.pbix$/i;
-const COULD_FEED_A_REPORT = /\.(xlsx|xlsm|xlsb|xls|csv|tsv|txt|json|xml|parquet)$/i;
-
-// "DIMP E-1.xlsx" against "DIMP E-1 Performance Measures.pbix" is three words
-// of agreement, which is a pairing. "Metrics" against "NiSource Metric
-// Dashboard" is none, which is a coincidence of vocabulary.
-const SHARED_WORDS_MEANING_PAIRED = 3;
-
-/** @param {string} path */
-function folderOf(path) {
-  const cut = String(path || '').lastIndexOf('/');
-  return cut === -1 ? '' : String(path).slice(0, cut);
-}
-
-/** @param {string} name */
-function wordsOf(name) {
-  return splitExtension(String(name || ''))
-    .stem.toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter(Boolean);
-}
-
-/** @param {string[]} a @param {string[]} b */
-function sharedOpening(a, b) {
-  let n = 0;
-  while (n < a.length && n < b.length && a[n] === b[n]) n += 1;
-  return n;
-}
-
-/**
  * Plan a whole library at once, which is the only level at which collisions and
  * Power BI dependencies are visible. Two files renamed onto one name would
  * destroy one of them, so both are refused rather than either being guessed at.
@@ -495,38 +449,27 @@ function planRenames(files, options) {
   const rows = list.map((f) => planRename(f, options));
 
   // Power BI first, because a file refused here has no proposal left to collide.
-  const reports = rows.filter((r) => POWER_BI_REPORT.test(r.current));
+  const reports = reportsIn(list);
   for (const row of rows) {
     if (!row.proposed) continue;
 
-    if (POWER_BI_REPORT.test(row.current)) {
+    if (isReport(row.current)) {
       row.blocked =
-        'a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep';
+        'a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library \u2014 rename it deliberately, not in a sweep';
       row.proposed = '';
       continue;
     }
 
-    if (!COULD_FEED_A_REPORT.test(row.current)) continue;
-
-    const mine = wordsOf(row.current);
-    const named = reports.find(
-      (rep) => sharedOpening(mine, wordsOf(rep.current)) >= SHARED_WORDS_MEANING_PAIRED,
-    );
-    if (named) {
+    const reading = reportReading(row.current, row.path, reports);
+    if (reading) {
       row.blocked =
-        'opens with the same words as the report ' +
-        named.current +
-        ', so that report very likely reads from it — renaming breaks the refresh until the report is repointed';
-      row.proposed = '';
-      continue;
-    }
-
-    const neighbour = reports.find((rep) => folderOf(rep.path) === folderOf(row.path));
-    if (neighbour) {
-      row.blocked =
-        'shares a folder with the report ' +
-        neighbour.current +
-        ', which may read from it — a .pbix hides its source paths inside the file, so a rename can break a dashboard unseen';
+        reading.because === 'name'
+          ? 'opens with the same words as the report ' +
+            reading.report +
+            ', so that report very likely reads from it \u2014 renaming breaks the refresh until the report is repointed'
+          : 'shares a folder with the report ' +
+            reading.report +
+            ', which may read from it \u2014 a .pbix hides its source paths inside the file, so a rename can break a dashboard unseen';
       row.proposed = '';
     }
   }
