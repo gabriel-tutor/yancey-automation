@@ -420,6 +420,38 @@ describe('decideCategories', () => {
 });
 
 describe('voiceGuard — spec Gate 2', () => {
+  // Seen for real on a Gate 2 fixture, with the original prompt as well as the
+  // reworded one: the model declines instead of replying, and the sign-off
+  // repair turns "No draft — flag for Yancey." into a passing draft that then
+  // lands in the mailbox signed as if Yancey wrote it.
+  it('refuses a refusal rather than dressing it up with a sign-off', () => {
+    const out = voiceGuard('No draft — flag for Yancey.', 'Chuck asked what you think');
+    expect(out.ok).toBe(false);
+    expect(out.hard).toContain('model_declined');
+    expect(out.text).toBe('');
+  });
+
+  it('catches the other shapes the model declines in', () => {
+    for (const declined of [
+      'No draft. Hold for Yancey\u2019s review.',
+      'I cannot draft a reply to this message.',
+      'Unable to write a response here.',
+      'Hey Chuck,\n\nHolding this for Yancey.\n\nThanks,\nYancey',
+    ]) {
+      expect(voiceGuard(declined, 'source text').ok, declined).toBe(false);
+    }
+  });
+
+  // The check must not swallow a real reply that happens to decline something.
+  it('still writes a reply that turns an invitation down', () => {
+    const out = voiceGuard(
+      "Hey Chuck,\n\nI can't make Thursday, but I'll send my notes before the session.\n\nThanks,\nYancey",
+      'can you make Thursday',
+    );
+    expect(out.ok).toBe(true);
+    expect(out.text).toContain("can't make Thursday");
+  });
+
   const source = 'Can you send the updated crossarm workbook before the Momentum Room?';
 
   it('blocks a draft that invents a dollar figure', () => {

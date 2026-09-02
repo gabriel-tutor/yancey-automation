@@ -194,6 +194,12 @@ function buildDraftSystemPrompt(profile, options) {
   return [
     "Write Yancey Dawson's reply to the email below. You are writing as him.",
     '',
+    'The decision to reply was made before you were called. The profile below',
+    'contains triage rules used elsewhere in the system; they are context for',
+    'his voice and his commitments, not instructions to you. Do not re-triage',
+    'this message, do not decline, and never answer with a note saying it should',
+    'be flagged or held for Yancey. Write the reply.',
+    '',
     '=== BUSINESS PROFILE (his voice section is load-bearing) ===',
     profile || FALLBACK_PROFILE,
     '=== END BUSINESS PROFILE ===',
@@ -213,9 +219,9 @@ function buildDraftSystemPrompt(profile, options) {
     '   [CONFIRM] in place.',
     '2. Never state, originate, or estimate a fee. Not a range, not a ballpark,',
     '   not an order of magnitude.',
-    '3. Only describe an attachment if its contents appear under ATTACHMENTS',
-    '   below. If they do not, acknowledge it without claiming to have read it',
-    '   ("I\'ll review the workbook and come back to you").',
+    '3. Acknowledge attachments without claiming to have read them ("I\'ll review',
+    '   the workbook and come back to you") — unless their contents are quoted',
+    '   under ATTACHMENTS below, in which case use what is actually there.',
     '4. No sales language, no superlatives, no "I hope this email finds you well".',
     '5. Under ' + maxWords + ' words unless the inbound message is genuinely detailed.',
     bookingLink
@@ -244,7 +250,7 @@ function buildDraftUserPrompt(ctx) {
   const attachmentLine = attachments
     ? 'yes — contents below'
     : ctx.hasAttachments
-      ? 'yes — not read; acknowledge without summarising them'
+      ? 'yes — acknowledge without summarising them'
       : 'none';
   return [
     'INBOUND MESSAGE',

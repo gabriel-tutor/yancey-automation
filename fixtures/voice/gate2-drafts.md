@@ -9,7 +9,7 @@ would send it after edits. A 5 means you would send it as-is.
 Put your scores in `fixtures/voice/gate2-ratings.json` and re-run
 `npm run gate2`. The gate needs an average of 4 or better.
 
-Drafts generated 2026-08-27T11:33:57.497Z · model gpt-5.6-terra
+Drafts generated 2026-09-02T01:05:25.900Z · model gpt-5.6-terra
 
 ---
 
@@ -28,16 +28,15 @@ Drafts generated 2026-08-27T11:33:57.497Z · model gpt-5.6-terra
 ```
 Hey Chuck,
 
-Agreed. I’ll get copies of the closed initiatives from Kris and make sure we review them as a team before we depend on them in the 18-month plan.
+I do have that, and I’ll get copies of the closed initiatives from Kris so we can review them as a team. I agree we need to understand which closures are solid before we build dependencies into the 18-month plan.
 
-I’ll also let Phil know, when the timing makes sense, that reviewing closed actions for quality will be part of this effort.
+I’ll also bring up the quality review with Phil when the timing is right and make sure it is positioned as part of the overall effort.
 
-I think a short class for action owners would be helpful, especially if the closure review shows the actions are being closed without enough evidence that the issue is really addressed. It could give them a clear understanding of what good closure looks like and what will be expected going forward.
+I think a short class for action owners would be helpful, especially if the closure review shows inconsistency in the evidence and validation. It could give everyone a clear understanding of what a properly closed action needs to include.
 
-I’ll connect with Kris and Phil this week and we can regroup once we have a better feel for the quality of the closed actions.
+I’ll get the initiatives moving and we can regroup once we have a better view of what the closure review is showing.
 
 Thanks,
-
 Yancey
 ```
 
@@ -73,12 +72,11 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 ```
 Hi Jessica,
 
-Thank you for taking the time to review it and for fact checking the ratings. I agree on Slide 2—we do not want to get stuck there, so I'll make sure the revised version keeps the focus on the T&D opportunity and the work ahead.
+Thanks for the thoughtful review and for checking the credit ratings. I agree on Slide 2—we don't want to get stuck there, and we'll make sure the revised deck supports the discussion without creating an unnecessary distraction.
 
-I'll review the attachments and get the updated deck back to the team shortly. See you all at 2pm.
+I'll get the revised deck back out with the additions we discussed. See you all at 2pm.
 
 Thanks,
-
 Yancey
 ```
 
@@ -114,12 +112,11 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 ```
 Hey Chuck,
 
-I agree. This sounds more natural and less like a sales pitch. I especially like the focus on learning more about what they have already started and having a conversation from there.
+I agree completely. Your changes make it sound more like a real conversation and less like a pitch. That’s especially important here since Aaron only has the words in front of him.
 
-I’ll use this direction as I revise the note and get it back over to you shortly. Let me know if there is anything else you want me to work in.
+I’ll use this direction and tighten up my outreach going forward.
 
 Thanks,
-
 Yancey
 ```
 
@@ -154,10 +151,9 @@ Hey Chuck,
 
 Thanks for the review and for cleaning up the spacing. I’ll pay closer attention to that going forward.
 
-I’ll download the Teams version, remove all comments, and double check it before sending it over to Ashley. I’ll also let you know how she responds and any feedback on how she is interpreting the coaching.
+I’ll download the Teams version, remove all comments, and double check they are gone before sending it to Ashley. I’ll also let you know how she responds and any read on how she is interpreting the coaching.
 
 Thanks,
-
 Yancey
 ```
 
@@ -182,14 +178,13 @@ Automated pre-checks: ✓ sign_off · ✓ no_forbidden_opener · ✓ no_invented
 ```
 Hey Chuck,
 
-Agreed. I’ll adjust the plan to pull the file upload standard and column changes forward as more immediate items.
+Agreed. I’ll revisit the deadlines and pull the file upload standard and column changes forward in the plan.
 
-I’ll also add a step to confirm the workbook upload requirements and track down whether there is a misunderstanding with Joe.
+I’ll also track down the workbook question with Joe and make sure we understand the expected number before we finalize that portion of the plan.
 
-I’ll update the plan and send it back over shortly. Let me know if there is anything else you want moved up.
+I’ll review the attachment and send you an updated version shortly. Let me know if there is anything else you want prioritized.
 
 Thanks,
-
 Yancey
 ```
 

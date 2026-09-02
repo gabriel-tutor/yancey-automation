@@ -35,7 +35,7 @@ describe('draft prompt — attachments', () => {
 
   it('still says not to summarise when nothing could be read', () => {
     const out = buildDraftUserPrompt(ctx({ attachmentText: '' }));
-    expect(out).toContain('not read; acknowledge without summarising');
+    expect(out).toContain('acknowledge without summarising');
     expect(out).not.toContain('--- ATTACHMENTS ---');
   });
 
@@ -53,7 +53,7 @@ describe('draft prompt — attachments', () => {
   // is built once and does not know what this particular message carried.
   it('ties the hard rule to whether contents are present', () => {
     const rules = buildDraftSystemPrompt('profile text', { maxWords: 180 });
-    expect(rules).toContain('Only describe an attachment if its contents appear under ATTACHMENTS');
-    expect(rules).not.toContain('Acknowledge attachments without claiming to have read them');
+    expect(rules).toContain('Acknowledge attachments without claiming to have read them');
+    expect(rules).toContain('unless their contents are quoted');
   });
 });

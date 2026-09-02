@@ -1373,6 +1373,21 @@ function wordCount(text) {
 }
 
 /**
+ * The drafting model sometimes declines instead of writing a reply, returning
+ * something like "No draft — flag for Yancey." Left alone, the sign-off repair
+ * further down dresses that up into a draft that passes every check and lands
+ * in the mailbox as if it were real. Seen on a Gate 2 fixture with the original
+ * prompt as well as the reworded one, so it is the model's behaviour and not
+ * any one instruction.
+ */
+const DECLINED_TO_DRAFT = [
+  /^\s*no draft\b/i,
+  /^\s*i (?:cannot|can't|can not|won't|will not|am unable to) (?:draft|write|provide|generate)\b/i,
+  /^\s*unable to (?:draft|write)\b/i,
+  /\b(?:flag|hold)(?:ing|s)? (?:this )?for yancey(?:'s review)?\b/i,
+];
+
+/**
  * Gate 2 in code: repair what is safe to repair, block what is not.
  *
  * hard  -> do not create a draft at all (the message is tagged AI-Review)
@@ -1403,6 +1418,13 @@ function voiceGuard(draftText, sourceText, options) {
   if (!body) {
     hard.push('empty_draft');
     return { ok: false, hard, medium, soft, text: '', words: 0 };
+  }
+
+  for (const pattern of DECLINED_TO_DRAFT) {
+    if (pattern.test(body)) {
+      hard.push('model_declined');
+      return { ok: false, hard, medium, soft, text: '', words: 0 };
+    }
   }
 
   const invented = inventedTokens(body, sourceText, CURRENCY_TOKEN);
