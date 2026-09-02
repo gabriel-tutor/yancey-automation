@@ -253,4 +253,200 @@ function proposeFileName(parts) {
   );
 }
 
-export { STATUSES, diagnose, parseFileName, proposeFileName };
+/**
+ * A date written year-first can be read. An eight-digit run like 04042025
+ * cannot: 14042025 and 04142025 mean different things, and being right by
+ * coincidence is not being right. Only the unambiguous form is read.
+ */
+const YEAR_FIRST_DATE = /(20\d{2})[-_.]?(\d{2})[-_.]?(\d{2})/;
+
+/**
+ * Underscore is a word character, so \b never fires between "_" and a letter
+ * and "_Review_" would not match a status. These bracket on separators instead.
+ */
+const STATUS_IN_NAME = /(^|[_\-. ])(Draft|Review|Final|Archived)([_\-. ]|$)/i;
+const VERSION_IN_NAME = /(^|[_\-. ])v(\d+)(?:[._](\d+))?([_\-. ]|$)/i;
+
+/**
+ * An eight-digit run that is not year-first, or a version glued to a word.
+ * Neither can be read, and appending a canonical one anyway would leave the
+ * file carrying two dates or two versions that disagree — which is worse than
+ * either choice. Where one of these is present and unread, the rename is
+ * refused and the digits are named so a person can decide.
+ */
+const UNREADABLE_DATE = /(?:^|[^\d])(\d{8})(?:[^\d]|$)/;
+const UNREADABLE_VERSION = /v\d/i;
+
+/**
+ * Decide what one file should be renamed to, and be explicit about anything
+ * that had to be assumed to get there.
+ *
+ * Status is the load-bearing assumption. It is a claim about whether a document
+ * is approved, and getting it wrong upward — marking a working draft Final —
+ * could have someone act on unfinished work. Draft is the weakest claim
+ * available, so where the name carries no status the default under-states
+ * rather than over-states, and says that it did.
+ *
+ * @param {{ name: string, path?: string, modified?: string }} file
+ * @param {{ assumeStatus?: string | null,
+ *           assumeVersion?: { major: number, minor: number } | null,
+ *           project?: string }} [options]
+ * @returns {{ current: string, path: string, compliant: boolean, problems: string[],
+ *             proposed: string, assumptions: string[], blocked: string }}
+ */
+function planRename(file, options) {
+  const spec = file || {};
+  const opts = options || {};
+  const current = String(spec.name || '');
+  const path = String(spec.path || '');
+
+  const problems = diagnose(current);
+  /** @type {string[]} */
+  const assumptions = [];
+  const base = { current, path, compliant: false, problems, proposed: '', assumptions, blocked: '' };
+
+  if (problems.length === 0) return { ...base, compliant: true };
+
+  const assumeStatus = opts.assumeStatus === undefined ? 'Draft' : opts.assumeStatus;
+  const assumeVersion =
+    opts.assumeVersion === undefined ? { major: 0, minor: 1 } : opts.assumeVersion;
+
+  const { stem, extension } = splitExtension(current);
+
+  const dateMatch = YEAR_FIRST_DATE.exec(stem);
+  const modified = spec.modified ? String(spec.modified).slice(0, 10) : '';
+  let date = '';
+  if (dateMatch) {
+    date = dateMatch[1] + '-' + dateMatch[2] + '-' + dateMatch[3];
+  } else if (isRealDate(modified)) {
+    date = modified;
+    assumptions.push('date taken from the file timestamp, not the name');
+  }
+
+  const statusMatch = STATUS_IN_NAME.exec(stem);
+  let status = '';
+  if (statusMatch && statusMatch[2]) {
+    const word = statusMatch[2];
+    status = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  } else if (assumeStatus) {
+    status = String(assumeStatus);
+    assumptions.push('status assumed to be ' + status + ', the name does not say');
+  }
+
+  const versionMatch = VERSION_IN_NAME.exec(stem);
+  /** @type {{ major: number, minor: number } | null} */
+  let version = null;
+  if (versionMatch) {
+    version = { major: Number(versionMatch[2]), minor: Number(versionMatch[3] || 0) };
+  } else if (assumeVersion) {
+    version = assumeVersion;
+    assumptions.push('version assumed to be v' + assumeVersion.major + '.' + assumeVersion.minor);
+  }
+
+  if (!dateMatch) {
+    const stray = UNREADABLE_DATE.exec(stem);
+    if (stray) {
+      return {
+        ...base,
+        blocked:
+          'the name contains ' + stray[1] + ', which is a date under one convention and a different date under another — renaming would leave two dates in the name',
+      };
+    }
+  }
+
+  if (!versionMatch && UNREADABLE_VERSION.test(stem)) {
+    return {
+      ...base,
+      blocked: 'the name looks like it already carries a version but not in a form that can be read — renaming would leave two',
+    };
+  }
+
+  if (!status) return { ...base, blocked: 'no status in the name and none assumed' };
+  if (!date) return { ...base, blocked: 'no date in the name and none on the file' };
+  if (!version) return { ...base, blocked: 'no version in the name and none assumed' };
+
+  // Whatever is left once the rebuilt parts are removed is the document name.
+  // Cut by position on the original stem, right to left, rather than by
+  // replacing text: removing the status first shifts the version's text so a
+  // second replace silently misses and leaves "Reportv0.1-copy" behind.
+  /** @type {Array<[number, number]>} */
+  const cuts = [];
+  if (dateMatch) cuts.push([dateMatch.index, dateMatch.index + dateMatch[0].length]);
+  if (statusMatch) cuts.push([statusMatch.index, statusMatch.index + statusMatch[0].length]);
+  if (versionMatch) cuts.push([versionMatch.index, versionMatch.index + versionMatch[0].length]);
+
+  // Adjacent parts can share a separator, so overlapping cuts are merged before
+  // any are applied.
+  cuts.sort((a, b) => a[0] - b[0]);
+  /** @type {Array<[number, number]>} */
+  const merged = [];
+  for (const cut of cuts) {
+    const last = merged[merged.length - 1];
+    if (last && cut[0] <= last[1]) last[1] = Math.max(last[1], cut[1]);
+    else merged.push([cut[0], cut[1]]);
+  }
+
+  let remainder = stem;
+  for (let i = merged.length - 1; i >= 0; i -= 1) {
+    const cut = merged[i];
+    if (!cut) continue;
+    remainder = remainder.slice(0, cut[0]) + ' ' + remainder.slice(cut[1]);
+  }
+
+  let proposed = '';
+  try {
+    proposed = proposeFileName({
+      project: String(opts.project || ''),
+      document: remainder,
+      date,
+      status,
+      version,
+      extension,
+    });
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return { ...base, blocked: reason.slice(0, 160) };
+  }
+
+  if (proposed === current) return { ...base, compliant: true };
+
+  return { ...base, proposed };
+}
+
+/**
+ * Plan a whole library at once, which is the only level at which collisions are
+ * visible. Two files renamed onto one name would destroy one of them, so both
+ * are refused rather than either being guessed at.
+ *
+ * @param {Array<{ name: string, path?: string, modified?: string }>} files
+ * @param {{ assumeStatus?: string | null,
+ *           assumeVersion?: { major: number, minor: number } | null,
+ *           project?: string }} [options]
+ * @returns {ReturnType<typeof planRename>[]}
+ */
+function planRenames(files, options) {
+  const list = Array.isArray(files) ? files : [];
+  const rows = list.map((f) => planRename(f, options));
+
+  // Every name that would exist afterwards, including the ones already correct
+  // which keep theirs — renaming onto an existing file is a collision too.
+  /** @type {Record<string, number>} */
+  const wanted = {};
+  for (const row of rows) {
+    const target = String(row.proposed || row.current).toLowerCase();
+    wanted[target] = (wanted[target] || 0) + 1;
+  }
+
+  for (const row of rows) {
+    if (!row.proposed) continue;
+    const target = row.proposed.toLowerCase();
+    if ((wanted[target] || 0) > 1) {
+      row.blocked = 'two files would end up with the same name — ' + row.proposed;
+      row.proposed = '';
+    }
+  }
+
+  return rows;
+}
+
+export { STATUSES, diagnose, parseFileName, planRename, planRenames, proposeFileName };

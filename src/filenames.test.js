@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STATUSES, diagnose, parseFileName, proposeFileName } from './filenames.js';
+import { STATUSES, diagnose, parseFileName, planRename, planRenames, proposeFileName } from './filenames.js';
 
 /**
  * Yancey's naming convention, sent 28 August 2026 and again on the 31st:
@@ -158,5 +158,180 @@ describe('building a compliant name', () => {
     expect(() =>
       proposeFileName({ project: 'SCE', document: 'Plan', date: '2026-09-01', status: 'Approved', version: { major: 1, minor: 0 }, extension: 'docx' }),
     ).toThrow(/status/i);
+  });
+});
+
+/**
+ * The real contents of Yancey's Task Management library, read on 2 September
+ * 2026. Renaming is destructive — a saved link, a Teams tab or a Power BI data
+ * source stops resolving — so the decision about what to rename is made here,
+ * where it can be tested, rather than inside a workflow node where it cannot.
+ */
+const HIS_LIBRARY = [
+  { name: 'Task Management Channel Guide_YD_04042025.docx', path: '/sites/TaskManagement/Shared Documents/a.docx', modified: '2025-04-04T10:00:00Z' },
+  { name: 'TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix', path: '/sites/TaskManagement/Shared Documents/b.pbix', modified: '2025-04-14T10:00:00Z' },
+  { name: 'Screenshot 2025-04-06 at 6.42.39 PM.png', path: '/sites/TaskManagement/Shared Documents/c.png', modified: '2025-04-06T10:00:00Z' },
+  { name: 'Working TimesKV.xlsx', path: '/sites/TaskManagement/Shared Documents/d.xlsx', modified: '2025-05-01T10:00:00Z' },
+];
+
+describe('planRename — what to do with one legacy file', () => {
+  /** @param {string} name @param {string} [modified] */
+  const plan = (name, modified) =>
+    planRename({ name, path: '/x/' + name, modified: modified || '2025-04-04T10:00:00Z' }, {});
+
+  it('leaves a compliant file alone', () => {
+    const out = plan('SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1.docx');
+    expect(out.compliant).toBe(true);
+    expect(out.proposed).toBe('');
+  });
+
+  // Status is a claim about whether a document is approved. Draft is the
+  // weakest such claim, so assuming it under-states rather than over-states.
+  it('assumes Draft when no status is in the name, and says so', () => {
+    const out = plan('Working TimesKV.xlsx', '2025-05-01T10:00:00Z');
+    expect(out.proposed).toContain('_Draft_');
+    expect(out.assumptions.join(' ')).toContain('status');
+  });
+
+  it('never assumes a status when the name already carries one', () => {
+    const out = plan('Oversight Dashboard_Review_v0.2.pbix', '2025-04-14T10:00:00Z');
+    expect(out.proposed).toContain('_Review_');
+    expect(out.assumptions.join(' ')).not.toContain('status');
+  });
+
+  it('reads a year-first date out of the name rather than assuming', () => {
+    const out = plan('Screenshot 2025-04-06 at 6.42.39 PM.png');
+    expect(out.proposed).toContain('2025-04-06');
+    expect(out.assumptions.join(' ')).not.toContain('date');
+  });
+
+  // The file's own timestamp stands in for a date only when the name carries
+  // none at all. Where the name has digits that cannot be read, see the
+  // refusals below — substituting would leave two dates in one name.
+  it('falls back to the file timestamp when the name carries no date at all', () => {
+    const out = plan('Working TimesKV.xlsx', '2025-05-01T10:00:00Z');
+    expect(out.assumptions.join(' ')).toContain('date');
+    expect(out.proposed).toContain('2025-05-01');
+  });
+
+  it('produces a name its own checker accepts', () => {
+    for (const f of HIS_LIBRARY) {
+      const out = planRename(f, {});
+      if (!out.proposed) continue;
+      expect(diagnose(out.proposed), f.name + ' -> ' + out.proposed).toEqual([]);
+    }
+  });
+
+  it('refuses when there is no document name left to keep', () => {
+    const out = plan('v0.1.docx');
+    expect(out.proposed).toBe('');
+    expect(out.blocked).toBeTruthy();
+  });
+
+  it('can be told not to assume anything', () => {
+    const out = planRename(
+      { name: 'Working TimesKV.xlsx', path: '/x', modified: '2025-05-01T10:00:00Z' },
+      { assumeStatus: '', assumeVersion: null },
+    );
+    expect(out.proposed).toBe('');
+    expect(out.blocked).toContain('status');
+  });
+});
+
+describe('planRenames — what to do with a whole library', () => {
+  it('refuses both files when two would land on the same name', () => {
+    const out = planRenames(
+      [
+        { name: 'Report Draft v0.1.docx', path: '/x/1', modified: '2025-04-04T10:00:00Z' },
+        { name: 'Report_Draft_v0.1.docx', path: '/x/2', modified: '2025-04-04T10:00:00Z' },
+      ],
+      {},
+    );
+    const blocked = out.filter((r) => r.blocked.indexOf('same name') !== -1);
+    expect(blocked.length).toBe(2);
+    expect(out.every((r) => r.proposed === '')).toBe(true);
+  });
+
+  // A suffix that means something is kept, so these two do not collide.
+  it('keeps a distinguishing suffix rather than forcing a collision', () => {
+    const out = planRenames(
+      [
+        { name: 'Report_Draft_v0.1 copy.docx', path: '/x/1', modified: '2025-04-04T10:00:00Z' },
+        { name: 'Report_Draft_v0.1 (2).docx', path: '/x/2', modified: '2025-04-04T10:00:00Z' },
+      ],
+      {},
+    );
+    expect(out[0]?.proposed).toBe('Report-copy_2025-04-04_Draft_v0.1.docx');
+    expect(out[1]?.proposed).toBe('Report-2_2025-04-04_Draft_v0.1.docx');
+    expect(out.every((r) => r.blocked === '')).toBe(true);
+  });
+
+  it('refuses to rename onto a name already in the library', () => {
+    const out = planRenames(
+      [
+        { name: 'Guide_2025-04-04_Draft_v0.1.docx', path: '/x/taken', modified: '2025-04-04T10:00:00Z' },
+        { name: 'Guide Draft v0.1 2025-04-04.docx', path: '/x/other', modified: '2025-04-04T10:00:00Z' },
+      ],
+      {},
+    );
+    const collided = out.filter((r) => r.blocked);
+    expect(collided.length).toBeGreaterThan(0);
+  });
+
+  it('leaves the already-correct file untouched and unblocked', () => {
+    const out = planRenames(
+      [{ name: 'SCE_PM_Plan_2026-09-01_Draft_v0.1.docx', path: '/x/1', modified: '2026-09-01T10:00:00Z' }],
+      {},
+    );
+    expect(out[0]?.compliant).toBe(true);
+    expect(out[0]?.blocked).toBe('');
+  });
+
+  it('handles the real library without throwing and proposes only valid names', () => {
+    const out = planRenames(HIS_LIBRARY, {});
+    expect(out.length).toBe(HIS_LIBRARY.length);
+    for (const row of out) {
+      if (row.proposed) expect(diagnose(row.proposed), row.proposed).toEqual([]);
+    }
+  });
+});
+
+describe('a name that already carries something unreadable', () => {
+  /** @param {string} name */
+  const plan = (name) => planRename({ name, path: '/x/' + name, modified: '2025-04-07T10:00:00Z' }, {});
+
+  // Refusing to read 04042025 while still leaving it in the name produced
+  // Task-Management-Channel-Guide_YD_04042025_2025-04-07_Draft_v0.1.docx —
+  // two dates that disagree. Carrying two is worse than either choice.
+  it('refuses a name holding an eight-digit date it cannot read', () => {
+    const out = plan('Task Management Channel Guide_YD_04042025.docx');
+    expect(out.proposed).toBe('');
+    expect(out.blocked).toContain('04042025');
+  });
+
+  it('refuses when the digits are genuinely ambiguous between conventions', () => {
+    const out = plan('TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix');
+    expect(out.proposed).toBe('');
+    expect(out.blocked).toContain('14042025');
+  });
+
+  // Trackingv1 has no separator, so it is not read as a version — but appending
+  // _v0.1 would leave the file carrying two.
+  it('refuses a version glued to a word rather than adding a second one', () => {
+    const out = plan('Daily_Employee_Project_Time_Trackingv1.xlsx');
+    expect(out.proposed).toBe('');
+    expect(out.blocked).toContain('version');
+  });
+
+  it('still renames a name with nothing unreadable in it', () => {
+    const out = plan('Working TimesKV.xlsx');
+    expect(out.proposed).toBe('Working-TimesKV_2025-04-07_Draft_v0.1.xlsx');
+  });
+
+  // A time of day is not an eight-digit date and must not be mistaken for one.
+  it('is not tripped by a timestamp in a screenshot name', () => {
+    const out = plan('Screenshot 2025-04-06 at 6.42.39 PM.png');
+    expect(out.proposed).toContain('2025-04-06');
+    expect(out.blocked).toBe('');
   });
 });
