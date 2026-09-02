@@ -126,9 +126,9 @@
 <div class="page">
 
 <header class="prose">
-  <div class="eyebrow">Upperform inbox assistant &middot; builder reference</div>
+  <div class="eyebrow">Upperform inbox assistant &amp; document organiser &middot; builder reference</div>
   <h1>How the workflows actually run</h1>
-  <p class="standfirst">Six workflows, two data tables, and eight places a draft can die before it reaches the Drafts folder. This is the map for whoever is debugging it at 11pm.</p>
+  <p class="standfirst">Eight workflows, two data tables, a SharePoint library, and eight places a draft can die before it reaches the Drafts folder. This is the map for whoever is debugging it at 11pm.</p>
 </header>
 
 <section>
@@ -498,13 +498,13 @@
     <p>The workflows are generated from the repo, not authored in the n8n editor.</p>
   </div>
   <div class="prose">
-    <p>Hand-editing a Code node in n8n works until the next <code>npm run build</code> overwrites it. The chain is <code>src/agent-lib.js</code> &rarr; tree-shaken per node by esbuild &rarr; inlined into the generated SDK source &rarr; deployed. Two hundred and sixty-nine tests cover it: the library itself, a parity suite proving the tree-shaken subset that ships behaves like the module under test, a vocabulary sweep that walks every term in every guard, and &mdash; added after two bugs shipped through the gap &mdash; a suite that executes the Code node <em>bodies</em> with stubbed <code>$</code> and <code>$input</code>, because until then they were only ever strings that nothing ran.</p>
+    <p>Hand-editing a Code node in n8n works until the next <code>npm run build</code> overwrites it. The chain is <code>src/agent-lib.js</code> &rarr; tree-shaken per node by esbuild &rarr; inlined into the generated SDK source &rarr; deployed. Six hundred and twenty-five tests cover it: the library itself, a parity suite proving the tree-shaken subset that ships behaves like the module under test, a vocabulary sweep that walks every term in every guard, a suite that executes the Code node <em>bodies</em> with stubbed <code>$</code> and <code>$input</code>, because until then they were only ever strings that nothing ran, and a check that every generated helper is pure ASCII &mdash; which immediately found a literal non-breaking space inside a normaliser and the euro and sterling signs inside the guard that decides whether an invented fee reaches a draft. Both had survived the trip to production intact; neither would have announced itself if it had not.</p>
     <p>Three things change without touching code at all: the business profile (edit on the VPS, picked up on the next 1-minute poll &mdash; no restart), anything in a Config node, and the Outlook categories themselves.</p>
   </div>
 </section>
 
 <footer>
-  Upperform inbox assistant &middot; Phase&nbsp;1 builder reference &middot; n8n 2.35.7 on srv1921545
+  Upperform inbox assistant and document organiser &middot; builder reference &middot; n8n 2.35.7 on srv1921545
 </footer>
 
 </div>
