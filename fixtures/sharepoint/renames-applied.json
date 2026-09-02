@@ -8,7 +8,8 @@
       "version assumed to be v0.1"
     ],
     "applied": "2026-09-02",
-    "run": "8383"
+    "run": "8383",
+    "kind": "rename"
   },
   {
     "from": "Screenshot 2025-04-06 at 6.42.39 PM.png",
@@ -19,7 +20,8 @@
       "version assumed to be v0.1"
     ],
     "applied": "2026-09-02",
-    "run": "8456"
+    "run": "8456",
+    "kind": "rename"
   },
   {
     "from": "Screenshot 2025-04-14 at 9.06.08 AM.png",
@@ -30,7 +32,8 @@
       "version assumed to be v0.1"
     ],
     "applied": "2026-09-02",
-    "run": "8456"
+    "run": "8456",
+    "kind": "rename"
   },
   {
     "from": "Metrics .xlsx",
@@ -42,7 +45,8 @@
       "version assumed to be v0.1"
     ],
     "applied": "2026-09-02",
-    "run": "8456"
+    "run": "8456",
+    "kind": "rename"
   },
   {
     "from": "ALL STATES E-1 Table - 2025 Draft.xlsx",
@@ -53,7 +57,8 @@
       "version assumed to be v0.1"
     ],
     "applied": "2026-09-02",
-    "run": "8456"
+    "run": "8456",
+    "kind": "rename"
   },
   {
     "from": "DEL - asme.b31.8s.2004.pdf",
@@ -65,6 +70,19 @@
       "version assumed to be v0.1"
     ],
     "applied": "2026-09-02",
-    "run": "8456"
+    "run": "8456",
+    "kind": "rename"
+  },
+  {
+    "kind": "move",
+    "from": "Daily_Employee_Project_Time_Trackingv1.xlsx",
+    "to": "Daily_Employee_Project_Time_Trackingv1.xlsx",
+    "fromFolder": "Power BI Task Management",
+    "toFolder": "Power BI Task Management/Resources and References",
+    "assumptions": [
+      "it sits above the filing with no folder of its own, and Resources and References is the only folder beside it that says in its own name what it holds"
+    ],
+    "applied": "2026-09-03",
+    "run": "8956"
   }
 ]

@@ -174,7 +174,7 @@ describe('stageFolderOf', () => {
 });
 
 describe('planPlacements', () => {
-  const rows = planPlacements(LIBRARY);
+  const rows = planPlacements(LIBRARY, {});
 
   it('leaves a report where it is', () => {
     const r = row(rows, 'DIMP E-1 Performance Measures.pbix');
@@ -226,5 +226,73 @@ describe('what counts as evidence', () => {
     const reports = [{ name: 'NiSource Metric Dashboard.pbix', path: '/lib/2. In Progress/x.pbix' }];
     const found = reportReading('Unrelated Roster.xlsx', '/lib/2. In Progress/Unrelated Roster.xlsx', reports);
     expect(found?.because).toBe('folder');
+  });
+});
+
+/**
+ * The one move it will offer.
+ *
+ * A document with no folder at all is the only placement problem visible from
+ * outside a file, and even then the destination has to come out of the library
+ * rather than out of a preference. One folder beside it saying in its own name
+ * what it holds is evidence; two is a choice, and choosing belongs to a person.
+ */
+describe('offering a home to a document that has none', () => {
+  const ROOT2 = '/lib/Programme';
+  /** @param {string} folder @param {string} name */
+  const at2 = (folder, name) => ({ name, path: folder ? ROOT2 + '/' + folder + '/' + name : ROOT2 + '/' + name });
+
+  const LOOSE = [
+    at2('', 'Daily_Time_Tracking.xlsx'),
+    at2('1. Assigned Tasks', 'Brief.docx'),
+    at2('Resources and References', 'Guide.docx'),
+  ];
+
+  it('proposes the one folder that says what it holds', () => {
+    const rows = planPlacements(LOOSE, {
+      folders: [ROOT2 + '/1. Assigned Tasks', ROOT2 + '/Resources and References'],
+    });
+    const loose = rows.find((r) => r.name.indexOf('Daily_Time') !== -1);
+    expect(loose?.verdict).toBe('move');
+    expect(loose?.destination).toBe(ROOT2 + '/Resources and References/Daily_Time_Tracking.xlsx');
+    expect(loose?.reason).toContain('Resources and References');
+  });
+
+  it('refuses to choose when two folders could hold it', () => {
+    const rows = planPlacements(LOOSE, {
+      folders: [ROOT2 + '/Resources and References', ROOT2 + '/General', ROOT2 + '/1. Assigned Tasks'],
+    });
+    const loose = rows.find((r) => r.name.indexOf('Daily_Time') !== -1);
+    expect(loose?.verdict).toBe('unfiled');
+    expect(loose?.destination).toBe('');
+    expect(loose?.reason).toContain('more than one folder');
+  });
+
+  it('says so plainly when nothing beside it says what it holds', () => {
+    const rows = planPlacements(LOOSE, { folders: [ROOT2 + '/1. Assigned Tasks'] });
+    const loose = rows.find((r) => r.name.indexOf('Daily_Time') !== -1);
+    expect(loose?.verdict).toBe('unfiled');
+    expect(loose?.reason).toContain('no folder beside it says what it holds');
+  });
+
+  // A folder is only a candidate if it sits beside the file. One nested two
+  // levels down is not where a homeless document at the top belongs.
+  it('will not reach into a nested folder for a destination', () => {
+    const rows = planPlacements(LOOSE, {
+      folders: [ROOT2 + '/1. Assigned Tasks', ROOT2 + '/1. Assigned Tasks/Resources'],
+    });
+    const loose = rows.find((r) => r.name.indexOf('Daily_Time') !== -1);
+    expect(loose?.verdict).toBe('unfiled');
+  });
+
+  it('still never moves a file that is already filed', () => {
+    const rows = planPlacements(LOOSE, {
+      folders: [ROOT2 + '/1. Assigned Tasks', ROOT2 + '/Resources and References'],
+    });
+    for (const r of rows) {
+      if (r.name.indexOf('Daily_Time') !== -1) continue;
+      expect(r.verdict).toBe('settled');
+      expect(r.destination).toBe('');
+    }
   });
 });

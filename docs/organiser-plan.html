@@ -397,8 +397,8 @@
     <h1>Task Management Library Review</h1>
     <p class="standfirst">
       Every file in the Task Management library: what it is, whether it is in the right
-      place, and what it should be called. Six names have been brought into line. Fifteen
-      were deliberately left alone, and each one says why.
+      place, and what it should be called. Six names brought into line and one document
+      given a home. Fifteen were deliberately left alone, and each one says why.
     </p>
     <div class="meta" id="meta"></div>
   </header>
@@ -436,12 +436,12 @@
   </div>
 
   <section>
-    <h2>Renamed</h2>
+    <h2>Changed</h2>
     <p class="lede">
-      Applied after the plan was read, never automatically. This is also the undo list: the
-      old name is kept beside the new one, so any of it can be put back by hand. Nothing was
-      overwritten — the move refuses rather than replace anything already sitting on the
-      new name.
+      Applied after the plan was read, never automatically. This is also the undo list: what
+      was there before is kept beside what is there now, so any of it can be put back by
+      hand. Nothing was overwritten — the call refuses rather than replace anything already
+      sitting on the new path.
     </p>
     <div class="rows" id="applied"></div>
   </section>
@@ -468,10 +468,12 @@
   <section>
     <h2>Where things sit</h2>
     <p class="lede">
-      The organiser proposes no moves, and that is a finding rather than an omission. Every
-      move this library could justify would either break a Power BI refresh it cannot see, or
-      assert how far a piece of work has got — which no file records. What it will say is when
-      a document has no folder at all.
+      It moves almost nothing, and that is a finding rather than an omission. It will never
+      move a Power BI report, a workbook a report reads, or anything inside a numbered stage
+      folder — that last would be claiming how far a piece of work has got, which no file
+      records and only you know. The one case it will act on is a document sitting above the
+      filing with no folder of its own, and only where exactly one folder beside it says in
+      its own name what it holds. There was one. It has been moved.
     </p>
     <div class="rows" id="unfiled"></div>
     <h3>Why everything else stays put</h3>
@@ -545,9 +547,8 @@
     {
       "path": "Power BI Task Management",
       "depth": 0,
-      "files": 2,
+      "files": 1,
       "kinds": {
-        "spreadsheet": 1,
         "report data": 1
       }
     },
@@ -615,17 +616,19 @@
     {
       "path": "Power BI Task Management/Resources and References",
       "depth": 1,
-      "files": 2,
+      "files": 3,
       "kinds": {
         "document": 1,
-        "spreadsheet": 1
+        "spreadsheet": 2
       }
     }
   ],
   "applied": [
     {
+      "kind": "rename",
       "from": "Working TimesKV.xlsx",
       "to": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
+      "fromFolder": "",
       "applied": "2026-09-02",
       "assumptions": [
         "date taken from the file timestamp, not the name",
@@ -635,8 +638,10 @@
       "folder": "Power BI Task Management/Resources and References"
     },
     {
+      "kind": "rename",
       "from": "Screenshot 2025-04-06 at 6.42.39 PM.png",
       "to": "Screenshot_2025-04-06_Draft_v0.1.png",
+      "fromFolder": "",
       "applied": "2026-09-02",
       "assumptions": [
         "no project prefix, the library does not say which project this belongs to",
@@ -646,8 +651,10 @@
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 1"
     },
     {
+      "kind": "rename",
       "from": "Screenshot 2025-04-14 at 9.06.08 AM.png",
       "to": "Screenshot_2025-04-14_Draft_v0.1.png",
+      "fromFolder": "",
       "applied": "2026-09-02",
       "assumptions": [
         "no project prefix, the library does not say which project this belongs to",
@@ -657,8 +664,10 @@
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2"
     },
     {
+      "kind": "rename",
       "from": "Metrics .xlsx",
       "to": "Metrics_2025-04-15_Draft_v0.1.xlsx",
+      "fromFolder": "",
       "applied": "2026-09-02",
       "assumptions": [
         "no project prefix, the library does not say which project this belongs to",
@@ -669,8 +678,10 @@
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2"
     },
     {
+      "kind": "rename",
       "from": "ALL STATES E-1 Table - 2025 Draft.xlsx",
       "to": "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
+      "fromFolder": "",
       "applied": "2026-09-02",
       "assumptions": [
         "no project prefix, the library does not say which project this belongs to",
@@ -680,8 +691,10 @@
       "folder": "Power BI Task Management/1. Assigned Tasks/DIMP Folder"
     },
     {
+      "kind": "rename",
       "from": "DEL - asme.b31.8s.2004.pdf",
       "to": "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
+      "fromFolder": "",
       "applied": "2026-09-02",
       "assumptions": [
         "no project prefix, the library does not say which project this belongs to",
@@ -690,6 +703,17 @@
         "version assumed to be v0.1"
       ],
       "folder": "Power BI Task Management/1. Assigned Tasks/DIMP Folder"
+    },
+    {
+      "kind": "move",
+      "from": "Daily_Employee_Project_Time_Trackingv1.xlsx",
+      "to": "Daily_Employee_Project_Time_Trackingv1.xlsx",
+      "fromFolder": "Power BI Task Management",
+      "applied": "2026-09-03",
+      "assumptions": [
+        "it sits above the filing with no folder of its own, and Resources and References is the only folder beside it that says in its own name what it holds"
+      ],
+      "folder": "Power BI Task Management/Resources and References"
     }
   ],
   "rows": [
@@ -713,7 +737,7 @@
     },
     {
       "current": "Daily_Employee_Project_Time_Trackingv1.xlsx",
-      "folder": "Power BI Task Management",
+      "folder": "Power BI Task Management/Resources and References",
       "compliant": false,
       "proposed": "",
       "blocked": "the name looks like it already carries a version but not in a form that can be read — renaming would leave two",
@@ -726,8 +750,8 @@
       ],
       "kind": "spreadsheet",
       "kindWhy": "from the .xlsx extension",
-      "placement": "unfiled",
-      "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and nothing in the library says which one it belongs to"
+      "placement": "settled",
+      "placementWhy": "filed under Resources and References"
     },
     {
       "current": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
@@ -1121,7 +1145,7 @@
     var applied = data.applied || [];
     var stats = [
       { n: data.scanned, label: 'files reviewed', cls: '' },
-      { n: applied.length, label: 'renamed', cls: 'correct' },
+      { n: applied.length, label: 'changed', cls: 'correct' },
       { n: refused.length, label: 'left alone, with a reason', cls: 'refused' },
       { n: ready.length, label: 'still to rename', cls: 'ready' },
       { n: rows.filter(function (r) { return r.placement === 'unfiled'; }).length, label: 'needs a home', cls: 'refused' }
@@ -1147,10 +1171,13 @@
     var appliedBox = document.getElementById('applied');
     applied.forEach(function (a) {
       var found = kindOf[a.to] || {};
+      // A move keeps its name and changes its folder, so showing the name twice
+      // would hide the very thing that changed.
+      var isMove = a.kind === 'move';
       appliedBox.appendChild(renameRow({
-        current: a.from,
-        proposed: a.to,
-        folder: a.folder,
+        current: isMove ? a.fromFolder + '/' + a.from : a.from,
+        proposed: isMove ? a.folder + '/' + a.to : a.to,
+        folder: isMove ? 'moved' : a.folder,
         assumptions: a.assumptions,
         blocked: '',
         kind: found.kind,

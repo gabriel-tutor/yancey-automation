@@ -100,7 +100,7 @@ for (const f of files) {
 
 // What has actually been renamed, straight out of the runs that did it. This is
 // also the undo list: every line is a rename that can be reversed by hand.
-/** @type {Array<{ from: string, to: string, assumptions: string[], applied: string, run: string }>} */
+/** @type {Array<{ kind?: string, from: string, to: string, fromFolder?: string, assumptions: string[], applied: string, run: string }>} */
 const applied = existsSync(appliedPath) ? JSON.parse(readFileSync(appliedPath, 'utf8')) : [];
 const byName = new Map(files.map((f) => [f.name, f]));
 for (const r of applied) {
@@ -117,8 +117,10 @@ const data = {
   scanned: rows.length,
   folders: Object.values(folders).sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
   applied: applied.map((r) => ({
+    kind: r.kind || 'rename',
     from: r.from,
     to: r.to,
+    fromFolder: r.fromFolder || '',
     applied: r.applied,
     assumptions: r.assumptions,
     folder: folderLabel(String((byName.get(r.to) || { path: '' }).path)),

@@ -97,13 +97,18 @@ const conclusion = canWrite
       ? 'the person may edit but the token cannot, so the OAuth scope is the limiter - name AllSites.Write explicitly in the credential and reconnect'
       : 'neither the token nor the person can edit, so this is a site permission question rather than a scope one';
 
-throw new Error(
-  (canWrite ? 'WRITE-OK' : 'WRITE-BLOCKED')
-  + ' >> TOKEN ' + verbs(token) + ' (low=' + token.low + ')'
-  + ' >> PERSON ' + personText
-  + ' >> groups= ' + flat(groups)
-  + ' >> ' + conclusion
-);
+// Returns rather than throws. A diagnostic that reports by failing shows red
+// on the canvas, and a red run is exactly what someone reaches for this
+// workflow to explain.
+return [{
+  json: {
+    verdict: canWrite ? 'WRITE-OK' : 'WRITE-BLOCKED',
+    token: { permissions: verbs(token), low: token.low, high: token.high },
+    person: personCode ? { unreadable: personCode, why: 'reading another user needs EnumeratePermissions, which this account does not hold' } : { permissions: verbs(person), low: person.low },
+    directGroups: flat(groups),
+    conclusion: conclusion
+  }
+}];
 `;
 
 /**

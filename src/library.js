@@ -259,27 +259,44 @@ function hasFilingBeneath(folder, folders) {
 }
 
 /**
+ * A folder whose name says it holds general material rather than the output of
+ * one task. Used only to home a document that has no folder at all, and only
+ * when the library offers exactly one such folder beside it — the destination
+ * is read out of the library, never invented.
+ */
+const GENERAL_FOLDER = /\b(resources?|references?|general|shared|admin|misc|archive)\b/i;
+
+/** @param {string} path @returns {string} */
+function lastSegment(path) {
+  const cut = String(path || '').lastIndexOf('/');
+  return cut === -1 ? String(path || '') : String(path).slice(cut + 1);
+}
+
+/**
  * Whether a document is where it should be, and why.
  *
- * This deliberately proposes no moves. Every move this library could justify
- * would either break a Power BI refresh, which it cannot see, or assert a
- * workflow stage, which no file records. So it reports, and a person decides.
- * The one thing it will say is when a document has no folder at all.
+ * It proposes a move in one case only: a document sitting above the filing with
+ * no folder of its own, where exactly one folder beside it says in its own name
+ * that it holds general material. Everything else is left alone, because every
+ * other move this library could justify would either break a Power BI refresh
+ * it cannot see, or assert a workflow stage that no file records.
  *
  * @param {Array<{ name: string, path: string }>} files
- * @param {Array<{ name: string, path?: string }>} [knownReports]
- * @returns {Array<{ name: string, path: string, folder: string, verdict: 'settled' | 'unfiled', reason: string }>}
+ * @param {{ reports?: Array<{ name: string, path?: string }>, folders?: string[] }} [options]
+ * @returns {Array<{ name: string, path: string, folder: string, verdict: 'settled' | 'unfiled' | 'move', reason: string, destination: string }>}
  */
-export function planPlacements(files, knownReports) {
+export function planPlacements(files, options) {
   const list = Array.isArray(files) ? files : [];
-  const reports = knownReports || reportsIn(list);
+  const opts = options || {};
+  const reports = opts.reports || reportsIn(list);
+  const knownFolders = Array.isArray(opts.folders) ? opts.folders : [];
   const folders = list.map((f) => folderOf(f.path));
 
   return list.map((file) => {
     const name = String(file.name || '');
     const path = String(file.path || '');
     const folder = folderName(path);
-    const base = { name, path, folder };
+    const base = { name, path, folder, destination: '' };
 
     if (isReport(name)) {
       return {
@@ -315,11 +332,35 @@ export function planPlacements(files, knownReports) {
     }
 
     if (hasFilingBeneath(folderOf(path), folders)) {
+      // Only a folder sitting directly beside the file counts, and only if its
+      // own name says what it holds. Two candidates is a choice, and choosing
+      // is the part that belongs to a person.
+      const here = folderOf(path);
+      const candidates = knownFolders.filter(
+        (f) => folderOf(f) === here && GENERAL_FOLDER.test(lastSegment(f)),
+      );
+
+      if (candidates.length === 1) {
+        const into = String(candidates[0]);
+        return {
+          ...base,
+          verdict: /** @type {const} */ ('move'),
+          destination: into + '/' + name,
+          reason:
+            'it sits above the filing with no folder of its own, and ' +
+            lastSegment(into) +
+            ' is the only folder beside it that says in its own name what it holds',
+        };
+      }
+
       return {
         ...base,
         verdict: /** @type {const} */ ('unfiled'),
         reason:
-          'it sits above the filing rather than in it, with folders of documents beneath it, and nothing in the library says which one it belongs to',
+          'it sits above the filing rather than in it, with folders of documents beneath it, and ' +
+          (candidates.length === 0
+            ? 'no folder beside it says what it holds'
+            : 'more than one folder beside it could hold it, which is a choice for a person'),
       };
     }
 

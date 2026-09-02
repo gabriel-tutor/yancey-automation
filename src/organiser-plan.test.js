@@ -59,13 +59,28 @@ describe('the review page agrees with the workflow', () => {
     }
   });
 
-  // A record claiming a rename that is not in the library would be worse than
+  // A record claiming a change that is not in the library would be worse than
   // no record: it is the undo list.
-  it('only claims renames whose result is really in the library', () => {
+  it('only claims changes whose result is really in the library', () => {
     const present = new Set(files.map((f) => f.name));
     for (const applied of data.applied) {
-      expect(present.has(applied.to), applied.to + ' is claimed as renamed but is not there').toBe(true);
-      expect(applied.from).not.toBe(applied.to);
+      expect(present.has(applied.to), applied.to + ' is claimed as changed but is not there').toBe(true);
+    }
+  });
+
+  /**
+   * The two kinds change different things, and a record that conflated them
+   * would show a move as a file renamed to itself.
+   */
+  it('records a rename as a changed name and a move as a changed folder', () => {
+    for (const applied of data.applied) {
+      if (applied.kind === 'move') {
+        expect(applied.from, 'a move keeps the name').toBe(applied.to);
+        expect(applied.fromFolder, 'a move must record where it came from').toBeTruthy();
+        expect(applied.fromFolder).not.toBe(applied.folder);
+      } else {
+        expect(applied.from, 'a rename must change the name').not.toBe(applied.to);
+      }
     }
   });
 });
