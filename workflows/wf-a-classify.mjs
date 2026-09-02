@@ -477,8 +477,17 @@ const logClassification = node({
     name: 'Log Classification',
     parameters: {
       resource: 'row',
-      operation: 'insert',
+      // Upsert, not insert. Two polls can overlap on the same message while the
+      // first is still classifying, and two rows for one email would show up
+      // twice in the digest and read as two separate decisions.
+      operation: 'upsert',
       dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.emailLog)}, cachedResultName: ${S(TABLES.emailLogName)} },
+      matchType: 'allConditions',
+      filters: {
+        conditions: [
+          { keyName: 'message_id', condition: 'eq', keyValue: ${E("{{ $('Apply Classification').item.json.messageId }}")} }
+        ]
+      },
       columns: {
         mappingMode: 'defineBelow',
         value: {
@@ -528,6 +537,28 @@ const logClassification = node({
   output: [{ id: 12, createdAt: '2026-08-26T12:00:00.000Z' }]
 });
 
+const notDraftedElsewhere = node({
+  type: 'n8n-nodes-base.dataTable',
+  version: 1.1,
+  config: {
+    name: 'Not Drafted Elsewhere?',
+    parameters: {
+      resource: 'row',
+      operation: 'rowNotExists',
+      dataTableId: { __rl: true, mode: 'id', value: ${S(TABLES.emailLog)}, cachedResultName: ${S(TABLES.emailLogName)} },
+      matchType: 'allConditions',
+      filters: {
+        conditions: [
+          { keyName: 'message_id', condition: 'eq', keyValue: ${E("{{ $('Apply Classification').item.json.messageId }}")} },
+          { keyName: 'status', condition: 'eq', keyValue: 'drafted' }
+        ]
+      }
+    },
+    position: [3200, 0]
+  },
+  output: [{ id: 'AAMkAGI2' }]
+});
+
 const needsDraft = ifElse({
   version: 2.3,
   config: {
@@ -543,7 +574,7 @@ const needsDraft = ifElse({
       },
       looseTypeValidation: true
     },
-    position: [3200, 0]
+    position: [3400, 0]
   },
   output: [{ id: 12 }]
 });
@@ -596,7 +627,7 @@ const callDraftWorkflow = node({
       },
       options: { waitForSubWorkflow: true }
     },
-    position: [3420, -140]
+    position: [3620, -140]
   },
   output: [{ ok: true, draftId: 'AAMkDRAFT' }]
 });
@@ -634,6 +665,7 @@ export default workflow('upperform-wf-a-classify', ${S(NAME)})
   .to(applyClassification)
   .to(tagInOutlook)
   .to(logClassification)
+  .to(notDraftedElsewhere)
   .to(needsDraft.onTrue(callDraftWorkflow))
   .add(noteHeader)
   .add(noteIdempotency)
