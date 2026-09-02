@@ -46,9 +46,9 @@ OPENAI_API_KEY=sk-... npm run gate1
 
 ## Live workflows
 
-Fourteen, and every one is generated from `workflows/*.mjs`. A workflow in n8n
-with no generator here is scaffolding, and scaffolding gets archived once the
-question it was built to answer is written down.
+Seventeen. Fourteen are generated from `workflows/*.mjs` and carry a `WF-`
+name; three are hand-built tools that create test conditions no generated
+workflow can, and carry a `Tool ·` name so the difference is visible.
 
 **Production** — tagged `prod`:
 
@@ -77,6 +77,17 @@ question it was built to answer is written down.
 WF-F has no dev copy: there is no second SharePoint library to point one at, and
 it changes nothing unless deliberately armed.
 
+**Hand-built tools** — no generator, nothing rebuilds them:
+
+| Tool | ID | Why it is kept |
+|---|---|---|
+| Tool · Seed Attachment Fixtures · dev | `43a7JCG1nkt9j2Nk` | WF-S seeds six plain messages and no attachments, so this is the only way to put one in front of WF-D in the sandbox |
+| Tool · Seed PDF Fixtures · dev | `TeBnHLSFVbfwW0KQ` | PDFs are one of only two kinds that leave the server for OpenAI — the path most worth re-testing |
+| Tool · SharePoint Permissions (read-only) | `K7871Mqqho6nPSuq` | reports the gap between what the token can do and what the person may do |
+
+They are recorded under `diagnostics` in `config/deploy.json`, so the repo knows
+about every workflow in the instance even where it does not build one.
+
 ### The conventions, and why each one
 
 **Names.** `WF-X · Title` in production, the same plus ` · dev` in the sandbox —
@@ -89,6 +100,13 @@ puts a unit beside its own dev copy, which is how you notice one has drifted.
 exists because production used to be identified by the *absence* of `dev`, and
 no filter can express an absence. `phase-1` and `upperform` were removed: both
 sat on every workflow, so neither selected anything.
+
+**What gets archived.** Scaffolding goes once the answer it was built for is
+written down, and anything that would now give a *wrong* answer goes regardless
+— a probe that misleads is worse than no probe. But what creates a test
+condition stays. Reading execution data replaced the four helpers that inspected
+a run; nothing replaces a seeder, and the dev sandbox is not something to tidy
+away.
 
 **Nothing falls back.** Each target names its own workflow IDs and the build
 throws if one is missing. There is no shared block to inherit from — a dev build

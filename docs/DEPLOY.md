@@ -1836,23 +1836,56 @@ serve two environments, the seeder never appears under production, there is no
 top-level block to inherit from, every named workflow has a generator, and the
 conventions are written into `config/deploy.json` rather than left to memory.
 
-### Waiting on approval: ten to archive
+### Seven archived, three kept
 
-Archiving is a destructive action on a client instance, so it needs a person.
-All ten are tagged `stale` — filter by that tag and archive the selection.
+Ten were queued. Three of them should not have been, and the correction is worth
+recording because it is a distinction that will come up again.
+
+**Archived (7):**
 
 | Workflow | Why |
 |---|---|
-| `zz · WF-F duplicate` | abandoned after two minutes; nothing references it |
-| `WF-S0 · SharePoint access probe · dev` | **would give the wrong answer today** — probed SharePoint with the Outlook credential |
-| `WF-S8 · SharePoint permissions probe` | answered; the two-endpoint technique is recorded above |
+| `zz · WF-F duplicate` | abandoned after two minutes; nothing referenced it |
+| `WF-S0 · SharePoint access probe · dev` | **would give the wrong answer today** — probed SharePoint with the Outlook credential and concluded access was blocked |
 | `WF-S9 · Find the Task Management site` | answered; the host is in `deploy.json` |
-| `WF-S1`, `WF-S3`, `WF-S6`, `WF-S7` | one-shot scaffolding for attachment ingestion, now live and tested |
-| `WF-S4`, `WF-S5` | read logs and drafts back before execution data could be fetched directly |
+| `WF-S3 · Exercise WF-D and Show It · dev` | inspected a run, from before execution data could be fetched |
+| `WF-S4 · Check What WF-A Logged · dev` | read the log table, which the Data tables tab shows directly |
+| `WF-S5 · Check the Draft WF-B Wrote · dev` | read a draft, which the Drafts folder shows directly |
+| `WF-S6 · Exercise WF-B With Attachments · dev` | drove a sub-workflow directly; running WF-A · dev on seeded mail does the same |
 
-`workflows/wf-s0-probe.mjs` is deleted outright rather than archived: a
-generator that rebuilds a workflow whose premise was disproved is worse than
-having no probe.
+**Kept (3), renamed `Tool ·`:**
+
+The line between them is not how they were built or what they are named. It is
+whether something else now does the job:
+
+> Reading execution data replaced everything that **inspected** a run.
+> Nothing replaces something that **creates the condition** to inspect.
+
+`WF-S` seeds six plain messages and no attachments at all, so without a seeder
+that carries them, WF-D cannot be exercised end to end in the sandbox — there is
+no other way to get an attachment in front of it. PDFs matter more still: they
+are one of only two kinds that leave the server for OpenAI, which makes that the
+path most worth being able to re-test after any change.
+
+| Tool | Was | Why kept |
+|---|---|---|
+| `Tool · Seed Attachment Fixtures · dev` | WF-S1 | the only source of attachment mail in the sandbox |
+| `Tool · Seed PDF Fixtures · dev` | WF-S7 | the only fixture for the vision path |
+| `Tool · SharePoint Permissions (read-only)` | WF-S8 | SharePoint is the newest integration and refused writes today in a way that took real work to diagnose |
+
+The `Tool ·` prefix is load-bearing: a `WF-` name is a promise that the repo
+generates it and that the next build will overwrite any hand edit. These three
+have no generator, so wearing a `WF-` code would have been a lie. They are
+listed under `diagnostics` in `config/deploy.json`, and `src/deployment.test.js`
+requires each to say what it is and why it is kept, and forbids a `WF-` name.
+
+`workflows/wf-s0-probe.mjs` is deleted outright rather than archived: a generator
+that rebuilds a workflow whose premise was disproved is worse than no probe.
+
+**A known simplification, not done.** The two seeders overlap with
+`wf-s-seed.mjs` and would be better folded into it, so one generated seeder
+covers plain, Office and PDF fixtures. They work; rebuilding a working seeder to
+save a row in a list is the wrong trade today.
 
 ## Still open
 

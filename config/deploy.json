@@ -123,9 +123,28 @@
   },
   "_conventions": {
     "_note": "How the n8n instance is kept organised. Enforced by src/deployment.test.js where it can be, and by reading where it cannot.",
-    "naming": "Every workflow name is NAME + targets.<t>.nameSuffix, composed by the generator. Production is \"WF-X - Title\"; dev is the same plus \" . dev\". Sorting by name therefore puts a unit and its dev copy next to each other, which is how you notice one has drifted from the other. Never rename a workflow in the n8n editor: the next build renames it back.",
+    "naming": "Two classes of name, and the prefix says which. \"WF-<letter> - Title\" is a generated unit: the generator composes it as NAME + targets.<t>.nameSuffix, production keeps the bare name and dev adds \" . dev\". Never rename one of those in the n8n editor, because the next build renames it back. \"Tool - Title\" is hand-built and nothing rebuilds it; those are listed under diagnostics below. Sorting by name puts a unit beside its own dev copy, which is how you notice one has drifted.",
     "tags": "Exactly one environment tag (prod | dev) and exactly one system tag (email-agent | documents) on every workflow, plus \"diagnostic\" on anything that must never be scheduled or left published. Production used to be identified only by the absence of a dev tag, which no filter can express. \"phase-1\" and \"upperform\" were removed: they were on every workflow and so selected nothing.",
-    "archiving": "Scaffolding built to answer one question is archived once the answer is written down. A probe that would now give the wrong answer is worse than no probe.",
-    "everything_is_generated": "Every workflow in the instance is generated from workflows/*.mjs. Hand-built workflows are scaffolding and get archived; if one earns a permanent place, write its generator first."
+    "archiving": "Archive scaffolding once the answer it was built for is written down, and archive anything that would now give a wrong answer. But keep what creates test conditions: reading execution data replaced the helpers that inspected a run, and nothing replaces a seeder. Never archive a workflow the dev sandbox needs to exercise a path end to end.",
+    "everything_is_generated": "Every workflow that touches production is generated from workflows/*.mjs, and every WF- name is one of those. Hand-built tools are allowed where they create test conditions the generated workflows cannot, but they carry a Tool prefix, are tagged diagnostic, and must be listed under diagnostics below so the repo knows about every workflow in the instance."
+  },
+  "diagnostics": {
+    "_note": "Hand-run tools with no generator. Nothing rebuilds these, so a change to src/ does not reach them — which is fine for fixtures, and the reason they are named Tool rather than WF-.",
+    "seedAttachments": {
+      "id": "43a7JCG1nkt9j2Nk",
+      "name": "Tool · Seed Attachment Fixtures · dev",
+      "why": "WF-S seeds six plain messages and no attachments, so this is the only way to put one in front of WF-D in the sandbox."
+    },
+    "seedPdfs": {
+      "id": "TeBnHLSFVbfwW0KQ",
+      "name": "Tool · Seed PDF Fixtures · dev",
+      "why": "PDFs are one of only two kinds that leave the server for OpenAI, so the path most worth re-testing after any change to attachment handling."
+    },
+    "sharepointPermissions": {
+      "id": "K7871Mqqho6nPSuq",
+      "name": "Tool · SharePoint Permissions (read-only)",
+      "why": "Reports the gap between what the token can do and what the person may do. When the second is wider, the OAuth scope is the limiter and no site permission will help."
+    },
+    "_folding": "The two seeders overlap with wf-s-seed.mjs and would be better folded into it, so one generated seeder covers plain, Office and PDF fixtures. Not done: they work, and rebuilding a working seeder to save a row in a list is the wrong trade."
   }
 }

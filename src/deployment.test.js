@@ -109,3 +109,44 @@ describe('the deployment map', () => {
     }
   });
 });
+
+/**
+ * The hand-built tools. These exist because a generated workflow cannot create
+ * a test condition — WF-S seeds no attachments, so without a seeder that does,
+ * WF-D cannot be exercised end to end in the sandbox at all.
+ *
+ * They were nearly archived on the argument that everything should be
+ * generated. That argument was right about production and wrong about the
+ * sandbox: reading execution data replaced the helpers that inspected a run,
+ * but nothing replaces a seeder. What the repo must not do is forget they
+ * exist, which is what this block is for.
+ */
+describe('the hand-built tools', () => {
+  const entries = Object.entries(deploy.diagnostics || {}).filter(([key]) => !key.startsWith('_'));
+
+  it('are listed at all, so no workflow in the instance is unaccounted for', () => {
+    expect(entries.length).toBeGreaterThan(0);
+  });
+
+  it.each(entries.map(([key]) => key))('%s says what it is and why it is kept', (key) => {
+    const tool = deploy.diagnostics[key];
+    expect(String(tool.id || '').length, key + '.id').toBeGreaterThan(8);
+    expect(String(tool.why || '').length, key + '.why').toBeGreaterThan(40);
+  });
+
+  // A WF- name is a promise that the repo generates it. These are not
+  // generated, so they must not wear one.
+  it.each(entries.map(([key]) => key))('%s is named Tool, not WF-', (key) => {
+    expect(deploy.diagnostics[key].name).toMatch(/^Tool · /);
+  });
+
+  it('never reuses the id of a generated workflow', () => {
+    const generated = new Set();
+    for (const target of targets) {
+      for (const id of Object.values(deploy.targets[target].workflows)) generated.add(id);
+    }
+    for (const [key, tool] of entries) {
+      expect(generated.has(tool.id), key + ' shares an id with a generated workflow').toBe(false);
+    }
+  });
+});
