@@ -64,6 +64,7 @@
         "wfA": "dSGzw1yk46JTHD3Z",
         "wfB": "Rjpk5KuPopQCpCQL",
         "wfC": "vCbgJoNqfuVOqWGH",
+        "wfD": "ZYV9V281C1Kojzpz",
         "wfE": "XSKk6eHTFGqftrUM",
         "wfT": "1fCjIsw2JjVGkNJb",
         "wfS": "CNttEItjnRC4RkZZ"
@@ -77,7 +78,7 @@
       "draftingEnabled": true,
       "_digestToNote": "Delivered by writing the message into the mailbox via Graph, not by email, so no verified domain is needed and Resend is out of the picture entirely. The POST targets /me, so the digest always lands in the mailbox the credential owns - digestTo is only the displayed To: header and cannot misroute it. digestFrom is the display identity and is listed in WF-A's ignoreSenders, so the agent does not classify its own digest.",
       "draftingAliases": [],
-      "_wfDNote": "Deliberately absent. WF-A only reads attachments when its target names a wfD, and Yancey was told in writing that the assistant never opens them. Set this once he has agreed, not before."
+      "_wfDNote": "Attachment reading switched on in production on 2026-09-02 at the account owner's instruction. Yancey had previously been told in writing that attachments are never opened, so the Controls and Definitions doc was rewritten in the same pass to say what is read, what is not, and that PDFs and images are the only kinds that leave the server. Clearing this key is the whole off switch: WF-A only reads attachments when its target names a wfD."
     },
     "dev": {
       "label": "gtutor sandbox",

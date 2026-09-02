@@ -383,25 +383,28 @@
 
   <h2>Are attachments read or processed?</h2>
   <div class="answer">
-    <strong>Not in your inbox — the switch is off, and it stays off until you turn it on.</strong>
-    Today the assistant records only that attachments exist. It never opens or reads them.
+    <strong>Yes, as of 2 September 2026 — this changed, and it is worth reading.</strong>
+    Until now the assistant recorded only that attachments existed. It now opens most of
+    them, because triaging a message whose substance sits in the attachment rather than
+    the body was guesswork otherwise.
   </div>
   <p>
-    Drafts acknowledge an attachment without pretending to have read it — "I'll review
-    the workbook and come back to you".
+    <strong>What this means for your documents.</strong> Word, PowerPoint and Excel files
+    are opened on the automation server and never leave it. PDFs and images are different:
+    those are sent to the model, because a scanned page has no text to pull out of it.
+    So a PDF a client sends you does travel to OpenAI, under the same no-training terms as
+    the message bodies already do. If that is not acceptable for a particular client, say
+    so and it goes back off.
   </p>
   <p>
-    The capability now exists and has been tested, because triaging a message whose
-    substance sits in the attachment rather than the body is guesswork otherwise. It is
-    switched off in your instance because reading attachments means client documents
-    pass through the model, and that is your decision to make rather than ours.
+    Drafts may now refer to what an attachment actually says, rather than only
+    acknowledging that one arrived. They still cannot invent a figure that is not in the
+    document, and they still cannot quote one that was not read.
   </p>
   <p>
-    If you do want it on, this is what it would do. Word, PowerPoint and Excel files are
-    opened on the automation server itself and never leave it. PDFs and images are the
-    only kinds sent to the model, because a scanned page has no text to extract — that is
-    also what makes a photographed document or a screenshot readable. Plain text, CSV and
-    similar are decoded directly. Anything it cannot open — a Power BI file, an old
+    The rest of the detail. Sending PDFs and images to the model is also what makes a
+    photographed document or a screenshot readable at all. Plain text, CSV and
+    similar are decoded directly on the server. Anything it cannot open — a Power BI file, an old
     <span class="mono">.xls</span>, an archive, a video — is named in the summary as not
     read, rather than passed over in silence. Only the first few attachments on a
     message are opened, and only the first three of those that need the model —
@@ -410,9 +413,9 @@
     the assistant does not spend a reading on being told what a company logo is.
   </p>
   <p>
-    Turning it on is a one-line configuration change and a redeploy. Turning it off again
-    is the same change in reverse, and the assistant goes back to recording only that an
-    attachment was there.
+    Turning it off is a one-line configuration change and a redeploy, and the assistant
+    goes straight back to recording only that an attachment was there. It is a single
+    switch, not a rewrite, so changing your mind about this costs nothing.
   </p>
 
   <h2>Where are the decision logs, and who can reach them?</h2>
