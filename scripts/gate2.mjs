@@ -33,6 +33,7 @@ import {
   voiceGuard,
   voicePreChecks,
 } from '../src/agent-lib.js';
+import { SAMPLES } from './gate2-samples.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const args = process.argv.slice(2);
@@ -43,43 +44,6 @@ const MAX_WORDS = 150;
 const SIGN_OFF = 'Thanks,';
 const SIGNATURE = 'Yancey';
 const RATING_TARGET = 4;
-
-/**
- * Five of Yancey's own OPPORTUNITY emails, chosen to spread the registers his
- * voice has to cover rather than to be easy. Each reason is the thing a rating
- * of 1–5 is really judging.
- */
-const SAMPLES = [
-  {
-    id: 'opp-06',
-    register: 'Colleague',
-    why: 'Chuck asks your opinion directly. This is the register you use with the people you work beside every day.',
-  },
-  {
-    id: 'opp-03',
-    register: 'Client',
-    why: 'An SCE contact on a live deck. Warmer distance than a colleague, and every word is read by the client.',
-  },
-  {
-    id: 'opp-08',
-    register: 'Business development',
-    why: 'Chuck rewrote your PG&E note to be less salesy and asked what you think. Salesmanship is the failure mode here.',
-  },
-  {
-    id: 'opp-09',
-    register: 'Copied in',
-    why: 'You are cc, not to. The work Chuck is assigning belongs to Kathleen. Watch whether the reply takes it over.',
-    flag:
-      'Chuck addressed that task to Kathleen — you were only copied in. The reply is in your voice and reads well, ' +
-      'which is exactly why an automated check cannot catch it. If the right answer here is a shorter note that does ' +
-      'not take over her action, score it low and say so.',
-  },
-  {
-    id: 'opp-10',
-    register: 'Plan review',
-    why: 'Chuck raises an open question the thread does not answer. Watch that the reply does not invent one.',
-  },
-];
 
 const ratingsPath = join(root, 'fixtures/voice/gate2-ratings.json');
 const sheetPath = join(root, 'fixtures/voice/gate2-drafts.md');
@@ -235,7 +199,7 @@ for (const sample of SAMPLES) {
 const sheet = [
   '# Gate 2 — voice rating sheet',
   '',
-  'Five replies the assistant wrote to real emails from your own inbox.',
+  'Replies the assistant wrote to real emails from your own inbox.',
   '',
   '**Rate each 1–5 on one question only: does this sound like you?**',
   'Not whether it is a good reply — whether it is *your* reply. A 3 means you',

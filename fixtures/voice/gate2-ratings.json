@@ -1,36 +1,30 @@
 {
   "_instructions": "Score each draft 1-5 on whether it sounds like Yancey. Read fixtures/voice/gate2-drafts.md, fill in every \"score\", then run npm run gate2.",
   "ratedBy": "",
-  "generatedAt": "2026-09-02T01:05:25.900Z",
+  "generatedAt": "2026-09-02T01:20:51.756Z",
   "model": "gpt-5.6-terra",
   "ratings": [
     {
-      "id": "opp-06",
-      "subject": "Re: NIPSCO Deliverables: Status Update",
+      "id": "opp-02",
+      "subject": "RE: ACTION NEEED",
       "score": null,
       "comment": ""
     },
     {
-      "id": "opp-03",
-      "subject": "Re: (External):Re: Vector Sync-Up",
+      "id": "opp-04",
+      "subject": "RE: DRAFT Proposal for Kickoff Meeting Deck",
       "score": null,
       "comment": ""
     },
     {
-      "id": "opp-08",
-      "subject": "Re: Follow-up from Upperform and PG&E Support",
+      "id": "opp-07",
+      "subject": "Re: VEM Spreadsheet",
       "score": null,
       "comment": ""
     },
     {
-      "id": "opp-09",
-      "subject": "Re: Coaching Summary from 3/20/24",
-      "score": null,
-      "comment": ""
-    },
-    {
-      "id": "opp-10",
-      "subject": "Re: T+1 Project Plan",
+      "id": "synthetic-06-admin",
+      "subject": "Momentum Room — moving to Thursday 2pm?",
       "score": null,
       "comment": ""
     }
