@@ -133,14 +133,16 @@
 
 <section>
   <div class="sec-head">
-    <h2>The six units</h2>
-    <p>Only WF&#8209;A and WF&#8209;C hold schedules. WF&#8209;B is called, WF&#8209;E is invoked on failure, and the last two are hand-run diagnostics that never belong on a client mailbox unattended. <b>WF&#8209;A, WF&#8209;B and WF&#8209;E are published and running against the dev mailbox now</b> &mdash; a sub-workflow must be published before anything referencing it can be, which is why WF&#8209;B went first.</p>
+    <h2>The eight units</h2>
+    <p>Only WF&#8209;A and WF&#8209;C hold schedules. WF&#8209;B and WF&#8209;D are called by WF&#8209;A, WF&#8209;E is invoked on failure, and the last three are hand-run: WF&#8209;F reviews a SharePoint library and changes nothing unless it is deliberately armed, while WF&#8209;T and WF&#8209;S are diagnostics that never belong on a client mailbox unattended. <b>WF&#8209;A, WF&#8209;B, WF&#8209;D and WF&#8209;E are published and running against Yancey&rsquo;s live mailbox.</b> A sub-workflow must be published before anything referencing it can be, which is why WF&#8209;B went first.</p>
   </div>
   <div class="board">
     <div class="unit"><span class="id">WF-A</span><span class="nm">Poll &amp; Classify</span><span class="mt">schedule &middot; every minute<br>dSGzw1yk46JTHD3Z</span><span class="pill p-live">live &middot; drafting on</span></div>
     <div class="unit"><span class="id">WF-B</span><span class="nm">Draft Reply</span><span class="mt">called by WF-A<br>Rjpk5KuPopQCpCQL</span><span class="pill p-live">published</span></div>
+    <div class="unit"><span class="id">WF-D</span><span class="nm">Read Attachments</span><span class="mt">called by WF-A<br>ZYV9V281C1Kojzpz</span><span class="pill p-live">published</span></div>
     <div class="unit"><span class="id">WF-C</span><span class="nm">Digest &amp; Follow-ups</span><span class="mt">weekdays 07:30 CT<br>vCbgJoNqfuVOqWGH</span><span class="pill p-live">published</span></div>
     <div class="unit"><span class="id">WF-E</span><span class="nm">Error Handler</span><span class="mt">on failure of A/B/C<br>XSKk6eHTFGqftrUM</span><span class="pill p-live">published</span></div>
+    <div class="unit"><span class="id">WF-F</span><span class="nm">Organise Documents</span><span class="mt">manual &middot; SharePoint<br>qh29SRwChF2g9bYB</span><span class="pill p-util">review only</span></div>
     <div class="unit"><span class="id">WF-T</span><span class="nm">Preflight</span><span class="mt">manual &middot; scope proof<br>1fCjIsw2JjVGkNJb</span><span class="pill p-util">diagnostic</span></div>
     <div class="unit"><span class="id">WF-S</span><span class="nm">Seed Test Inbox</span><span class="mt">manual &middot; dev only<br>CNttEItjnRC4RkZZ</span><span class="pill p-util">diagnostic</span></div>
   </div>
@@ -405,6 +407,32 @@
 
 <section>
   <div class="sec-head">
+    <h2>WF&#8209;D &mdash; reading attachments</h2>
+    <p>Live since 2 September 2026. Yancey had previously been told in writing that attachments are never opened, so what changed is set out plainly rather than left to be discovered.</p>
+  </div>
+  <div class="prose">
+    <p>WF&#8209;A calls it once per message that has attachments, and it decides per file what is worth opening. <b>Word, PowerPoint and Excel files never leave the server.</b> n8n&rsquo;s Code node refuses <code>require('zlib')</code>, so the workflow carries its own DEFLATE decompressor and reads the text straight out of the archive in process. Plain text and CSV are decoded in place.</p>
+    <p><b>PDFs and images are the only kinds that go anywhere.</b> They cannot be read without vision, so they are sent to OpenAI the same way the message body already is. Anything else &mdash; an executable, an archive, a file type nothing here recognises &mdash; is named and skipped rather than guessed at, and the draft acknowledges it without pretending to have read it.</p>
+    <p>Three limits keep a mailbox full of large attachments from becoming a bill: 25&nbsp;MB per file, eight files per message, and at most three model calls per message. Office files and skipped files do not count against the model budget. A signature image or a logo below the reading threshold is skipped and says so, because reading a letterhead costs money and tells you nothing.</p>
+    <p><b>The off switch is one key.</b> WF&#8209;A reads attachments only when its deployment target names a <code>wfD</code> workflow. Clearing that key stops it everywhere at once &mdash; there is no second place to remember, and no node left half-wired.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>WF&#8209;F &mdash; the document organiser</h2>
+    <p>Phase 2. It reviews a SharePoint library, categorises every document, checks each name against Yancey&rsquo;s convention, and reports where each file sits. It rests switched off and changes nothing until a person arms it.</p>
+  </div>
+  <div class="prose">
+    <p><b>It never opens a document.</b> Every judgement comes from what is visible on the outside: the extension, the name, and what sits beside it in the library. Reading the contents of a client&rsquo;s document library would mean sending those contents somewhere, and that is a decision to take knowingly rather than one to slip into.</p>
+    <p><b>It proposes no moves, and that is a finding rather than a gap.</b> A move changes a file&rsquo;s path exactly as a rename changes its name, so it breaks a Power BI refresh the same way &mdash; and a <code>.pbix</code> keeps the paths of the files it reads inside itself, where nothing outside can see them. Moving anything between the numbered stage folders would assert how far a piece of work has got, which no file records. What it will say is when a document sits above the filing with no folder of its own.</p>
+    <p>The refusals are the interesting part. It will not rename a Power BI report, or a workbook a report probably reads, and it names the report in both cases. It will not read an eight-digit date like <code>04042025</code>, because day-first and month-first disagree and being right by luck is not being right. It will not rename a file whose name already carries a version it cannot parse, or two files in one folder onto the same name, or anything without a file extension &mdash; which is how a folder can never be renamed by accident. The move uses <code>flags=0</code>, so it fails rather than overwrite anything already sitting on the new name.</p>
+    <p>Access took a wrong turn worth recording. An early probe used the <em>Outlook</em> credential against SharePoint endpoints, got 403 on everything, and concluded SharePoint was out of reach and needed a tenant administrator. It proved only that a mail credential cannot read SharePoint. The SharePoint node has its own credential type on the same Entra app, and the permissions it needs require no admin at all.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
     <h2>Config reference</h2>
     <p>Every knob, and which workflow&rsquo;s Config node holds it. Changing behaviour should never mean editing a node other than these.</p>
   </div>
@@ -412,8 +440,8 @@
     <table>
       <thead><tr><th>Key</th><th>Where</th><th>Now</th><th>What it does</th></tr></thead>
       <tbody>
-        <tr><td class="k">draftingEnabled</td><td>WF-A</td><td class="v">true</td><td>The shadow-mode switch, and it is <b>on</b> &mdash; drafts are being written unattended every minute. Must be <code>false</code> before the credential points at Yancey.</td></tr>
-        <tr><td class="k">draftingMailbox</td><td>WF-A</td><td class="v">gtutor@&hellip;</td><td>The interlock. A message only drafts if this address is on its to or cc, so re-pointing the Outlook credential at Yancey stops drafting rather than redirecting it. <b>Change it in the same action as the credential.</b> Blank blocks all drafting.</td></tr>
+        <tr><td class="k">draftingEnabled</td><td>WF-A</td><td class="v">true</td><td>The shadow-mode switch, and it is <b>on</b> &mdash; drafts are written unattended every minute into Yancey&rsquo;s Drafts folder. Nothing is ever sent: the Entra app holds no <code>Mail.Send</code> scope, so the invariant does not depend on this switch.</td></tr>
+        <tr><td class="k">draftingMailbox</td><td>WF-A</td><td class="v">YDawson@&hellip;</td><td>The interlock. A message only drafts if this address is on its to or cc, so re-pointing the Outlook credential stops drafting rather than redirecting it. It was moved to Yancey in the same action as the credential, which is the only safe way to change it. Blank blocks all drafting.</td></tr>
         <tr><td class="k">confidenceMin</td><td>WF-A</td><td class="v">0.80</td><td>Below this the item is surfaced rather than drafted, flagged <code>below_confidence_min</code>.</td></tr>
         <tr><td class="k">lookbackHours</td><td>WF-A</td><td class="v">6</td><td>Graph <code>$filter</code> window. Wider means re-reading mail the gates will drop anyway.</td></tr>
         <tr><td class="k">pollBatch</td><td>WF-A</td><td class="v">25</td><td><code>$top</code> on the inbox read.</td></tr>
@@ -430,6 +458,10 @@
         <tr><td class="k">autoCloseDays</td><td>WF-C</td><td class="v">21</td><td>Undrafted rows older than this close themselves, so the digest doesn&rsquo;t silt up.</td></tr>
         <tr><td class="k">mode</td><td>WF-C</td><td class="v">live</td><td>Asks for the shadow banner, but no longer decides it. The banner is suppressed whenever a draft exists, because the digest was printing &ldquo;no replies are being drafted&rdquo; above a list of six.</td></tr>
         <tr><td class="k">alertTo</td><td>WF-E</td><td class="v">gtutor@&hellip;</td><td>Proven to deliver &mdash; a deliberate failure was run end to end and SMTP accepted it. The Resend sandbox only delivers to the account owner, so any other address is accepted and silently dropped.</td></tr>
+        <tr><td class="k">wfD</td><td>deploy.json</td><td class="v">set</td><td>Attachment reading. WF-A opens attachments only when its target names a <code>wfD</code> workflow, so <b>clearing this one key is the whole off switch</b> &mdash; no node needs editing and no branch is left half-wired.</td></tr>
+        <tr><td class="k">applyRenames</td><td>WF-F</td><td class="v">false</td><td>Whether the document organiser writes. Off, so a run produces a review and changes nothing. Arming it is a deliberate edit.</td></tr>
+        <tr><td class="k">maxRenamesPerRun</td><td>WF-F</td><td class="v">5</td><td>Even armed, one run touches at most this many files &mdash; few enough to check by eye and undo by hand.</td></tr>
+        <tr><td class="k">assumeStatus</td><td>WF-F</td><td class="v">Draft</td><td>What to assume when a file name does not say whether it is approved. Draft is the weakest claim, so it under-states rather than over-states, and every assumption is reported beside the proposal. Set to <code>&quot;&quot;</code> to refuse instead of assuming.</td></tr>
         <tr><td class="k">digestTo</td><td>WF-C</td><td class="v">YDawson@&hellip;</td><td>Yancey&rsquo;s mailbox. Only the displayed To: header &mdash; the digest is written into whichever mailbox the credential owns via <code>POST /me/mailFolders/inbox/messages</code>, so it cannot be misaddressed the way an SMTP recipient could.</td></tr>
       </tbody>
     </table>

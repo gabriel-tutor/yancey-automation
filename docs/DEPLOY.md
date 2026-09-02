@@ -1720,16 +1720,95 @@ Yancey holds the links.
 | `gate2-voice-check.html` | asked him to score five drafts the system would now never write | marked superseded, replaced with a real draft the assistant produced |
 | `controls-and-definitions.html` | — | new, answers his 28 August email |
 
+## Phase 2 — the document organiser, 2026-09-02
+
+**SharePoint was never blocked.** The earlier conclusion — that the automation
+could not reach it and needed `Sites.Selected` plus a tenant admin — came from
+probing SharePoint endpoints with the *Outlook* credential. A mail credential
+returning 403 on SharePoint proves that a mail credential cannot read
+SharePoint. It was read as if it proved more. `docs/PHASE2-SHAREPOINT.md` and
+`docs/access-request-sharepoint.md` now open by saying so; the access request is
+withdrawn, unsent.
+
+What is actually true:
+
+| | |
+|---|---|
+| Credential type | `microsoftSharePointOAuth2Api` — its own type, not Graph |
+| Permissions | `AllSites.Read` + `AllSites.Write` under **Office 365 SharePoint Online** (`00000003-0000-0ff1-ce00-000000000000`), on the Entra app already used for Outlook |
+| Admin needed | **None.** Neither permission requires admin consent |
+| Host | `upperformpartners.sharepoint.com` — not `partnersperform` |
+
+**The `.default` trap is the one worth remembering.** The credential requests
+`…/.default`, which means *whatever this app is already consented for*. A
+permission added but not consented therefore yields a quietly weaker token
+rather than an error, and reconnecting the credential picks up nothing new.
+Naming the scope explicitly is what forces Entra to prompt:
+
+```
+openid offline_access https://upperformpartners.sharepoint.com/AllSites.Read https://upperformpartners.sharepoint.com/AllSites.Write
+```
+
+Two endpoints tell the two possible causes apart and are worth keeping:
+`_api/web/effectiveBasePermissions` reports what *the token* can do;
+`_api/web/getusereffectivepermissions(@u)` reports what *the person* is entitled
+to. When the second is wider than the first, the scope is the limiter and no
+amount of site permission will help.
+
+**Do not press "Grant admin consent"** on the API permissions page. It grants
+everything configured, including `AllSites.FullControl` — tenant-wide full
+control, for a workflow that renames files.
+
+### What WF-F does
+
+Reviews the library, categorises every document, checks each name against
+Yancey's convention, and reports where each file sits. It rests with
+`applyRenames: false`, so a run produces a review and changes nothing.
+
+It **proposes no moves**, deliberately. A move changes a path exactly as a
+rename changes a name, so it breaks a Power BI refresh the same way — and a
+`.pbix` keeps its source paths inside itself. Moving anything between the
+numbered stage folders would assert how far work has got, which no file records.
+
+Applied on 2026-09-02 after the plan was read: six renames, no failures. The
+library now reads 21 scanned, 6 compliant, 0 outstanding, 15 refused with a
+reason each, 1 unfiled. The record and the undo list are in
+`fixtures/sharepoint/renames-applied.json`.
+
 ## Still open
 
-1. **`Mail.Send` is still granted** on the Entra app. Unused by anything —
-   the digest is written, not sent. Bundled into the SharePoint access request.
-   **Yancey asked directly whether the send-permission test has passed: it has
-   not.** WF-T still reports `noSendInvariantProven: false`.
-2. **Gate 2 needs regenerating** from opp-02, opp-04 and opp-07; its old samples
-   are all now flagged rather than drafted.
-3. **Drafting volume is low and he should hear it from Gabriel.** With his
-   rules, on his own twenty-email training set, no draft is written for any of
-   the ten opportunities: six are Chuck, one is external, and on the remaining
-   three the classifier itself judged that no reply was warranted. The triage is
-   doing the work; the drafting is deliberately conservative.
+Three things, none of them mine to close.
+
+1. **`Mail.Send` is still granted** on the Entra app. Unused by anything — the
+   digest is written, not sent — but a promise resting on the code being correct
+   is weaker than one resting on the permission being absent. Needs a Microsoft
+   365 administrator on `partnersperform.com`. It was going to be bundled with
+   the SharePoint access request; that request is withdrawn, so **this is now
+   the only administrator item**. **Yancey asked directly whether the
+   send-permission test has passed: it has not.** WF-T still reports
+   `noSendInvariantProven: false`.
+2. **Gate 2 needs Yancey's ratings.** The samples were regenerated — the old
+   five were all mail his rules now hold for review, so scoring them would have
+   measured nothing. Four genuinely draftable fixtures replaced them and are
+   pinned by `src/gate2-samples.test.js`. The sheet is
+   `fixtures/voice/gate2-drafts.md`, scores go into
+   `fixtures/voice/gate2-ratings.json`, then `npm run gate2`. Needs a 4.0
+   average.
+3. **The OpenAI key needs rotating.** It was pasted into a session to run the
+   gates and was never written to this repo — verified against the working tree
+   and the full git history. It lives only in n8n, encrypted under
+   `N8N_ENCRYPTION_KEY`. Rotating it is the account owner's action.
+
+### Also worth saying out loud
+
+**Drafting volume is low, and Yancey should hear it from Gabriel rather than
+notice it.** With his rules, on his own twenty-email training set, no draft is
+written for any of the ten opportunities: six are Chuck, one is external, and on
+the remaining three the classifier itself judged that no reply was warranted.
+The triage is doing the work; the drafting is deliberately conservative.
+
+**The client-facing artifacts show viewers a pinned version.** Updating them
+updates the live page, but anyone holding an old link keeps seeing the version
+pinned when it was shared. After the 2026-09-02 pass, re-share:
+Controls and Definitions, How It Decides, Upperform Agent Internals, and the
+Task Management Library Review.

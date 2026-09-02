@@ -288,6 +288,21 @@
 
   <section>
     <div class="sec-head">
+      <h2>What it reads before it decides</h2>
+      <p>Since 2 September 2026 the answer is no longer just the message. Attachments are read too, and that changes what the rules have to work with.</p>
+    </div>
+
+    <div class="keyq">
+      <p>Yancey was told in writing, earlier, that attachments are never opened. That is no longer true, so here is exactly what happens now.</p>
+      <p><b>Word, PowerPoint and Excel files never leave the server.</b> Their text is pulled out in process and handed to the classifier along with the message body. <b>PDFs and images are the only kinds that go anywhere</b> &mdash; they cannot be read without vision, so they are sent to OpenAI the same way the message body already is. Anything else is named and skipped rather than guessed at, and a reply acknowledges it without pretending to have read it.</p>
+      <p>It matters for triage because the ask is often in the file rather than the email. &ldquo;Thoughts on the attached?&rdquo; is unclassifiable on its own; when the attached workbook turns out to hold a fee schedule, the money rule fires and the message is held for Yancey instead of drafted. Reading the attachment is what makes that possible.</p>
+      <p>Two things are deliberately left out. A signature image or a logo below the reading threshold is skipped, because reading a letterhead costs money and tells you nothing. And there is a per-message ceiling &mdash; 25&nbsp;MB a file, eight files, three model calls &mdash; so one heavy thread cannot quietly become a bill.</p>
+      <p><b>Switching it off is one key</b> in the deployment config, not a code change. A client Yancey would rather this were never applied to is reason enough.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
       <h2>Who actually decides</h2>
       <p>The model proposes. The rules dispose. That order matters, and it is the whole safety design.</p>
     </div>

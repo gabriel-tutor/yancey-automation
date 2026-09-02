@@ -519,9 +519,57 @@
   <p>
     Removing it needs a Microsoft 365 administrator on
     <span class="mono">partnersperform.com</span> — it is not something I can do from
-    inside the tool. It is bundled into the same access request as the SharePoint
-    work so it is one conversation with them rather than two. I will re-run the test
-    the moment it is done and send you the result either way.
+    inside the tool. It was going to be bundled with a SharePoint access request, but
+    that request turned out to be unnecessary and has been withdrawn, so this is now the
+    <strong>only</strong> thing outstanding with an administrator: remove
+    <span class="mono">Mail.Send</span> from the app registration. Nothing else is
+    waiting on anyone. I will re-run the test the moment it is done and send you the
+    result either way.
+  </p>
+
+  <!-- ============ THE ORGANISER ============ -->
+  <h2>The document organiser, and what it will not do</h2>
+
+  <p>
+    You asked whether it could rename and organise the Task Management library. It can,
+    and it has — but the interesting part is the list of things it refuses, so that is
+    what this section is.
+  </p>
+
+  <p>
+    It reviewed all 21 documents, brought six names into line with your convention, and
+    <strong>deliberately left fifteen alone</strong>. Every refusal says why, in full, on
+    the review page. Renaming is switched off between runs, so running it produces a
+    review and changes nothing until someone arms it.
+  </p>
+
+  <ul>
+    <li><strong>It never opens a document.</strong> Everything it decides comes from the
+      file name, the extension, and what sits beside it in the library. Reading the
+      contents of your document library would mean sending those contents somewhere,
+      and that is your call to make knowingly rather than mine to slip into.</li>
+    <li><strong>It will not touch a Power BI report, or a workbook a report reads.</strong>
+      A <span class="mono">.pbix</span> keeps the paths of its data sources inside itself,
+      where nothing outside can see them. Rename the workbook and the dashboard breaks
+      with nothing on the outside to show it happened.</li>
+    <li><strong>It moves nothing at all.</strong> A move changes a file's path exactly as
+      a rename changes its name, so it breaks a refresh the same way. And moving anything
+      between <span class="mono">1. Assigned Tasks</span> and
+      <span class="mono">4. Completed Tasks</span> would be claiming how far a piece of
+      work has got — which no file records, and which only you know.</li>
+    <li><strong>It will not read a date it cannot read.</strong> A name like
+      <span class="mono">04042025</span> is 4 April under one convention and 4 May under
+      another. Being right by luck is not being right, so it refuses and says so.</li>
+    <li><strong>It never overwrites.</strong> If something already sits on the new name,
+      the rename fails rather than replacing it. Two files that would land on the same
+      name are both refused.</li>
+  </ul>
+
+  <p>
+    One document has no folder at all —
+    <span class="mono">Daily_Employee_Project_Time_Trackingv1.xlsx</span> sits above the
+    filing rather than in it. The organiser will point that out; it will not guess where
+    it belongs.
   </p>
 
   <!-- ============ CLOSING ============ -->

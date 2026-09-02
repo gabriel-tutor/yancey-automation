@@ -1,7 +1,7 @@
-# Upperform Email Assistant — Phase 1
+# Upperform Email Assistant
 
-Source of truth for the four n8n workflows running the Upperform Partners
-inbox assistant. The workflows in n8n are **generated from this repo** — edit
+Source of truth for the eight n8n workflows running the Upperform Partners
+inbox assistant and, since Phase 2, the SharePoint document organiser. The workflows in n8n are **generated from this repo** — edit
 here, rebuild, redeploy. Do not hand-edit the Code nodes in the n8n UI; the
 next rebuild overwrites them.
 
@@ -48,14 +48,22 @@ OPENAI_API_KEY=sk-... npm run gate1
 
 | Workflow | ID | Trigger | Publish when |
 |---|---|---|---|
-| WF-A · Poll & Classify | `dSGzw1yk46JTHD3Z` | every 2 min | credentials attached + Gate 1 passed |
+| WF-A · Poll & Classify | `dSGzw1yk46JTHD3Z` | every minute | credentials attached + Gate 1 passed |
 | WF-B · Draft Reply | `Rjpk5KuPopQCpCQL` | called by WF-A | credentials attached |
+| WF-D · Read Attachments | `ZYV9V281C1Kojzpz` | called by WF-A | live since 2026-09-02 |
 | WF-C · Daily Digest & Follow-ups | `vCbgJoNqfuVOqWGH` | weekdays 07:30 CT | after shadow mode |
 | WF-E · Error Handler | `XSKk6eHTFGqftrUM` | on failure | before the others |
+| WF-F · Organise Documents | `qh29SRwChF2g9bYB` | manual | never — it has no trigger but the manual one, and must not run unattended |
 | WF-T · Preflight (scope proof) | `1fCjIsw2JjVGkNJb` | manual | never — diagnostic only |
+| WF-S · Seed Test Inbox | `CNttEItjnRC4RkZZ` | manual | never — dev mailbox only, refuses to build for prod |
 
 Base URL: `https://n8n-wevu.srv1921545.hstgr.cloud`
-Data tables: `agent_email_log` (`zGcPKOA90SMVEenJ`), `agent_error_log` (`Q6j7VEadubVstttP`)
+Data tables: `agent_email_log_yancey` (`cKOjAskKEn5wYTuf`), `agent_error_log` (`Q6j7VEadubVstttP`)
+SharePoint: `https://upperformpartners.sharepoint.com/sites/TaskManagement`, credential `We80s2s9pbxJWWp2`
+
+Every id above is prod. The dev equivalents live under `targets.dev` in
+`config/deploy.json` — never hard-code one, because a dev workflow naming a
+production id is how drafts end up in the wrong mailbox.
 
 Next steps are in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
@@ -69,6 +77,8 @@ Next steps are in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 | Change model, confidence floor, poll size, always-flag senders | WF-A **Config** node. |
 | Reconsider model choice | See "Model choice" below before switching — the naming is misleading. |
 | Change digest time, recipient, follow-up threshold | WF-C **Config** node + the Schedule Trigger. |
+| Stop reading attachments | Clear `wfD` from the target in `config/deploy.json`. That is the whole off switch — WF-A only reads attachments when its target names one. |
+| Let the organiser actually rename | `applyRenames: true` in WF-F's **Config** node, with `maxRenamesPerRun` as the cap. It rests `false`, so a run reviews and changes nothing. |
 | Change a guard rule | `src/agent-lib.js` + its test, then rebuild and redeploy. |
 
 ## Two deviations from the spec, deliberate
