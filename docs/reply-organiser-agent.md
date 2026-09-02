@@ -62,8 +62,8 @@ lists every proposal with the reason it was chosen and every assumption it made
 — where a date came from a file timestamp rather than the document, it says so
 on that line.
 
-**The nine it refused.** Eight are Power BI reports or the workbooks feeding
-them. A `.pbix` keeps the paths of its data sources inside itself, where nothing
+**The nine it refused.** Every one of them is a Power BI report or a workbook
+feeding one. A `.pbix` keeps the paths of its data sources inside itself, where nothing
 outside the file can see them, so renaming a workbook can break a dashboard with
 nothing on the surface to show it happened. Those get renamed deliberately, with
 you, not in a sweep. The reason is written out in full on each one rather than

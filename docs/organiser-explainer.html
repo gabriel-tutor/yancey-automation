@@ -1,0 +1,516 @@
+<title>Upperform Document Organiser</title>
+<style>
+  :root {
+    --ground:      #F5F6F7;
+    --panel:       #FFFFFF;
+    --ink:         #141D26;
+    --ink-soft:    #5A6672;
+    --ink-faint:   #8A94A0;
+    --rule:        #D9DEE3;
+    --rule-soft:   #E8EBEE;
+    --live:        #B5610C;
+    --live-wash:   #FBF2E7;
+    --inert:       #8A94A0;
+    --cat-grey:    #7C8794;
+    --cat-amber:   #C2761A;
+    --cat-red:     #B3261E;
+    --cat-green:   #2E7D4F;
+    --shadow:      0 1px 2px rgba(20,29,38,.05), 0 8px 24px -18px rgba(20,29,38,.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:    #0F151B;
+      --panel:     #161E26;
+      --ink:       #E4E9ED;
+      --ink-soft:  #9AA6B2;
+      --ink-faint: #6C7885;
+      --rule:      #2A343E;
+      --rule-soft: #202932;
+      --live:      #E39B4E;
+      --live-wash: #221A10;
+      --inert:     #6C7885;
+      --cat-grey:  #8A94A0;
+      --cat-amber: #E0A050;
+      --cat-red:   #E8776E;
+      --cat-green: #6BBF8E;
+      --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:    #0F151B;
+    --panel:     #161E26;
+    --ink:       #E4E9ED;
+    --ink-soft:  #9AA6B2;
+    --ink-faint: #6C7885;
+    --rule:      #2A343E;
+    --rule-soft: #202932;
+    --live:      #E39B4E;
+    --live-wash: #221A10;
+    --inert:     #6C7885;
+    --cat-grey:  #8A94A0;
+    --cat-amber: #E0A050;
+    --cat-red:   #E8776E;
+    --cat-green: #6BBF8E;
+    --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page { max-width: 1000px; margin: 0 auto; padding: 56px 28px 96px; }
+  .prose { max-width: 66ch; }
+
+  .eyebrow {
+    font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(30px, 4.6vw, 46px);
+    line-height: 1.08; font-weight: 400; letter-spacing: -.01em;
+    text-wrap: balance; margin: 14px 0 0;
+  }
+  .standfirst { font-size: 19px; line-height: 1.55; color: var(--ink-soft); margin: 16px 0 0; max-width: 60ch; }
+
+  h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 25px; font-weight: 400; line-height: 1.2;
+    text-wrap: balance; margin: 0;
+  }
+  h3 { font-size: 15px; font-weight: 650; margin: 0 0 6px; letter-spacing: -.005em; }
+  p { margin: 0 0 14px; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 650; }
+  em { font-style: italic; }
+
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .86em; letter-spacing: -.01em;
+  }
+  code { background: var(--rule-soft); padding: .12em .38em; border-radius: 2px; }
+
+  section { margin-top: 56px; }
+  .sec-head { display: flex; flex-direction: column; gap: 8px; padding-top: 22px; border-top: 1px solid var(--rule); margin-bottom: 26px; }
+  .sec-head p { color: var(--ink-soft); margin: 0; max-width: 62ch; }
+
+  figure { margin: 0; }
+  .figwrap { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 26px 22px 18px; box-shadow: var(--shadow); }
+  .scroll { overflow-x: auto; }
+  svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+  figcaption {
+    font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--ink-faint); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule-soft);
+  }
+
+  .cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(228px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 16px 18px; }
+  .card p { font-size: 14.5px; color: var(--ink-soft); margin: 0; }
+
+  .tag {
+    display: inline-block; font: 600 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .1em; text-transform: uppercase; padding: 5px 8px; border-radius: 2px;
+    border: 1px solid currentColor; margin-bottom: 10px;
+  }
+  .t-grey  { color: var(--cat-grey); }
+  .t-amber { color: var(--cat-amber); }
+  .t-red   { color: var(--cat-red); }
+  .t-green { color: var(--cat-green); }
+
+  .steps { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+  .step { display: grid; grid-template-columns: 92px 1fr; gap: 20px; padding: 16px 18px; border-bottom: 1px solid var(--rule-soft); }
+  .step:last-child { border-bottom: 0; }
+  .step .when { font: 600 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--live); letter-spacing: .04em; padding-top: 1px; }
+  .step .what { font-size: 14.5px; color: var(--ink-soft); }
+  .step .what b { color: var(--ink); font-weight: 650; }
+
+  .callout { background: var(--live-wash); border: 1px solid var(--rule); border-left: 3px solid var(--live); border-radius: 3px; padding: 18px 20px; }
+  .callout p { font-size: 15px; }
+  .callout p:first-child { font-weight: 650; color: var(--ink); }
+
+  ul.asks { list-style: none; padding: 0; margin: 0; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+  ul.asks li { padding: 14px 18px; border-bottom: 1px solid var(--rule-soft); font-size: 14.5px; color: var(--ink-soft); }
+  ul.asks li:last-child { border-bottom: 0; }
+  ul.asks b { color: var(--ink); font-weight: 650; display: block; margin-bottom: 2px; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  th {
+    font: 600 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+    border-bottom: 1px solid var(--rule);
+  }
+  td.k { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--ink); white-space: nowrap; }
+  td.v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--live); white-space: nowrap; }
+  td.d { color: var(--ink-soft); }
+  td.was { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-faint); }
+  td.now { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--cat-green); }
+
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-faint); }
+
+  @media (max-width: 560px) {
+    .page { padding: 36px 18px 64px; }
+    .step { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="prose">
+    <div class="eyebrow">Upperform Partners &middot; WF-F &middot; document organiser</div>
+    <h1>The document organiser, and how to run it</h1>
+    <p class="standfirst">It reads every document in the Task&nbsp;Management library, works out what each one actually is, and writes it a name under your convention. It changes nothing until someone switches it on. This is how it works and how to run it.</p>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2>What happens to one document</h2>
+      <p>Two passes. Rules decide what must never be touched; a model decides what everything else should be called. A document only reaches the model if the rules have cleared it first.</p>
+    </div>
+
+    <div class="figwrap">
+      <figure>
+        <div class="scroll">
+          <svg viewBox="0 0 1080 400" role="img" aria-label="The library is listed, then rules read every document to decide what it is and what must never be touched. Power BI reports and the workbooks feeding them are guarded and never downloaded. Everything else is downloaded and read, a model names it, the code assembles and checks the name, and a proposal comes out.">
+            <defs>
+              <marker id="oa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor"/>
+              </marker>
+              <marker id="oa-live" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#B5610C"/>
+              </marker>
+              <marker id="oa-grey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#7C8794"/>
+              </marker>
+            </defs>
+
+            <rect x="16" y="164" width="130" height="64" fill="none" stroke="currentColor" stroke-width="1.25" rx="2"/>
+            <text x="81" y="190" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">The library</text>
+            <text x="81" y="208" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">21 documents</text>
+
+            <line x1="146" y1="196" x2="186" y2="196" fill="none" stroke="currentColor" stroke-width="1.25" opacity=".75" marker-end="url(#oa)"/>
+
+            <rect x="186" y="156" width="176" height="80" fill="none" stroke="currentColor" stroke-width="1.25" rx="2"/>
+            <text x="274" y="182" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Rules read it</text>
+            <text x="274" y="200" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">what kind of thing it is</text>
+            <text x="274" y="216" text-anchor="middle" font-size="11" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">what must not be touched</text>
+
+            <path d="M362 196 L390 196 L390 92 L412 92" fill="none" stroke="#7C8794" stroke-width="1.4" marker-end="url(#oa-grey)"/>
+            <path d="M362 196 L390 196 L390 296 L412 296" fill="none" stroke="#B5610C" stroke-width="1.75" marker-end="url(#oa-live)"/>
+
+            <rect x="412" y="64" width="300" height="56" fill="none" stroke="#7C8794" stroke-width="1.4" rx="2"/>
+            <text x="430" y="88" font-size="13" font-weight="600" fill="#7C8794">Guarded</text>
+            <text x="430" y="106" font-size="11" fill="#7C8794" opacity=".85" font-family="ui-monospace, Menlo, monospace">never downloaded, never renamed</text>
+
+            <text x="736" y="82" font-size="11.5" fill="currentColor" opacity=".55" font-family="ui-monospace, Menlo, monospace">Power BI reports and the</text>
+            <text x="736" y="99" font-size="11.5" fill="currentColor" opacity=".55" font-family="ui-monospace, Menlo, monospace">workbooks that feed them</text>
+            <text x="736" y="116" font-size="11.5" fill="currentColor" opacity=".55" font-family="ui-monospace, Menlo, monospace">&mdash; 9 documents</text>
+
+            <g stroke="#B5610C" stroke-width="1.75" fill="none">
+              <rect x="412" y="268" width="140" height="56" rx="2"/>
+              <rect x="588" y="268" width="146" height="56" rx="2"/>
+              <rect x="770" y="268" width="152" height="56" rx="2"/>
+              <line x1="552" y1="296" x2="580" y2="296" marker-end="url(#oa-live)"/>
+              <line x1="734" y1="296" x2="762" y2="296" marker-end="url(#oa-live)"/>
+              <line x1="922" y1="296" x2="950" y2="296" marker-end="url(#oa-live)"/>
+            </g>
+
+            <text x="482" y="292" text-anchor="middle" font-size="13" font-weight="600" fill="#B5610C">Opened</text>
+            <text x="482" y="310" text-anchor="middle" font-size="10.5" fill="#B5610C" opacity=".85" font-family="ui-monospace, Menlo, monospace">and read</text>
+
+            <text x="661" y="292" text-anchor="middle" font-size="13" font-weight="600" fill="#B5610C">A model names it</text>
+            <text x="661" y="310" text-anchor="middle" font-size="10.5" fill="#B5610C" opacity=".85" font-family="ui-monospace, Menlo, monospace">returns the parts</text>
+
+            <text x="846" y="292" text-anchor="middle" font-size="13" font-weight="600" fill="#B5610C">Checked</text>
+            <text x="846" y="310" text-anchor="middle" font-size="10.5" fill="#B5610C" opacity=".85" font-family="ui-monospace, Menlo, monospace">against your convention</text>
+
+            <rect x="950" y="262" width="114" height="68" fill="#FBF2E7" stroke="#B5610C" stroke-width="1.75" rx="2"/>
+            <text x="1007" y="288" text-anchor="middle" font-size="13" font-weight="700" fill="#B5610C">A proposal</text>
+            <text x="1007" y="306" text-anchor="middle" font-size="10.5" fill="#B5610C" opacity=".85" font-family="ui-monospace, Menlo, monospace">12 of them</text>
+            <text x="1007" y="321" text-anchor="middle" font-size="10.5" fill="#B5610C" opacity=".85" font-family="ui-monospace, Menlo, monospace">nothing applied</text>
+
+            <text x="412" y="360" font-size="11.5" fill="currentColor" opacity=".5" font-family="ui-monospace, Menlo, monospace">Office files are unzipped on our own server and only their text is sent. PDFs and images go as themselves.</text>
+            <text x="412" y="378" font-size="11.5" fill="currentColor" opacity=".5" font-family="ui-monospace, Menlo, monospace">A name that fails the check is dropped, and the document is left exactly as it was.</text>
+          </svg>
+        </div>
+        <figcaption>One run, start to finish, in about 35 seconds. The guarded branch is not a decision the model gets to weigh in on &mdash; those documents are filtered out before anything is downloaded.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Why a model, and not a pattern</h2>
+      <p>The first version matched patterns in file names. It could not have worked, and it is worth seeing why in one line.</p>
+    </div>
+
+    <div class="callout">
+      <p>A pattern can only rearrange the letters that are already there.</p>
+      <p>Your format opens with a <strong>project code</strong> and then a <strong>short descriptive name</strong>. Neither of those is in <code>Metrics .xlsx</code>. They are <em>inside</em> the document. So the pattern-matching version produced <code>Metrics_2025-04-15_Draft_v0.1.xlsx</code> &mdash; the old name with a date bolted on, wearing the convention as a costume.</p>
+      <p>Opening the file is not a shortcut around the problem. It <em>is</em> the problem.</p>
+    </div>
+
+    <div class="tablewrap" style="margin-top:20px">
+      <table>
+        <thead>
+          <tr><th style="width:44%">What it was called</th><th>What the organiser proposes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="was">Screenshot 2025-04-06 at 6.34.18 PM.png</td><td class="now">Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png</td></tr>
+          <tr><td class="was">Screenshot 2025-04-06 at 6.34.50 PM.png</td><td class="now">Net-Profit-Dashboard_2025-04-06_Draft_v0.1.png</td></tr>
+          <tr><td class="was">Screenshot 2025-04-06 at 6.35.10 PM.png</td><td class="now">Units-Sold-Dashboard_2025-04-06_Draft_v0.1.png</td></tr>
+          <tr><td class="was">Power BI TCO Pilot_YD_04072025.xlsx</td><td class="now">TCO_Project-Portfolio-Tracker_2025-04-08_Draft_v0.1.xlsx</td></tr>
+          <tr><td class="was">DEL-asme-b31-8s-2004.pdf</td><td class="now">DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf</td></tr>
+          <tr><td class="was">Metrics .xlsx</td><td class="now">Upperform_Metric-Development-Tracker_2025-04-15_Draft_v0.1.xlsx</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="prose" style="margin-top:18px;color:var(--ink-soft)">The three screenshots were taken thirty seconds apart on the same afternoon. Nothing outside them tells them apart. <code>TCO</code>, <code>DIMP</code> and <code>Upperform</code> were read out of the contents and the folder path &mdash; where nothing in a document evidences a project, none is added, and the proposal says so. An invented project code would be worse than none.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Who decides what</h2>
+      <p>The model never writes a file name. It fills in four blanks, and the code builds the name and checks it. That split is the whole safety argument.</p>
+    </div>
+
+    <div class="figwrap">
+      <figure>
+        <div class="scroll">
+          <svg viewBox="0 0 980 300" role="img" aria-label="The model reads the document and returns four parts: project, document name, status and date. Those are the words. The code then assembles the file name and reads it back against the convention. A name that passes becomes a proposal; a name that fails is dropped and the file is left alone.">
+            <defs>
+              <marker id="sa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor"/>
+              </marker>
+              <marker id="sa-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#2E7D4F"/>
+              </marker>
+              <marker id="sa-grey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#7C8794"/>
+              </marker>
+            </defs>
+
+            <text x="272" y="70" text-anchor="middle" font-size="10.5" font-weight="600" letter-spacing="1.6" fill="currentColor" opacity=".45" font-family="ui-monospace, Menlo, monospace">THE WORDS &mdash; THE MODEL</text>
+            <text x="565" y="70" text-anchor="middle" font-size="10.5" font-weight="600" letter-spacing="1.6" fill="currentColor" opacity=".45" font-family="ui-monospace, Menlo, monospace">THE SHAPE &mdash; THE CODE</text>
+
+            <line x1="176" y1="84" x2="368" y2="84" stroke="currentColor" stroke-width="1" opacity=".18"/>
+            <line x1="382" y1="84" x2="748" y2="84" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+            <rect x="16" y="122" width="150" height="72" fill="none" stroke="currentColor" stroke-width="1.5" rx="2"/>
+            <text x="91" y="152" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">The model</text>
+            <text x="91" y="170" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">reads the document</text>
+
+            <line x1="166" y1="158" x2="200" y2="158" stroke="currentColor" stroke-width="1.25" opacity=".75" marker-end="url(#sa)"/>
+
+            <g font-size="11.5" font-family="ui-monospace, Menlo, monospace">
+              <rect x="206" y="100" width="132" height="26" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".55" rx="2"/>
+              <text x="272" y="117" text-anchor="middle" fill="currentColor" opacity=".8">project</text>
+              <rect x="206" y="132" width="132" height="26" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".55" rx="2"/>
+              <text x="272" y="149" text-anchor="middle" fill="currentColor" opacity=".8">document name</text>
+              <rect x="206" y="164" width="132" height="26" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".55" rx="2"/>
+              <text x="272" y="181" text-anchor="middle" fill="currentColor" opacity=".8">status</text>
+              <rect x="206" y="196" width="132" height="26" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".55" rx="2"/>
+              <text x="272" y="213" text-anchor="middle" fill="currentColor" opacity=".8">date</text>
+            </g>
+
+            <line x1="338" y1="158" x2="376" y2="158" stroke="currentColor" stroke-width="1.25" opacity=".75" marker-end="url(#sa)"/>
+
+            <rect x="376" y="122" width="176" height="72" fill="none" stroke="currentColor" stroke-width="1.5" rx="2"/>
+            <text x="464" y="152" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Builds the name</text>
+            <text x="464" y="170" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">one place, always the same</text>
+
+            <line x1="552" y1="158" x2="590" y2="158" stroke="currentColor" stroke-width="1.25" opacity=".75" marker-end="url(#sa)"/>
+
+            <rect x="590" y="122" width="158" height="72" fill="none" stroke="currentColor" stroke-width="1.5" rx="2"/>
+            <text x="669" y="152" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Reads it back</text>
+            <text x="669" y="170" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6" font-family="ui-monospace, Menlo, monospace">against your rules</text>
+
+            <path d="M748 158 L774 158 L774 100 L800 100" fill="none" stroke="#2E7D4F" stroke-width="1.6" marker-end="url(#sa-green)"/>
+            <path d="M748 158 L774 158 L774 224 L800 224" fill="none" stroke="#7C8794" stroke-width="1.4" marker-end="url(#sa-grey)"/>
+
+            <rect x="800" y="72" width="164" height="56" fill="none" stroke="#2E7D4F" stroke-width="1.6" rx="2"/>
+            <text x="882" y="96" text-anchor="middle" font-size="13" font-weight="600" fill="#2E7D4F">Passes</text>
+            <text x="882" y="114" text-anchor="middle" font-size="10.5" fill="#2E7D4F" opacity=".9" font-family="ui-monospace, Menlo, monospace">shown as a proposal</text>
+
+            <rect x="800" y="196" width="164" height="56" fill="none" stroke="#7C8794" stroke-width="1.4" rx="2"/>
+            <text x="882" y="220" text-anchor="middle" font-size="13" font-weight="600" fill="#7C8794">Fails</text>
+            <text x="882" y="238" text-anchor="middle" font-size="10.5" fill="#7C8794" opacity=".9" font-family="ui-monospace, Menlo, monospace">dropped, file untouched</text>
+          </svg>
+        </div>
+        <figcaption>Because the model hands over parts rather than a finished name, a malformed name is not something it is able to produce. And every name it does produce is read back before anyone sees it &mdash; so the worst a bad answer can do is leave a file alone.</figcaption>
+      </figure>
+    </div>
+
+    <p class="prose" style="margin-top:18px;color:var(--ink-soft)">The collision check runs <em>after</em> the model answers as well as before it. A model can land two files on one name exactly as a rule can, and when it does, both are refused rather than one being destroyed.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>What actually leaves the tenant</h2>
+      <p>Reading a client&rsquo;s documents is a decision, so here is precisely what travels and what does not. It is one setting.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="tag t-green">Word, Excel, PowerPoint</span>
+        <h3>Text only</h3>
+        <p>Unzipped on our own server. Only the text that comes out is sent, capped at about a page. The file itself never leaves.</p>
+      </div>
+      <div class="card">
+        <span class="tag t-amber">PDFs and images</span>
+        <h3>The file itself</h3>
+        <p>A scan has no text layer to pull out, and an image of a dashboard can only be read by looking at it. These go to the model whole.</p>
+      </div>
+      <div class="card">
+        <span class="tag t-red">Power BI</span>
+        <h3>Never downloaded</h3>
+        <p>Reports and the workbooks feeding them are filtered out before anything is fetched. The model is never shown them at all.</p>
+      </div>
+      <div class="card">
+        <span class="tag t-grey">Everything else</span>
+        <h3>Name and folder</h3>
+        <p>Anything that can&rsquo;t be opened, or is too large, is named from its path and its kind &mdash; and the run says which.</p>
+      </div>
+    </div>
+
+    <p class="prose" style="margin-top:18px;color:var(--ink-soft)">Setting <code>readContents</code> to <code>false</code> stops all of it. The model then sees names, folders and file kinds only, and nothing from inside a document leaves the tenant. The naming gets worse; nothing breaks.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>How to run it</h2>
+      <p>It is manual only &mdash; no schedule, not published. Nothing happens in that library unless a person clicks the button.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="when">Open</div>
+        <div class="what"><b>The workflow is <code>WF-F &middot; Organise Documents</code></b> in n8n, tagged <code>prod</code> and <code>documents</code>. It has one trigger node, called <b>Run</b>, and it is a manual trigger &mdash; there is no schedule behind it.</div>
+      </div>
+      <div class="step">
+        <div class="when">Check</div>
+        <div class="what"><b>Look at the Config node first.</b> Every setting lives there in one block of JSON. Confirm <code>applyRenames</code> and <code>applyMoves</code> both read <code>false</code> before a first run, so the run reviews and changes nothing.</div>
+      </div>
+      <div class="step">
+        <div class="when">Run</div>
+        <div class="what"><b>Press Execute workflow.</b> It takes about 35 seconds for 21 documents &mdash; most of that is downloading them and waiting on the model. Every node should go green; a red node means the run failed rather than that it found something.</div>
+      </div>
+      <div class="step">
+        <div class="when">Read</div>
+        <div class="what"><b>Click the Summary node and open its output.</b> That is the whole answer in one place: a headline, every proposed rename with the reason the model chose it, every assumption it made, and every refusal with the reason in full.</div>
+      </div>
+      <div class="step">
+        <div class="when">Publish</div>
+        <div class="what"><b>To turn a run into the page Yancey reads</b>, save the run into <code>fixtures/sharepoint/organiser-run.json</code> and run <code>node scripts/build-organiser-plan.mjs</code>. The page is built from the run, never re-derived &mdash; names written by a model cannot be reproduced by rerunning anything locally.</div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <p>Don&rsquo;t edit the code inside the nodes.</p>
+      <p>Every node body is generated from this repository, and the next <code>npm run build</code> overwrites anything typed into the canvas. The judgement lives in <code>src/naming.js</code>, <code>src/filenames.js</code> and <code>src/library.js</code>, where it is tested. The Config node is the exception &mdash; it is there to be edited.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Every setting, and what it does</h2>
+      <p>All of these sit in the Config node. The ones that change behaviour rather than tuning it are at the top.</p>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th style="width:23%">Setting</th><th style="width:15%">Rests at</th><th>What it does</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="k">applyRenames</td><td class="v">false</td><td class="d">Whether it actually renames. Off, so a run produces a review and changes nothing. Arming it is a deliberate edit.</td></tr>
+          <tr><td class="k">applyMoves</td><td class="v">false</td><td class="d">Whether it actually moves files. A separate switch from renaming, because it is a separate promise.</td></tr>
+          <tr><td class="k">maxChangesPerRun</td><td class="v">5</td><td class="d">Even armed, one run touches at most this many files &mdash; renames and moves together. Few enough to check by eye and undo by hand.</td></tr>
+          <tr><td class="k">readContents</td><td class="v">true</td><td class="d">Whether it opens the documents it is naming. Off, and the model sees only names, folders and kinds.</td></tr>
+          <tr><td class="k">modelNaming</td><td class="v">gpt-5.6-luna</td><td class="d">The model that writes the names. It returns the parts; the code assembles and validates.</td></tr>
+          <tr><td class="k">maxNamed</td><td class="v">30</td><td class="d">How many documents one run will open at all. A ceiling on both cost and exposure.</td></tr>
+          <tr><td class="k">maxContentBytes</td><td class="v">4&nbsp;MB</td><td class="d">Anything larger is named from its path and kind instead, and the run says so.</td></tr>
+          <tr><td class="k">textPerFile</td><td class="v">1200</td><td class="d">Characters of extracted text sent per document &mdash; roughly a page, which is where the useful evidence is.</td></tr>
+          <tr><td class="k">assumeStatus</td><td class="v">Draft</td><td class="d">What to assume when neither the document nor its name says whether it is approved. Draft is the weakest claim, so it under-states. Set to <code>""</code> to refuse instead of assuming.</td></tr>
+          <tr><td class="k">maxItems</td><td class="v">200</td><td class="d">How many items to list from the library. Folders and files together.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Arming it, and getting back</h2>
+      <p>Renaming breaks every saved link, Teams tab and Power BI source pointing at the old path. So it is off, capped, and reversible.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>Off by default</h3>
+        <p>Two separate switches, both <code>false</code>. A run with them off is a review. Arming one is a deliberate edit to the Config node, not a click.</p>
+      </div>
+      <div class="card">
+        <h3>Five at a time</h3>
+        <p>Even armed, a run touches at most five files. Read the result, run it again for the next five.</p>
+      </div>
+      <div class="card">
+        <h3>Never overwrites</h3>
+        <p>The call is made with <code>flags=0</code>. If anything already sits on the new name, it fails rather than replacing it.</p>
+      </div>
+      <div class="card">
+        <h3>The old names are kept</h3>
+        <p>Every change is recorded with what it was before. That record is the undo list &mdash; any of it can be put back by hand.</p>
+      </div>
+    </div>
+
+    <p class="prose" style="margin-top:18px;color:var(--ink-soft)">Worth being exact about one thing: this is a <em>switch</em>, not a missing wire. The credential can write to that library &mdash; that is what makes the tool useful. What stops a surprise rename is that the switch rests off, the cap is small, and the plan is read by a person first. If you want the stronger guarantee instead, <code>readContents: false</code> and leaving both switches off makes a run purely advisory.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>What the last run found</h2>
+      <p>Run against the real library on 2 September. Twenty-one documents, thirty-three seconds, nothing changed.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>12 named</h3>
+        <p>Every one by reading the document rather than its file name, with the reason recorded beside it.</p>
+      </div>
+      <div class="card">
+        <h3>9 left alone</h3>
+        <p>Every one of them is a Power BI report or a workbook feeding one. Each refusal is written out in full, not reduced to a code.</p>
+      </div>
+      <div class="card">
+        <h3>0 applied</h3>
+        <p>Both switches off. The run produced a plan and touched nothing in the library.</p>
+      </div>
+    </div>
+
+    <p class="prose" style="margin-top:18px;color:var(--ink-soft)">Files renamed in the earlier pass show up again with better names. That is not a loop: the first pass gave them well-formed but mechanical names, and the agent gives them names that say what they hold. Both appear on the review page so the difference is visible rather than surprising.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>When something looks wrong</h2>
+      <p>The failure modes worth recognising, and what each one actually means.</p>
+    </div>
+    <ul class="asks">
+      <li><b>A red node on the canvas</b> The run failed, which is different from the organiser finding nothing to do. A run that finds nothing still finishes green and says so in the Summary.</li>
+      <li><b>&ldquo;the model call failed, so the rules named what they could&rdquo;</b> The OpenAI call did not come back. The run carries on and finishes &mdash; the naming degrades, it does not break. Run it again.</li>
+      <li><b>A document named from its path rather than its contents</b> It would not download, would not open, or was over the size cap. The Summary names which, on that document&rsquo;s line.</li>
+      <li><b>A rename that failed when armed</b> Almost always something already sitting on the new name. The call refuses rather than overwriting, and the reason comes back on that line.</li>
+      <li><b>SharePoint refusing everything</b> A scope problem rather than a permission one, usually. There is a read-only diagnostic, <code>WF-P &middot; SharePoint Permissions</code>, that compares what the token can do against what the person may do &mdash; when the second is wider, it is the scope.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Upperform Partners document organiser &middot; WF-F &middot; prepared by Gabriel O. Tutor
+  </footer>
+
+</div>

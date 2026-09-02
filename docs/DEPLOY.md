@@ -1821,8 +1821,8 @@ auto-assigned to HTTP Request nodes by `create_workflow_from_code`; the four
 were bound afterwards with `setNodeCredential`.
 
 Run 9006, 2026-09-02, 33 seconds, green: **21 scanned, 12 named by reading them,
-9 left alone**. Eight of the nine are Power BI reports or the workbooks feeding
-them. Sample of what changed:
+9 left alone**. All nine are Power BI reports or the workbooks feeding them —
+the refusal names the report in each case. Sample of what changed:
 
 | was | becomes |
 |---|---|
