@@ -282,6 +282,41 @@
     border-radius: 2px;
   }
 
+  .spec {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .format {
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    color: var(--accent);
+    background: var(--accent-wash);
+    border-radius: 3px;
+    padding: 0.6rem 0.75rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .rules { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .rule {
+    display: grid;
+    grid-template-columns: 1.1rem 1fr;
+    gap: 0.2rem 0.7rem;
+    align-items: start;
+    font-size: 0.93rem;
+  }
+
+  .rule .tick { color: var(--good); font-weight: 700; line-height: 1.5; }
+  .rule .tick.part { color: var(--warn); }
+  .rule em { color: var(--muted); font-style: normal; font-size: 0.88rem; display: block; }
+
   footer {
     border-top: 1px solid var(--rule);
     padding-top: 1.5rem;
@@ -305,6 +340,25 @@
   </header>
 
   <div class="stats" id="stats"></div>
+
+  <div class="spec">
+    <h2>The convention, as he wrote it</h2>
+    <div class="format">[Project]_[Document&nbsp;Name]_[YYYY-MM-DD]_[Status]_v#.#</div>
+    <p class="lede">
+      Statuses are Draft, Review, Final and Archived. Versions run v0.1&ndash;v0.3 for working
+      drafts, v1.0 for the first approved version, v1.1 and up for minor approved updates,
+      v2.0 for a major revision. Every rule below is checked on every file.
+    </p>
+    <div class="rules">
+      <div class="rule"><span class="tick">&check;</span><span>Dates written YYYY-MM-DD, so files sort<em>Any other date shape is reported, and an eight-digit run is refused rather than guessed at.</em></span></div>
+      <div class="rule"><span class="tick">&check;</span><span>Hyphens within a phrase, underscores between sections<em>Spaces become hyphens inside a section; the sections themselves stay underscore-separated.</em></span></div>
+      <div class="rule"><span class="tick">&check;</span><span>No spaces, no special characters<em>Letters, numbers, hyphens and underscores only.</em></span></div>
+      <div class="rule"><span class="tick">&check;</span><span>Document name short but descriptive<em>A time of day is cut out — it says when a file was made, not what it holds. Where that leaves two files with one name, both are refused, because only a person can say what each one shows.</em></span></div>
+      <div class="rule"><span class="tick">&check;</span><span>No Final_Final, Latest or New<em>The version number is what says which one is current.</em></span></div>
+      <div class="rule"><span class="tick">&check;</span><span>Keep the version number even when marked Final<em>And a Final numbered below v1.0 is reported, since an approved version starts at v1.0.</em></span></div>
+      <div class="rule"><span class="tick part">&#9679;</span><span>One place this falls short: the project prefix<em>The format opens with a project. Nothing in this library says which project a file belongs to, and inventing one would be worse than leaving it out, so every proposal below says the prefix was not supplied. Give a project code and it will be used.</em></span></div>
+    </div>
+  </div>
 
   <section>
     <h2>Ready to rename</h2>
@@ -399,6 +453,7 @@
       "blocked": "the name contains 04042025, which is a date under one convention and a different date under another — renaming would leave two dates in the name",
       "category": "ambiguous-date",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -412,6 +467,7 @@
       "blocked": "the name looks like it already carries a version but not in a form that can be read — renaming would leave two",
       "category": "unreadable-version",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -434,6 +490,7 @@
       "blocked": "the name contains 04072025, which is a date under one convention and a different date under another — renaming would leave two dates in the name",
       "category": "ambiguous-date",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -443,10 +500,11 @@
       "current": "Screenshot 2025-04-06 at 6.42.39 PM.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 1",
       "compliant": false,
-      "proposed": "Screenshot-at-6-42-39-PM_2025-04-06_Draft_v0.1.png",
+      "proposed": "Screenshot_2025-04-06_Draft_v0.1.png",
       "blocked": "",
       "category": "",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ]
@@ -459,6 +517,7 @@
       "blocked": "opens with the same words as the report TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
       "category": "feeds-a-report",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -472,6 +531,7 @@
       "blocked": "the name contains 14042025, which is a date under one convention and a different date under another — renaming would leave two dates in the name",
       "category": "ambiguous-date",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "version assumed to be v0.1"
       ]
@@ -480,10 +540,11 @@
       "current": "Screenshot 2025-04-14 at 9.06.08 AM.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
       "compliant": false,
-      "proposed": "Screenshot-at-9-06-08-AM_2025-04-14_Draft_v0.1.png",
+      "proposed": "Screenshot_2025-04-14_Draft_v0.1.png",
       "blocked": "",
       "category": "",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ]
@@ -496,6 +557,7 @@
       "blocked": "",
       "category": "",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -505,10 +567,11 @@
       "current": "Screenshot 2025-04-06 at 6.34.18 PM.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
       "compliant": false,
-      "proposed": "Screenshot-at-6-34-18-PM_2025-04-06_Draft_v0.1.png",
-      "blocked": "",
-      "category": "",
+      "proposed": "",
+      "blocked": "3 files in this folder would end up with the same name — Screenshot_2025-04-06_Draft_v0.1.png, so they need names that tell them apart",
+      "category": "collision",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ]
@@ -517,10 +580,11 @@
       "current": "Screenshot 2025-04-06 at 6.34.50 PM.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
       "compliant": false,
-      "proposed": "Screenshot-at-6-34-50-PM_2025-04-06_Draft_v0.1.png",
-      "blocked": "",
-      "category": "",
+      "proposed": "",
+      "blocked": "3 files in this folder would end up with the same name — Screenshot_2025-04-06_Draft_v0.1.png, so they need names that tell them apart",
+      "category": "collision",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ]
@@ -529,10 +593,11 @@
       "current": "Screenshot 2025-04-06 at 6.35.10 PM.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
       "compliant": false,
-      "proposed": "Screenshot-at-6-35-10-PM_2025-04-06_Draft_v0.1.png",
-      "blocked": "",
-      "category": "",
+      "proposed": "",
+      "blocked": "3 files in this folder would end up with the same name — Screenshot_2025-04-06_Draft_v0.1.png, so they need names that tell them apart",
+      "category": "collision",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ]
@@ -545,6 +610,7 @@
       "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
       "category": "is-a-report",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -558,6 +624,7 @@
       "blocked": "",
       "category": "",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "version assumed to be v0.1"
       ]
@@ -570,6 +637,7 @@
       "blocked": "",
       "category": "",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -583,6 +651,7 @@
       "blocked": "opens with the same words as the report DIMP E-1 Performance Measures.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
       "category": "feeds-a-report",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -596,6 +665,7 @@
       "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
       "category": "is-a-report",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -609,6 +679,7 @@
       "blocked": "opens with the same words as the report DIMP E-1 Performance Measures.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
       "category": "feeds-a-report",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -622,6 +693,7 @@
       "blocked": "shares a folder with the report NiSource Metric Dashboard.pbix, which may read from it — a .pbix hides its source paths inside the file, so a rename can break a dashboard unseen",
       "category": "feeds-a-report",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -635,6 +707,7 @@
       "blocked": "opens with the same words as the report Performance Management System.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
       "category": "feeds-a-report",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
@@ -648,6 +721,7 @@
       "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
       "category": "is-a-report",
       "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"

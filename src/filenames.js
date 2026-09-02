@@ -281,6 +281,19 @@ const UNREADABLE_DATE = /(?:^|[^\d])(\d{8})(?:[^\d]|$)/;
 const UNREADABLE_VERSION = /v\d/i;
 
 /**
+ * A time of day carries no meaning about what a document is, so it is cut from
+ * the descriptor the same way the date is. Yancey's rule is "keep the document
+ * name short but descriptive", and "Screenshot at 6.42.39 PM" is neither.
+ *
+ * Deliberately narrow: it fires only on an explicit time signal, either the
+ * word "at" or an am/pm marker. A bare 10.30 in a name might be a time, or a
+ * section number, or a measurement, and guessing wrong would delete meaning.
+ * The separator class excludes the hyphen so a date can never match.
+ */
+const TIME_IN_NAME =
+  /(^|[\s_-])(?:at\s+\d{1,2}[.:_]\d{2}(?:[.:_]\d{2})?(?:\s*[AP]\.?M\.?)?|\d{1,2}[.:_]\d{2}(?:[.:_]\d{2})?\s*[AP]\.?M\.?)(?=$|[\s_-])/i;
+
+/**
  * Decide what one file should be renamed to, and be explicit about anything
  * that had to be assumed to get there.
  *
@@ -314,6 +327,10 @@ function planRename(file, options) {
   const assumeVersion =
     opts.assumeVersion === undefined ? { major: 0, minor: 1 } : opts.assumeVersion;
 
+  if (!opts.project) {
+    assumptions.push('no project prefix, the library does not say which project this belongs to');
+  }
+
   const { stem, extension } = splitExtension(current);
 
   // Every one of his four examples names a document, and a document has an
@@ -343,6 +360,7 @@ function planRename(file, options) {
     assumptions.push('status assumed to be ' + status + ', the name does not say');
   }
 
+  const timeMatch = TIME_IN_NAME.exec(stem);
   const versionMatch = VERSION_IN_NAME.exec(stem);
   /** @type {{ major: number, minor: number } | null} */
   let version = null;
@@ -384,6 +402,7 @@ function planRename(file, options) {
   if (dateMatch) cuts.push([dateMatch.index, dateMatch.index + dateMatch[0].length]);
   if (statusMatch) cuts.push([statusMatch.index, statusMatch.index + statusMatch[0].length]);
   if (versionMatch) cuts.push([versionMatch.index, versionMatch.index + versionMatch[0].length]);
+  if (timeMatch) cuts.push([timeMatch.index, timeMatch.index + timeMatch[0].length]);
 
   // Adjacent parts can share a separator, so overlapping cuts are merged before
   // any are applied.
@@ -514,18 +533,25 @@ function planRenames(files, options) {
 
   // Every name that would exist afterwards, including the ones already correct
   // which keep theirs — renaming onto an existing file is a collision too.
+  // Scoped to the folder, because that is where SharePoint requires a name to
+  // be unique. Two screenshots of the same day in two different folders do not
+  // collide, and refusing them would be refusing work that is perfectly safe.
   /** @type {Record<string, number>} */
   const wanted = {};
   for (const row of rows) {
-    const target = String(row.proposed || row.current).toLowerCase();
+    const target = folderOf(row.path).toLowerCase() + '/' + String(row.proposed || row.current).toLowerCase();
     wanted[target] = (wanted[target] || 0) + 1;
   }
 
   for (const row of rows) {
     if (!row.proposed) continue;
-    const target = row.proposed.toLowerCase();
+    const target = folderOf(row.path).toLowerCase() + '/' + row.proposed.toLowerCase();
     if ((wanted[target] || 0) > 1) {
-      row.blocked = 'two files would end up with the same name — ' + row.proposed;
+      row.blocked =
+        String(wanted[target]) +
+        ' files in this folder would end up with the same name — ' +
+        row.proposed +
+        ', so they need names that tell them apart';
       row.proposed = '';
     }
   }

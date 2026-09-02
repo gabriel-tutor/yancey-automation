@@ -397,7 +397,7 @@ describe('planRenames — files a Power BI report may be reading', () => {
     );
     const shot = out.find((r) => r.current.endsWith('.png'));
     expect(shot?.blocked).toBe('');
-    expect(shot?.proposed).toBe('Screenshot-at-6-34-18-PM_2025-04-06_Draft_v0.1.png');
+    expect(shot?.proposed).toBe('Screenshot_2025-04-06_Draft_v0.1.png');
   });
 
   it('leaves a workbook alone when no report is anywhere in the library', () => {
@@ -424,5 +424,85 @@ describe('planRename — things that are not documents', () => {
     );
     expect(out.proposed).toBe('');
     expect(out.blocked).toContain('no file extension');
+  });
+});
+
+/**
+ * "Keep the document name short but descriptive" is one of his six rules, and
+ * it is the one a generator can most easily break. A screenshot name carries a
+ * date, which belongs in the date section, and a time, which belongs nowhere —
+ * it says when the file was made, not what it holds.
+ */
+describe('short but descriptive', () => {
+  /** @param {string} folder @param {string} name @param {string} [modified] */
+  const at = (folder, name, modified) => ({
+    name,
+    path: '/lib/' + folder + '/' + name,
+    modified: modified || '2025-04-06T18:42:00Z',
+  });
+
+  it('drops the time of day from a screenshot name', () => {
+    const out = planRename(at('Task 1', 'Screenshot 2025-04-06 at 6.42.39 PM.png'), {});
+    expect(out.proposed).toBe('Screenshot_2025-04-06_Draft_v0.1.png');
+  });
+
+  it('drops a 24-hour time written with an am marker', () => {
+    const out = planRename(at('Task 2', 'Screenshot 2025-04-14 at 9.06.08 AM.png'), {});
+    expect(out.proposed).toBe('Screenshot_2025-04-14_Draft_v0.1.png');
+  });
+
+  // A standard number is not a time. Guessing wrong here deletes meaning.
+  it('keeps a dotted standard number that only looks like a time', () => {
+    const out = planRename(at('DIMP Folder', 'DEL - asme.b31.8s.2004.pdf', '2025-03-19T10:00:00Z'), {});
+    expect(out.proposed).toBe('DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf');
+  });
+
+  it('keeps a bare number with no time marker at all', () => {
+    const out = planRename(at('x', 'Meeting 10.30 Notes.docx', '2025-05-01T10:00:00Z'), {});
+    expect(out.proposed).toBe('Meeting-10-30-Notes_2025-05-01_Draft_v0.1.docx');
+  });
+
+  it('says the project prefix his format opens with was not supplied', () => {
+    const out = planRename(at('x', 'Metrics .xlsx', '2025-04-15T10:00:00Z'), {});
+    expect(out.assumptions).toContain('no project prefix, the library does not say which project this belongs to');
+  });
+
+  it('uses the project when one is given, as in his examples', () => {
+    const out = planRename(at('x', 'Ride Along Plan.docx', '2026-09-01T10:00:00Z'), { project: 'SCE_PM' });
+    expect(out.proposed).toBe('SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1.docx');
+    expect(out.assumptions).not.toContain('no project prefix, the library does not say which project this belongs to');
+  });
+});
+
+describe('a name only has to be unique inside its own folder', () => {
+  /** @param {string} folder @param {string} name */
+  const shot = (folder, name) => ({
+    name,
+    path: '/lib/' + folder + '/' + name,
+    modified: '2025-04-06T18:00:00Z',
+  });
+
+  it('refuses same-day screenshots that share a folder', () => {
+    const out = planRenames(
+      [
+        shot('Task 2', 'Screenshot 2025-04-06 at 6.34.18 PM.png'),
+        shot('Task 2', 'Screenshot 2025-04-06 at 6.34.50 PM.png'),
+      ],
+      {},
+    );
+    expect(out.every((r) => r.proposed === '')).toBe(true);
+    expect(out.every((r) => r.blocked.indexOf('same name') !== -1)).toBe(true);
+  });
+
+  it('renames same-day screenshots that sit in different folders', () => {
+    const out = planRenames(
+      [
+        shot('Task 1', 'Screenshot 2025-04-06 at 6.42.39 PM.png'),
+        shot('Task 2', 'Screenshot 2025-04-06 at 6.34.18 PM.png'),
+      ],
+      {},
+    );
+    expect(out.every((r) => r.proposed === 'Screenshot_2025-04-06_Draft_v0.1.png')).toBe(true);
+    expect(out.every((r) => r.blocked === '')).toBe(true);
   });
 });
