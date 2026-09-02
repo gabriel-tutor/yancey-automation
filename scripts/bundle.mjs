@@ -6,7 +6,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 
 /**
- * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[] }} HelperNeeds
+ * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[], filenames?: string[] }} HelperNeeds
  */
 
 /** @type {Record<string, string>} */
@@ -17,10 +17,12 @@ const SOURCES = {
   // Code node refuses require('zlib'), and .docx/.pptx/.xlsx are ZIP archives.
   unzip: './src/unzip.js',
   attachments: './src/attachments.js',
+  // Yancey's document naming convention, sent 28 August 2026.
+  filenames: './src/filenames.js',
 };
 
-/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments'>} */
-const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments'];
+/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments' | 'filenames'>} */
+const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments', 'filenames'];
 
 
 /**

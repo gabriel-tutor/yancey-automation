@@ -32,4 +32,8 @@ export const HELPERS = {
   'wf-d/Triage Attachments': { attachments: ['triageAll'] },
   'wf-d/Extract': { unzip: ['officeText'] },
   'wf-d/Summarise': { attachments: ['summariseAttachments'] },
+
+  // The file organiser. Deciding what a document should be called is the whole
+  // of the judgement, so it lives in src/filenames.js where it is tested.
+  'wf-f/Audit Names': { filenames: ['diagnose', 'proposeFileName'] },
 };
