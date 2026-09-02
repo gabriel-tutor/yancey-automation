@@ -59,7 +59,7 @@ scaffolding is archived once the answer it was built for is written down.
 | WF-C · Daily Digest & Follow-ups | `vCbgJoNqfuVOqWGH` | weekdays 07:30 CT | `prod` `email-agent` |
 | WF-D · Read Attachments | `ZYV9V281C1Kojzpz` | called by WF-A | `prod` `email-agent` |
 | WF-E · Error Handler | `XSKk6eHTFGqftrUM` | on failure | `prod` `email-agent` |
-| WF-F · Organise Documents | `qh29SRwChF2g9bYB` | manual | `prod` `documents` |
+| WF-F · Organise Documents | `CC8jik1RGti4JXZk` | manual | `prod` `documents` |
 | WF-T · Preflight (scope proof) | `1fCjIsw2JjVGkNJb` | manual | `prod` `email-agent` `diagnostic` |
 | WF-P · SharePoint Permissions (read-only) | `c6gA3jbwVxR4cWoY` | manual | `prod` `documents` `diagnostic` |
 
@@ -133,7 +133,8 @@ SharePoint: `https://upperformpartners.sharepoint.com/sites/TaskManagement`, cre
 | Reconsider model choice | See "Model choice" below before switching — the naming is misleading. |
 | Change digest time, recipient, follow-up threshold | WF-C **Config** node + the Schedule Trigger. |
 | Stop reading attachments | Clear `wfD` from the target in `config/deploy.json`. That is the whole off switch — WF-A only reads attachments when its target names one. |
-| Let the organiser actually rename | `applyRenames: true` in WF-F's **Config** node, with `maxRenamesPerRun` as the cap. It rests `false`, so a run reviews and changes nothing. |
+| Let the organiser actually rename | `applyRenames: true` in WF-F's **Config** node, with `maxChangesPerRun` as the cap. It rests `false`, so a run reviews and changes nothing. |
+| Stop the organiser reading documents | `readContents: false` in WF-F's **Config** node. The model then sees only names, folders and kinds, and nothing from inside a document leaves the tenant. Naming gets worse, not broken. |
 | Change a guard rule | `src/agent-lib.js` + its test, then rebuild and redeploy. |
 
 ## Two deviations from the spec, deliberate

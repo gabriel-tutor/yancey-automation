@@ -1,20 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { planRenames } from './filenames.js';
-import { categoriseAll, planPlacements } from './library.js';
+import { diagnose } from './filenames.js';
 
 /**
  * The review page is what Yancey actually reads, and two things can go wrong
  * with it silently.
  *
- * It can go stale — the data block is generated, so an edit to the rules that
- * is never rebuilt leaves the page confidently describing a plan the workflow
- * no longer has. And it can go blank — the page renders itself from that data
- * in the browser, so one typo produces a beautifully styled empty document with
- * no error anywhere a person would look.
+ * It can go stale — the data block is generated, so a run that is never rebuilt
+ * into the page leaves it confidently describing a plan the workflow no longer
+ * has. And it can go blank — the page renders itself from that data in the
+ * browser, so one typo produces a beautifully styled empty document with no
+ * error anywhere a person would look.
  *
- * These run the page's own script against a minimal DOM and hold its data to
- * the same functions the workflow runs.
+ * The authority used to be a local rerun of planRenames, which was right while
+ * the names came from rules. It is not any more: the names come from a model
+ * reading the documents, and rerunning anything locally would only prove the
+ * page agrees with a computation nobody performed. So the authority is the run
+ * itself, saved whole, and what is checked is that the page carries that run
+ * faithfully and that every name on it still satisfies the convention.
  */
 const html = readFileSync(new URL('../docs/organiser-plan.html', import.meta.url), 'utf8');
 
@@ -25,44 +28,63 @@ function pageData() {
   return JSON.parse(block[1]);
 }
 
-/** @type {Array<{ name: string, path: string, modified: string }>} */
-const listing = JSON.parse(
-  readFileSync(new URL('../fixtures/sharepoint/task-management-listing.json', import.meta.url), 'utf8'),
+/** @type {{ executionId: string, summary: any, rows: any[] }} */
+const run = JSON.parse(
+  readFileSync(new URL('../fixtures/sharepoint/organiser-run.json', import.meta.url), 'utf8'),
 );
-const files = listing.filter((f) => /\.[A-Za-z0-9]*[A-Za-z][A-Za-z0-9]*$/.test(String(f.name)));
 
-describe('the review page agrees with the workflow', () => {
+describe('the review page agrees with the run', () => {
   const data = pageData();
 
-  it('reviews the same files the organiser would', () => {
-    expect(data.scanned).toBe(files.length);
+  it('reviews the same files the run did', () => {
+    expect(data.scanned).toBe(run.rows.length);
+    expect(data.execution).toBe(run.executionId);
   });
 
-  it('carries the same rename verdicts', () => {
-    const fresh = planRenames(files, { assumeStatus: 'Draft', assumeVersion: { major: 0, minor: 1 } });
+  it('carries the run’s verdicts unchanged', () => {
     const onPage = new Map(data.rows.map((/** @type {any} */ r) => [r.current, r]));
-    for (const row of fresh) {
+    for (const row of run.rows) {
       const shown = onPage.get(row.current);
       expect(shown, 'missing from the page: ' + row.current).toBeDefined();
       expect(shown.proposed).toBe(row.proposed);
       expect(shown.blocked).toBe(row.blocked);
+      expect(shown.kind).toBe(row.category || '');
+      expect(shown.placement).toBe(row.placement || '');
     }
   });
 
-  it('carries the same categories and placement verdicts', () => {
-    const onPage = new Map(data.rows.map((/** @type {any} */ r) => [r.current, r]));
-    for (const c of categoriseAll(files)) {
-      expect(onPage.get(c.name).kind).toBe(c.category);
+  /**
+   * The workflow validates every proposal before it leaves the node, so this is
+   * the second lock rather than the first — but the page is what a person reads
+   * and then approves, and a name on it that does not satisfy his own rules
+   * would be approved on the page's authority, not the workflow's.
+   */
+  it('shows no proposed name that breaks the convention', () => {
+    for (const row of data.rows) {
+      if (!row.proposed) continue;
+      expect(diagnose(row.proposed), row.current + ' -> ' + row.proposed).toEqual([]);
     }
-    for (const p of planPlacements(files)) {
-      expect(onPage.get(p.name).placement).toBe(p.verdict);
+  });
+
+  /**
+   * The point of the rewrite. A regex can rearrange the characters already in a
+   * name; it cannot write "Sales-Dashboard-Overview" for a file called
+   * "Screenshot 2025-04-06 at 6.34.18 PM.png", because those words are in the
+   * picture. If the page ever went back to rule-named proposals, this fails.
+   */
+  it('says which proposals were named by reading the document', () => {
+    const named = data.rows.filter((/** @type {any} */ r) => r.namedBy === 'model');
+    expect(named.length).toBe(data.namedByModel);
+    expect(named.length).toBeGreaterThan(0);
+    for (const row of named) {
+      expect(row.why, row.current + ' was named by the model with no reason given').toBeTruthy();
     }
   });
 
   // A record claiming a change that is not in the library would be worse than
   // no record: it is the undo list.
   it('only claims changes whose result is really in the library', () => {
-    const present = new Set(files.map((f) => f.name));
+    const present = new Set(run.rows.map((/** @type {any} */ r) => r.current));
     for (const applied of data.applied) {
       expect(present.has(applied.to), applied.to + ' is claimed as changed but is not there').toBe(true);
     }

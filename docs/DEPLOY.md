@@ -1763,17 +1763,92 @@ control, for a workflow that renames files.
 
 Reviews the library, categorises every document, checks each name against
 Yancey's convention, and reports where each file sits. It rests with
-`applyRenames: false`, so a run produces a review and changes nothing.
+`applyRenames: false` and `applyMoves: false`, so a run produces a review and
+changes nothing.
 
-It **proposes no moves**, deliberately. A move changes a path exactly as a
+It moves almost nothing, deliberately. A move changes a path exactly as a
 rename changes a name, so it breaks a Power BI refresh the same way — and a
 `.pbix` keeps its source paths inside itself. Moving anything between the
 numbered stage folders would assert how far work has got, which no file records.
+The one case it acts on is a document sitting above the filing with no folder of
+its own, where exactly one folder beside it says in its own name what it holds.
 
-Applied on 2026-09-02 after the plan was read: six renames, no failures. The
-library now reads 21 scanned, 6 compliant, 0 outstanding, 15 refused with a
-reason each, 1 unfiled. The record and the undo list are in
+Applied on 2026-09-02 after the plan was read: six renames and one move, no
+failures. The record and the undo list are in
 `fixtures/sharepoint/renames-applied.json`.
+
+### Rebuilt as an agent, 2026-09-02 — `CC8jik1RGti4JXZk`
+
+The first version named files with regular expressions, and a regular expression
+can only rearrange characters that are already in the file name. Yancey's format
+opens with a project code and then a short descriptive name, and neither of
+those is in `Metrics .xlsx` — they are inside the document. So it produced
+`Metrics_2025-04-15_Draft_v0.1.xlsx`, the old junk with a date bolted on, and he
+said so:
+
+> this is stupid? Not renamed, and why why do you append only dates or format
+> you didn't do reformat naming the whole file base on the naming convention
+
+He had already been explicit on the 28 August call, at line 49 of the
+transcript: *"I want to see if it can rename things and I want to see if it can
+organize it in a way, **but I want the AI to be able to do it**."*
+
+The division of labour is the whole design:
+
+| | |
+|---|---|
+| the model supplies | the **words** — project, document name, status, date |
+| the code enforces | the **shape** — format, guards, collisions, validation |
+
+The model never writes a file name. `src/naming.js` sends it the parts to fill
+in, `proposeFileName` assembles them, and `diagnose` reads the result back. A
+proposal that does not satisfy the convention is dropped, so the failure mode of
+a bad answer is inaction. `applyProposals` re-checks the Power BI guards and the
+per-folder collision rule *after* the model answers, because a model can land two
+files on one name exactly as a rule can.
+
+`readContents` is the consent switch. On: Office files are unzipped on the
+server and only their text is sent, while PDFs and images go as themselves —
+which is the only way to tell three screenshots taken thirty seconds apart from
+each other. Off: the model sees names, folders and kinds. Power BI reports and
+the workbooks they feed are filtered out before anything is downloaded either
+way, so they never reach the model at all.
+
+The structural change meant a new workflow rather than an edit — 23 nodes
+against the old 11 — so `qh29SRwChF2g9bYB` was archived and
+`config/deploy.json` repointed at `CC8jik1RGti4JXZk`. Credentials are not
+auto-assigned to HTTP Request nodes by `create_workflow_from_code`; the four
+were bound afterwards with `setNodeCredential`.
+
+Run 9006, 2026-09-02, 33 seconds, green: **21 scanned, 12 named by reading them,
+9 left alone**. Eight of the nine are Power BI reports or the workbooks feeding
+them. Sample of what changed:
+
+| was | becomes |
+|---|---|
+| `Screenshot 2025-04-06 at 6.34.18 PM.png` | `Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png` |
+| `Screenshot 2025-04-06 at 6.34.50 PM.png` | `Net-Profit-Dashboard_2025-04-06_Draft_v0.1.png` |
+| `Metrics_2025-04-15_Draft_v0.1.xlsx` | `Upperform_Metric-Development-Tracker_2025-04-15_Draft_v0.1.xlsx` |
+| `Power BI TCO Pilot_YD_04072025.xlsx` | `TCO_Project-Portfolio-Tracker_2025-04-08_Draft_v0.1.xlsx` |
+| `DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf` | `DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf` |
+
+Files renamed on 2 September appear here again. That is not a loop: the first
+pass gave them well-formed but mechanical names, and the agent gives them names
+that say what they hold. The page shows both.
+
+**One refusal reason was weaker than the fact behind it.** A `.pbix` whose name
+carries an ambiguous date was refused *for the date*, which reads as something a
+person could fix — fix the date and the rename goes ahead. It would not: being a
+Power BI report is the stronger fact and the one that does not go away. The
+report guards in `planRenames` now run even when a row is already blocked for
+another reason.
+
+**The page is no longer re-derived.** `scripts/build-organiser-plan.mjs` used to
+rerun `planRenames` locally to fill `docs/organiser-plan.html`, which was honest
+while the names came from rules. It is not any more, so the page is built from
+the run itself, saved whole in `fixtures/sharepoint/organiser-run.json`, and
+`src/organiser-plan.test.js` holds the page to that run plus a check that every
+proposed name on it still passes `diagnose`.
 
 ## Organising the n8n instance, 2026-09-02
 

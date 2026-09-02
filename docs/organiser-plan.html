@@ -359,6 +359,14 @@
     white-space: nowrap;
   }
 
+  /* A name written by reading the document is a different claim from one
+     rearranged out of the old name, so it does not borrow the accent. */
+  .badge.named {
+    color: var(--good);
+    background: var(--good-wash);
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
+
   .metaline { display: flex; flex-wrap: wrap; gap: 0.35rem 0.7rem; align-items: center; }
 
   .tally { display: flex; flex-direction: column; gap: 0.55rem; }
@@ -397,8 +405,9 @@
     <h1>Task Management Library Review</h1>
     <p class="standfirst">
       Every file in the Task Management library: what it is, whether it is in the right
-      place, and what it should be called. Six names brought into line and one document
-      given a home. Fifteen were deliberately left alone, and each one says why.
+      place, and what it should be called. The names below were not pattern-matched out of
+      the old ones &mdash; the documents were opened and read, and a model wrote a name for
+      what each one actually holds. Everything left alone says why.
     </p>
     <div class="meta" id="meta"></div>
   </header>
@@ -408,10 +417,12 @@
   <section>
     <h2>What is in the library</h2>
     <p class="lede">
-      Every document typed from what can be seen from the outside — its extension, its name,
-      and what sits beside it. Nothing was opened. Reading the contents of a client's document
-      library would mean sending those contents somewhere, and that is a decision to take
-      knowingly rather than one to slip into.
+      Every document typed by what is in it. Office files are unzipped on the server and only
+      their text is sent; a PDF or a screenshot goes as itself, because a scan has no text
+      layer and an image of a dashboard can only be read by looking at it. Power BI reports
+      and the workbooks they feed are filtered out before anything is downloaded, so they are
+      never opened at all. Reading a client's documents is a decision rather than something to
+      slip into, and it is one switch: turn it off and the model sees only names and folders.
     </p>
     <div class="tree" id="tree"></div>
   </section>
@@ -431,7 +442,7 @@
       <div class="rule"><span class="tick">&check;</span><span>Document name short but descriptive<em>A time of day is cut out — it says when a file was made, not what it holds. Where that leaves two files with one name, both are refused, because only a person can say what each one shows.</em></span></div>
       <div class="rule"><span class="tick">&check;</span><span>No Final_Final, Latest or New<em>The version number is what says which one is current.</em></span></div>
       <div class="rule"><span class="tick">&check;</span><span>Keep the version number even when marked Final<em>And a Final numbered below v1.0 is reported, since an approved version starts at v1.0.</em></span></div>
-      <div class="rule"><span class="tick part">&#9679;</span><span>One place this falls short: the project prefix<em>The format opens with a project. Nothing in this library says which project a file belongs to, and inventing one would be worse than leaving it out, so every proposal below says the prefix was not supplied. Give a project code and it will be used.</em></span></div>
+      <div class="rule"><span class="tick">&check;</span><span>A project prefix where the document evidences one<em>The format opens with a project, and a file name almost never carries it &mdash; but the document does. TCO, DIMP and Upperform below were read out of the contents and the folder path. Where nothing evidences a project, none is added and the proposal says so, because an invented project code is worse than none.</em></span></div>
     </div>
   </div>
 
@@ -517,10 +528,16 @@
   <div class="note">
     <h2>What it can't know</h2>
     <p>
-      The organiser can see file names, folders and timestamps. It cannot open a Power BI
-      report to read which workbooks feed it. So it refuses where a dependency is visible
-      from the outside — a shared folder, a shared opening — and it will miss one where a
-      report reads from a workbook whose name looks unrelated.
+      It can read a document; it cannot read a Power BI report. A <code>.pbix</code> keeps
+      the paths of the workbooks it loads inside itself, so nothing outside the file shows
+      what a rename would break. It therefore refuses wherever a dependency is visible from
+      the outside &mdash; a shared folder, a shared opening &mdash; and it will still miss one
+      where a report reads from a workbook whose name looks unrelated.
+    </p>
+    <p>
+      A status and a version are claims about approval, and a document usually does not state
+      either. Where it does not, the weakest claim is assumed &mdash; Draft, v0.1 &mdash; and
+      every proposal lists what was assumed rather than leaving you to notice.
     </p>
     <p>
       Two of the files renamed above are workbooks — <code>Metrics</code> and the
@@ -532,7 +549,7 @@
   </div>
 
   <footer>
-    <div>Generated from the library listing the organiser actually read — no file name on this page was typed by hand.</div>
+    <div>Generated from the run the organiser actually did &mdash; no file name and no reason on this page was typed by hand.</div>
     <div id="stamp"></div>
   </footer>
 </div>
@@ -542,6 +559,10 @@
   "library": "Documents",
   "site": "/sites/TaskManagement",
   "generated": "2026-09-02",
+  "execution": "9006",
+  "naming": "",
+  "namedByModel": 12,
+  "readContents": true,
   "scanned": 21,
   "folders": [
     {
@@ -557,7 +578,7 @@
       "depth": 1,
       "files": 1,
       "kinds": {
-        "spreadsheet": 1
+        "Project Tracker": 1
       }
     },
     {
@@ -565,8 +586,8 @@
       "depth": 2,
       "files": 2,
       "kinds": {
-        "spreadsheet": 1,
-        "document": 1
+        "Performance Table": 1,
+        "Technical Standard": 1
       }
     },
     {
@@ -574,7 +595,7 @@
       "depth": 2,
       "files": 1,
       "kinds": {
-        "image": 1
+        "Dashboard Screenshot": 1
       }
     },
     {
@@ -582,9 +603,9 @@
       "depth": 2,
       "files": 5,
       "kinds": {
-        "image": 1,
-        "spreadsheet": 1,
-        "screenshot": 3
+        "Performance Summary": 1,
+        "Metrics Tracker": 1,
+        "Dashboard Screenshot": 3
       }
     },
     {
@@ -595,6 +616,12 @@
         "Power BI report": 2,
         "report data": 3
       }
+    },
+    {
+      "path": "Power BI Task Management/3. Under Review",
+      "depth": 1,
+      "files": 0,
+      "kinds": {}
     },
     {
       "path": "Power BI Task Management/4. Completed Tasks",
@@ -618,8 +645,9 @@
       "depth": 1,
       "files": 3,
       "kinds": {
-        "document": 1,
-        "spreadsheet": 2
+        "Process Guide": 1,
+        "Time Tracker": 1,
+        "Time Reference": 1
       }
     }
   ],
@@ -721,17 +749,19 @@
       "current": "Task Management Channel Guide_YD_04042025.docx",
       "folder": "Power BI Task Management/Resources and References",
       "compliant": false,
-      "proposed": "",
-      "blocked": "the name contains 04042025, which is a date under one convention and a different date under another — renaming would leave two dates in the name",
-      "group": "ambiguous-date",
+      "proposed": "Task-Management-Channel-Guide_2025-04-07_Draft_v0.1.docx",
+      "blocked": "",
+      "group": "",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "kind": "document",
-      "kindWhy": "from the .docx extension",
+      "namedBy": "model",
+      "why": "The contents describe task-channel folders, workflow stages, and naming conventions, but evidence no project, status, version, or unambiguous document date.",
+      "kind": "Process Guide",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "filed under Resources and References"
     },
@@ -739,30 +769,36 @@
       "current": "Daily_Employee_Project_Time_Trackingv1.xlsx",
       "folder": "Power BI Task Management/Resources and References",
       "compliant": false,
-      "proposed": "",
-      "blocked": "the name looks like it already carries a version but not in a form that can be read — renaming would leave two",
-      "group": "unreadable-version",
+      "proposed": "Employee-Time-Tracking-Log_2025-08-08_Draft_v0.1.xlsx",
+      "blocked": "",
+      "group": "",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "kind": "spreadsheet",
-      "kindWhy": "from the .xlsx extension",
+      "namedBy": "model",
+      "why": "The spreadsheet contains daily employee, project, task, time, and notes fields, with no evidenced project, status, version, or document date.",
+      "kind": "Time Tracker",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "filed under Resources and References"
     },
     {
       "current": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
       "folder": "Power BI Task Management/Resources and References",
-      "compliant": true,
-      "proposed": "",
+      "compliant": false,
+      "proposed": "Time-Zone-Conversion-Table_2025-04-07_Draft_v0.1.xlsx",
       "blocked": "",
       "group": "",
-      "assumptions": [],
-      "kind": "spreadsheet",
-      "kindWhy": "from the .xlsx extension",
+      "assumptions": [
+        "no project code was evidenced, so none was added"
+      ],
+      "namedBy": "model",
+      "why": "The sheet maps Central Time to Philippines Time, while the filename provides the ISO date, Draft status, and version.",
+      "kind": "Time Reference",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "filed under Resources and References"
     },
@@ -770,30 +806,35 @@
       "current": "Power BI TCO Pilot_YD_04072025.xlsx",
       "folder": "Power BI Task Management/1. Assigned Tasks",
       "compliant": false,
-      "proposed": "",
-      "blocked": "the name contains 04072025, which is a date under one convention and a different date under another — renaming would leave two dates in the name",
-      "group": "ambiguous-date",
+      "proposed": "TCO_Project-Portfolio-Tracker_2025-04-08_Draft_v0.1.xlsx",
+      "blocked": "",
+      "group": "",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "kind": "spreadsheet",
-      "kindWhy": "from the .xlsx extension",
+      "namedBy": "model",
+      "why": "The filename evidences the TCO project, and the sheet contains project IDs, budgets, schedules, managers, stages, and statuses; the numeric date is ambiguous.",
+      "kind": "Project Tracker",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
     },
     {
       "current": "Screenshot_2025-04-06_Draft_v0.1.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 1",
-      "compliant": true,
-      "proposed": "",
+      "compliant": false,
+      "proposed": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
       "blocked": "",
       "group": "",
-      "assumptions": [],
-      "kind": "image",
-      "kindWhy": "from the .png extension",
+      "assumptions": [
+        "no project code was evidenced, so none was added"
+      ],
+      "namedBy": "model",
+      "why": "The image shows a Project Management Insights dashboard, and the filename provides the ISO date, Draft status, and version.",
+      "kind": "Dashboard Screenshot",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
     },
@@ -810,6 +851,8 @@
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ],
+      "namedBy": "",
+      "why": "",
       "kind": "report data",
       "kindWhy": "the report TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix opens with the same words",
       "placement": "settled",
@@ -820,13 +863,15 @@
       "folder": "Power BI Task Management/4. Completed Tasks",
       "compliant": false,
       "proposed": "",
-      "blocked": "the name contains 14042025, which is a date under one convention and a different date under another — renaming would leave two dates in the name",
-      "group": "ambiguous-date",
+      "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
+      "group": "is-a-report",
       "assumptions": [
         "no project prefix, the library does not say which project this belongs to",
         "date taken from the file timestamp, not the name",
         "version assumed to be v0.1"
       ],
+      "namedBy": "",
+      "why": "",
       "kind": "Power BI report",
       "kindWhy": "a .pbix is a Power BI report",
       "placement": "settled",
@@ -835,26 +880,34 @@
     {
       "current": "Screenshot_2025-04-14_Draft_v0.1.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
-      "compliant": true,
-      "proposed": "",
+      "compliant": false,
+      "proposed": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
       "blocked": "",
       "group": "",
-      "assumptions": [],
-      "kind": "image",
-      "kindWhy": "from the .png extension",
+      "assumptions": [
+        "no project code was evidenced, so none was added"
+      ],
+      "namedBy": "model",
+      "why": "The image is headed Enterprise Performance Summary and Level 1 Metrics Performance, with date, Draft status, and version evidenced by the filename.",
+      "kind": "Performance Summary",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
     },
     {
       "current": "Metrics_2025-04-15_Draft_v0.1.xlsx",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
-      "compliant": true,
-      "proposed": "",
+      "compliant": false,
+      "proposed": "Metric-Development-Tracker_2025-04-15_Draft_v0.1.xlsx",
       "blocked": "",
       "group": "",
-      "assumptions": [],
-      "kind": "spreadsheet",
-      "kindWhy": "from the .xlsx extension",
+      "assumptions": [
+        "no project code was evidenced, so none was added"
+      ],
+      "namedBy": "model",
+      "why": "The sheet tracks metric issues, approvals, and development actions, and references NiSource and Upperform; the filename provides the date, Draft status, and version.",
+      "kind": "Metrics Tracker",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
     },
@@ -862,16 +915,18 @@
       "current": "Screenshot 2025-04-06 at 6.34.18 PM.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
       "compliant": false,
-      "proposed": "",
-      "blocked": "3 files in this folder would end up with the same name — Screenshot_2025-04-06_Draft_v0.1.png, so they need names that tell them apart",
-      "group": "collision",
+      "proposed": "Sales-Performance-Dashboard_2025-04-06_Draft_v0.1.png",
+      "blocked": "",
+      "group": "",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "status assumed to be Draft, the name does not say",
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
         "version assumed to be v0.1"
       ],
-      "kind": "screenshot",
-      "kindWhy": "the name says it is a screen capture",
+      "namedBy": "model",
+      "why": "The image shows an Adventure Works dashboard with units sold, gross sales, net profit, channels, categories, countries, products, resellers, and customers.",
+      "kind": "Dashboard Screenshot",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
     },
@@ -879,16 +934,18 @@
       "current": "Screenshot 2025-04-06 at 6.34.50 PM.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
       "compliant": false,
-      "proposed": "",
-      "blocked": "3 files in this folder would end up with the same name — Screenshot_2025-04-06_Draft_v0.1.png, so they need names that tell them apart",
-      "group": "collision",
+      "proposed": "Net-Profit-Period-Dashboard_2025-04-06_Draft_v0.1.png",
+      "blocked": "",
+      "group": "",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "status assumed to be Draft, the name does not say",
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
         "version assumed to be v0.1"
       ],
-      "kind": "screenshot",
-      "kindWhy": "the name says it is a screen capture",
+      "namedBy": "model",
+      "why": "The image shows Adventure Works net profit by fiscal quarter, fiscal year, reporting period, and percentage to goal.",
+      "kind": "Dashboard Screenshot",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
     },
@@ -896,16 +953,18 @@
       "current": "Screenshot 2025-04-06 at 6.35.10 PM.png",
       "folder": "Power BI Task Management/1. Assigned Tasks/Task 2",
       "compliant": false,
-      "proposed": "",
-      "blocked": "3 files in this folder would end up with the same name — Screenshot_2025-04-06_Draft_v0.1.png, so they need names that tell them apart",
-      "group": "collision",
+      "proposed": "Units-Sold-Period-Dashboard_2025-04-06_Draft_v0.1.png",
+      "blocked": "",
+      "group": "",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "status assumed to be Draft, the name does not say",
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
         "version assumed to be v0.1"
       ],
-      "kind": "screenshot",
-      "kindWhy": "the name says it is a screen capture",
+      "namedBy": "model",
+      "why": "The image shows Adventure Works units sold by fiscal quarter and fiscal year, including period detail and percentage-to-average results.",
+      "kind": "Dashboard Screenshot",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
     },
@@ -922,6 +981,8 @@
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ],
+      "namedBy": "",
+      "why": "",
       "kind": "Power BI report",
       "kindWhy": "a .pbix is a Power BI report",
       "placement": "settled",
@@ -930,26 +991,30 @@
     {
       "current": "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
       "folder": "Power BI Task Management/1. Assigned Tasks/DIMP Folder",
-      "compliant": true,
-      "proposed": "",
+      "compliant": false,
+      "proposed": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
       "blocked": "",
       "group": "",
       "assumptions": [],
-      "kind": "spreadsheet",
-      "kindWhy": "from the .xlsx extension",
+      "namedBy": "model",
+      "why": "The DIMP folder and sheet title evidence a Table E-1 performance-measures table covering multiple states.",
+      "kind": "Performance Table",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
     },
     {
       "current": "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
       "folder": "Power BI Task Management/1. Assigned Tasks/DIMP Folder",
-      "compliant": true,
-      "proposed": "",
+      "compliant": false,
+      "proposed": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
       "blocked": "",
       "group": "",
       "assumptions": [],
-      "kind": "document",
-      "kindWhy": "from the .pdf extension",
+      "namedBy": "model",
+      "why": "The DIMP folder and filename identify an ASME B31.8S-2004 technical document, with date, Draft status, and version shown in the filename.",
+      "kind": "Technical Standard",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
     },
@@ -966,6 +1031,8 @@
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ],
+      "namedBy": "",
+      "why": "",
       "kind": "report data",
       "kindWhy": "the report DIMP E-1 Performance Measures.pbix opens with the same words",
       "placement": "settled",
@@ -984,6 +1051,8 @@
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ],
+      "namedBy": "",
+      "why": "",
       "kind": "Power BI report",
       "kindWhy": "a .pbix is a Power BI report",
       "placement": "settled",
@@ -1002,6 +1071,8 @@
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ],
+      "namedBy": "",
+      "why": "",
       "kind": "report data",
       "kindWhy": "the report DIMP E-1 Performance Measures.pbix opens with the same words",
       "placement": "settled",
@@ -1020,6 +1091,8 @@
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ],
+      "namedBy": "",
+      "why": "",
       "kind": "report data",
       "kindWhy": "the report NiSource Metric Dashboard.pbix sits in the same folder",
       "placement": "settled",
@@ -1038,6 +1111,8 @@
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ],
+      "namedBy": "",
+      "why": "",
       "kind": "report data",
       "kindWhy": "the report Performance Management System.pbix opens with the same words",
       "placement": "settled",
@@ -1056,6 +1131,8 @@
         "status assumed to be Draft, the name does not say",
         "version assumed to be v0.1"
       ],
+      "namedBy": "",
+      "why": "",
       "kind": "Power BI report",
       "kindWhy": "a .pbix is a Power BI report",
       "placement": "settled",
@@ -1111,6 +1188,11 @@
         badge.title = row.kindWhy || '';
         line.appendChild(badge);
       }
+      if (row.namedBy === 'model') {
+        var named = el('span', 'badge named', 'named by reading it');
+        named.title = 'The document was opened and a model wrote the name from what is in it.';
+        line.appendChild(named);
+      }
       return line;
     }
 
@@ -1132,8 +1214,13 @@
       card.appendChild(where(row));
       if (row.blocked) {
         card.appendChild(el('div', 'why', row.blocked));
-      } else if ((row.assumptions || []).length) {
-        card.appendChild(chips(row.assumptions));
+      } else {
+        if (row.why) {
+          card.appendChild(el('div', 'why', 'Read from the document: ' + row.why));
+        }
+        if ((row.assumptions || []).length) {
+          card.appendChild(chips(row.assumptions));
+        }
       }
       return card;
     }
@@ -1147,7 +1234,7 @@
       { n: data.scanned, label: 'files reviewed', cls: '' },
       { n: applied.length, label: 'changed', cls: 'correct' },
       { n: refused.length, label: 'left alone, with a reason', cls: 'refused' },
-      { n: ready.length, label: 'still to rename', cls: 'ready' },
+      { n: ready.length, label: 'still to rename, ' + data.namedByModel + ' named by reading them', cls: 'ready' },
       { n: rows.filter(function (r) { return r.placement === 'unfiled'; }).length, label: 'needs a home', cls: 'refused' }
     ];
     var statBox = document.getElementById('stats');
@@ -1159,7 +1246,9 @@
     });
 
     var meta = document.getElementById('meta');
-    [data.site, 'library: ' + data.library, 'as at ' + data.generated].forEach(function (m) {
+    var lines = [data.site, 'library: ' + data.library, 'as at ' + data.generated];
+    if (data.naming) lines.push(data.naming);
+    lines.forEach(function (m) {
       meta.appendChild(el('div', '', m));
     });
 
@@ -1278,6 +1367,6 @@
 
     document.getElementById('stamp').textContent =
       data.scanned + ' files in ' + data.site + '/' + data.library + ', reviewed ' + data.generated +
-      '. ' + applied.length + ' renamed, ' + refused.length + ' left alone.';
+      ' by run ' + data.execution + '. ' + applied.length + ' renamed, ' + refused.length + ' left alone.';
   })();
 </script>

@@ -538,22 +538,53 @@
   </p>
 
   <p>
-    It reviewed all 21 documents, brought six names into line with your convention, and
-    <strong>deliberately left fifteen alone</strong>. Every refusal says why, in full, on
+    It reviewed all 21 documents and has a name ready for twelve of them, with
+    <strong>nine deliberately left alone</strong>. Every refusal says why, in full, on
     the review page. Renaming is switched off between runs, so running it produces a
     review and changes nothing until someone arms it.
   </p>
 
+  <div class="answer">
+    <strong>This changed on 2 September.</strong> You were told earlier that the organiser
+    never opens a document. That is no longer true, and it is the difference between the
+    first version and this one. The first version matched patterns in the file names, and a
+    pattern can only rearrange the characters already there &mdash; so
+    <span class="mono">Metrics .xlsx</span> became
+    <span class="mono">Metrics_2025-04-15_Draft_v0.1.xlsx</span>: the old name with a date
+    bolted on. Your format opens with a project code and a short descriptive name, and
+    neither of those is in the old file name. They are inside the document. You asked for
+    the AI to do it, and doing it means reading them.
+  </div>
+
   <ul>
-    <li><strong>It never opens a document.</strong> Everything it decides comes from the
-      file name, the extension, and what sits beside it in the library. Reading the
-      contents of your document library would mean sending those contents somewhere,
-      and that is your call to make knowingly rather than mine to slip into.</li>
+    <li><strong>It opens the documents it is naming, and only those.</strong> Word,
+      PowerPoint and Excel files are unzipped on our own server and only the extracted
+      text is sent to the model &mdash; the file itself never leaves. A PDF or a screenshot
+      goes as itself, because a scan has no text to extract and an image of a dashboard can
+      only be read by looking at it. That is how
+      <span class="mono">Screenshot 2025-04-06 at 6.34.18 PM.png</span> became
+      <span class="mono">Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png</span>, and how
+      the two taken thirty seconds later got names that tell them apart.
+      <strong>It is one switch.</strong> Turn <span class="mono">readContents</span> off and
+      the model sees only names, folders and kinds; the naming gets worse and nothing
+      breaks.</li>
+    <li><strong>The model writes the words; the code writes the name.</strong> The model
+      never produces a file name. It returns the parts &mdash; project, document name,
+      status, date &mdash; and our own code assembles them and checks the result against
+      your convention. Anything that fails the check is dropped and the file is left alone,
+      so the worst a bad answer can do is nothing.</li>
+    <li><strong>It will not invent a project code.</strong> Where the document evidences one
+      it is used &mdash; TCO, DIMP and Upperform below were read out of the contents and the
+      folder path. Where nothing evidences one, none is added and the proposal says so. An
+      invented project code would be worse than none.</li>
     <li><strong>It will not touch a Power BI report, or a workbook a report reads.</strong>
       A <span class="mono">.pbix</span> keeps the paths of its data sources inside itself,
       where nothing outside can see them. Rename the workbook and the dashboard breaks
       with nothing on the outside to show it happened.</li>
-    <li><strong>It moves nothing at all.</strong> A move changes a file's path exactly as
+    <li><strong>Power BI is never even shown to it.</strong> Reports and the workbooks
+      they read are filtered out before anything is downloaded, so no answer the model
+      could give about them would be worth the risk.</li>
+    <li><strong>It moves almost nothing.</strong> A move changes a file's path exactly as
       a rename changes its name, so it breaks a refresh the same way. And moving anything
       between <span class="mono">1. Assigned Tasks</span> and
       <span class="mono">4. Completed Tasks</span> would be claiming how far a piece of
@@ -567,10 +598,11 @@
   </ul>
 
   <p>
-    One document has no folder at all —
-    <span class="mono">Daily_Employee_Project_Time_Trackingv1.xlsx</span> sits above the
-    filing rather than in it. The organiser will point that out; it will not guess where
-    it belongs.
+    One document had no folder at all &mdash;
+    <span class="mono">Daily_Employee_Project_Time_Trackingv1.xlsx</span> sat above the
+    filing rather than in it, and has been moved into Resources and References. Everything
+    else is where it belongs, and where it is not obvious the organiser says so rather than
+    guessing.
   </p>
 
   <!-- ============ CLOSING ============ -->
@@ -594,10 +626,12 @@
     than infer it from a quiet Drafts folder.
   </p>
   <p>
-    The organiser has the same shape. It reviewed 21 documents, renamed six, and left
-    fifteen alone with a reason for each. That ratio is not the tool being timid — it is
-    the tool declining to guess at things only you know, which is what makes the six it
-    did change safe to accept without checking them one by one.
+    The organiser has the same shape. It reviewed 21 documents, has a name ready for
+    twelve, and left nine alone with a reason for each &mdash; and eight of those nine are
+    Power BI reports or the workbooks feeding them. That ratio is not the tool being timid;
+    it is the tool declining to guess at things only you know, which is what makes the
+    twelve it does propose safe to read down in one pass rather than checking them one by
+    one.
   </p>
 
   <div class="foot">

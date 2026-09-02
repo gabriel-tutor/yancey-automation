@@ -1,21 +1,36 @@
 import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from './helpers-manifest.mjs';
-import { E, S, SDK_IMPORT } from './shared.mjs';
+import { DEPLOY, E, S, SDK_IMPORT, TARGET } from './shared.mjs';
 
 /**
- * WF-F reads a SharePoint document library, works out what each file should be
- * called under Yancey's convention, and — only when told to — renames them.
+ * WF-F — the document organiser.
  *
- * Renaming is the destructive part and is treated as such. It is off by
- * default, capped per run, refuses to overwrite anything, refuses when two
- * files would land on the same name, and verifies afterwards that the new name
- * exists. Every decision about *what* a file should be called is made in
- * src/filenames.js, where it is tested against his four worked examples and
- * against the real contents of this library.
+ * Yancey asked for this on the 28 August call, and was specific about how:
+ *
+ *   "I want to organize it and I want to see if it can rename things and I want
+ *    to see if it can organize it in a way, but I want the AI to be able to do it."
+ *
+ * The first version did not. It named files with regular expressions, which can
+ * only rearrange the characters already in a file name — so `Metrics .xlsx`
+ * became `Metrics_2025-04-15_Draft_v0.1.xlsx`, the old junk with a date bolted
+ * on, wearing the convention as a costume. His format opens with a project code
+ * and then a short descriptive name, and neither of those is in the old file
+ * name. They are inside the document.
+ *
+ * So the workflow now reads the documents and asks a model to name them, and
+ * the rules that used to do the naming do the checking instead:
+ *
+ *   the model supplies the WORDS — project, document name, status, date
+ *   the code enforces the SHAPE  — format, guards, collisions, validation
+ *
+ * The model never writes a file name; it returns parts, and `proposeFileName`
+ * assembles them. Every proposal is then read back by `diagnose`, and one that
+ * does not satisfy the convention is dropped. The worst a bad answer can do is
+ * leave a file alone.
  */
 const CONFIG = {
-  host: 'https://upperformpartners.sharepoint.com',
-  sitePath: '/sites/TaskManagement',
+  host: TARGET.sharepointHost || 'https://upperformpartners.sharepoint.com',
+  sitePath: TARGET.sharepointSite || '/sites/TaskManagement',
   libraryTitle: 'Documents',
   maxItems: 200,
 
@@ -31,15 +46,27 @@ const CONFIG = {
   // and undo by hand.
   maxChangesPerRun: 5,
 
-  // Status is a claim about whether a document is approved. Draft is the
-  // weakest such claim, so assuming it under-states rather than over-states,
-  // and every assumption is reported alongside the proposal. Set to "" to
-  // refuse to rename anything whose status is not written in the name.
+  // readContents is the consent switch. With it off the model sees only names,
+  // folders and kinds, and nothing from inside a document leaves the tenant.
+  // With it on, Office files are unzipped on the server and only their text
+  // travels; PDFs and images travel as themselves, because a scan and a
+  // screenshot have no text to extract.
+  readContents: true,
+  modelNaming: 'gpt-5.6-luna',
+  maxNamed: 30,
+  maxContentBytes: 4194304,
+  textPerFile: 1200,
+
+  // Used only where neither the document nor its name says. Draft is the
+  // weakest claim, so it under-states rather than over-states, and every
+  // assumption is reported beside the proposal. Set to "" to refuse to rename
+  // anything whose status is not written down.
   assumeStatus: 'Draft',
   assumeVersion: { major: 0, minor: 1 },
 };
 
-const PLAN = `
+/** The deterministic pass: what each document is, and what must never be touched. */
+const REVIEW = `
 const cfg = $('Config').first().json;
 const listed = $input.first().json || {};
 const items = Array.isArray(listed.value) ? listed.value : [];
@@ -64,7 +91,7 @@ const rows = planRenames(files, {
 });
 
 // What each document is, and whether it is where it should be. Keyed by path
-// rather than by position, so the three passes cannot drift out of step.
+// rather than by position, so the passes cannot drift out of step.
 const extra = {};
 for (const c of categoriseAll(files)) {
   extra[c.path] = { category: c.category, categoryWhy: c.evidence };
@@ -84,23 +111,190 @@ for (const r of rows) {
   r.placement = found.placement || '';
   r.placementWhy = found.placementWhy || '';
   r.destination = found.destination || '';
+  // Where a proposal comes from is part of the answer, so it is recorded
+  // rather than inferred from how the name looks.
+  r.namedBy = r.proposed ? 'rules' : '';
+  r.why = '';
 }
 
-const compliant = rows.filter(function (r) { return r.compliant; });
-const proposals = rows.filter(function (r) { return r.proposed; });
-const blocked = rows.filter(function (r) { return !r.compliant && !r.proposed; });
-const unfiled = rows.filter(function (r) { return r.placement === 'unfiled'; });
+return [{ json: {
+  library: String(cfg.libraryTitle || ''),
+  site: String(cfg.sitePath || ''),
+  files: files,
+  folders: folders,
+  rows: rows
+}}];
+`;
+
+/** Which documents a model may name, and where to fetch each one from. */
+const PICK = `
+const cfg = $('Config').first().json;
+const review = $input.first().json || {};
+const rows = review.rows || [];
+const files = review.files || [];
+
+const reports = reportsIn(files);
+const candidates = namingCandidates(rows, reports).slice(0, Number(cfg.maxNamed) || 30);
+
+// Always emit something, so the branch below runs even when there is nothing
+// to name and the summary still gets to speak.
+if (candidates.length === 0) return [{ json: { nothing: true, readIt: false } }];
+
+const lit = function (p) { return String(p).replace(/'/g, "''").replace(/ /g, '%20'); };
+const base = String(cfg.host || '') + String(cfg.sitePath || '') + '/_api/web';
+const readIt = cfg.readContents === true;
+
+return candidates.map(function (r) {
+  return { json: {
+    nothing: false,
+    readIt: readIt,
+    name: r.current,
+    path: r.path,
+    folder: r.folder || '',
+    category: r.category || '',
+    contentNote: readIt ? '' : 'not read - reading contents is switched off',
+    downloadUrl: base + "/GetFileByServerRelativePath(decodedurl='" + lit(r.path) + "')/$value"
+  }};
+});
+`;
+
+/**
+ * Turn the downloaded bytes into something a model can use.
+ *
+ * Office files are unzipped here and only their text travels. PDFs and images
+ * travel as themselves, because a scanned page and a screenshot have no text to
+ * extract and looking at them is the only way to know what they hold — which is
+ * exactly what the three same-day screenshots needed.
+ *
+ * Items are matched to their metadata by position. The fetch and the base64
+ * conversion both emit one item per input item, including when they fail, so
+ * position holds where paired-item tracking through a failed HTTP call might
+ * not.
+ */
+const READ_CONTENTS = `
+const cfg = $('Config').first().json;
+const picks = $('Pick What To Name').all().map(function (i) { return i.json || {}; });
+const got = $input.all();
+const maxBytes = Number(cfg.maxContentBytes) || 4194304;
+
+const out = [];
+for (let i = 0; i < picks.length; i++) {
+  const meta = picks[i];
+  const row = Object.assign({}, meta, { text: '', dataUri: '', isImage: false, contentNote: '' });
+  const payload = (got[i] && got[i].json) || {};
+  const b64 = typeof payload.contentBytes === 'string' ? payload.contentBytes : '';
+
+  if (!b64) {
+    row.contentNote = 'could not be downloaded, named from its name, folder and kind';
+    out.push({ json: row });
+    continue;
+  }
+
+  // base64 is four characters for every three bytes.
+  if (Math.floor(b64.length * 3 / 4) > maxBytes) {
+    row.contentNote = 'too large to read, named from its name, folder and kind';
+    out.push({ json: row });
+    continue;
+  }
+
+  const lower = String(meta.name || '').toLowerCase();
+  try {
+    if (/\\.(docx|pptx|xlsx|xlsm)$/.test(lower)) {
+      row.text = String(officeText(Uint8Array.from(Buffer.from(b64, 'base64')), lower) || '').slice(0, 6000);
+      if (!row.text) row.contentNote = 'opened but held no readable text';
+    } else if (/\\.pdf$/.test(lower)) {
+      row.dataUri = 'data:application/pdf;base64,' + b64;
+    } else if (/\\.(png|jpg|jpeg|gif|webp)$/.test(lower)) {
+      row.isImage = true;
+      const mime = /\\.png$/.test(lower) ? 'image/png'
+        : /\\.gif$/.test(lower) ? 'image/gif'
+        : /\\.webp$/.test(lower) ? 'image/webp'
+        : 'image/jpeg';
+      row.dataUri = 'data:' + mime + ';base64,' + b64;
+    } else if (/\\.(txt|csv|tsv|md|json|xml|html?)$/.test(lower)) {
+      row.text = Buffer.from(b64, 'base64').toString('utf8').slice(0, 6000);
+    } else {
+      row.contentNote = 'not a kind that can be opened, named from its name, folder and kind';
+    }
+  } catch (err) {
+    // A file that will not open is a file named from its path, not a failed run.
+    row.contentNote = 'could not be opened, named from its name, folder and kind';
+  }
+
+  out.push({ json: row });
+}
+return out;
+`;
+
+const COMPOSE = `
+const cfg = $('Config').first().json;
+const candidates = $input.all()
+  .map(function (i) { return i.json || {}; })
+  .filter(function (c) { return c && c.nothing !== true && c.name; });
+
+return [{ json: {
+  toName: candidates.length,
+  modelRequest: buildNamingRequest(candidates, {
+    model: String(cfg.modelNaming || 'gpt-5.6-luna'),
+    textPerFile: Number(cfg.textPerFile) || 1200
+  })
+}}];
+`;
+
+/** The model's words, held to the convention, then turned into work to do. */
+const APPLY = `
+const cfg = $('Config').first().json;
+const review = $('Review The Library').first().json || {};
+const rows = review.rows || [];
+const files = review.files || [];
+
+// Either the model's answer, or nothing at all - because there was nothing to
+// name, or because the call failed. Either way the run carries on with what the
+// rules could work out, so the naming degrades rather than the run breaking.
+const incoming = $input.first().json || {};
+let proposals = [];
+let modelNote = 'the model was not called, so nothing was renamed beyond what the rules could read';
+
+if (incoming.error) {
+  modelNote = 'the model call failed, so the rules named what they could';
+} else if (Array.isArray(incoming.output)) {
+  let text = '';
+  for (const block of incoming.output) {
+    for (const part of ((block && block.content) || [])) {
+      if (part && typeof part.text === 'string') text += part.text;
+    }
+  }
+  try {
+    proposals = JSON.parse(text).proposals || [];
+    modelNote = 'the model read and named ' + proposals.length + ' documents';
+  } catch (err) {
+    proposals = [];
+    modelNote = 'the model answer could not be read, so the rules named what they could';
+  }
+}
+
+const reports = reportsIn(files);
+applyProposals(rows, proposals, {
+  files: files,
+  reports: reports,
+  assumeStatus: cfg.assumeStatus === '' ? '' : String(cfg.assumeStatus || 'Draft')
+});
+
+const toRename = rows.filter(function (r) { return r.proposed; });
 const movable = rows.filter(function (r) { return r.placement === 'move' && r.destination; });
 
 const summary = {
-  library: String(cfg.libraryTitle || ''),
-  site: String(cfg.sitePath || ''),
+  library: String(review.library || ''),
+  site: String(review.site || ''),
   scanned: rows.length,
-  compliant: compliant.length,
-  proposed: proposals.length,
-  blocked: blocked.length,
-  unfiled: unfiled.length,
+  compliant: rows.filter(function (r) { return r.compliant; }).length,
+  proposed: toRename.length,
+  blocked: rows.filter(function (r) { return !r.compliant && !r.proposed; }).length,
+  unfiled: rows.filter(function (r) { return r.placement === 'unfiled'; }).length,
   movesProposed: movable.length,
+  namedByModel: rows.filter(function (r) { return r.namedBy === 'model'; }).length,
+  modelNote: modelNote,
+  readContents: cfg.readContents === true,
   applyRenames: cfg.applyRenames === true,
   applyMoves: cfg.applyMoves === true,
   cap: Number(cfg.maxChangesPerRun) || 5,
@@ -113,7 +307,7 @@ const summary = {
 // state.
 const actions = [];
 if (cfg.applyRenames === true) {
-  for (const r of proposals) {
+  for (const r of toRename) {
     const folder = r.path.slice(0, r.path.lastIndexOf('/'));
     actions.push({
       kind: 'rename',
@@ -121,7 +315,7 @@ if (cfg.applyRenames === true) {
       newName: r.proposed,
       oldPath: r.path,
       newPath: folder + '/' + r.proposed,
-      why: r.assumptions
+      why: r.assumptions || []
     });
   }
 }
@@ -151,9 +345,7 @@ if (actions.length === 0) {
 const lit = function (p) { return String(p).replace(/'/g, "''").replace(/ /g, '%20'); };
 const base = String(cfg.host || '') + String(cfg.sitePath || '') + '/_api/web';
 
-const take = actions.slice(0, Number(cfg.maxChangesPerRun) || 5);
-
-return take.map(function (a) {
+return actions.slice(0, Number(cfg.maxChangesPerRun) || 5).map(function (a) {
   return { json: {
     nothingToDo: false,
     kind: a.kind,
@@ -171,7 +363,7 @@ return take.map(function (a) {
 `;
 
 const CONFIRM = `
-const planned = $('Plan Renames').all().map(function (i) { return i.json; });
+const planned = $('Apply Proposals').all().map(function (i) { return i.json; });
 const results = $input.all().map(function (i) { return i.json || {}; });
 
 const done = [];
@@ -192,14 +384,14 @@ const summary = (planned[0] && planned[0].summary) || {};
 return [{ json: Object.assign({}, summary, { applied: done, failedChanges: failed }) }];
 `;
 
-const REPORT = `
+/**
+ * Returns its result rather than throwing it. An earlier version threw, because
+ * that was the only way to read a run back through the MCP at the time, and it
+ * was wrong for everyone else: a workflow that signals success by failing shows
+ * red on the canvas and reads as broken to whoever is watching it.
+ */
+const SUMMARY = `
 const r = $input.first().json || {};
-
-// This node used to throw its result. That was the only way to read a run back
-// through the MCP at the time, and it was wrong for everyone else: a workflow
-// that signals success by failing shows red on the canvas and reads as broken
-// to whoever is watching it. Execution data is readable directly now, so it
-// returns data like any other node.
 const applied = r.applied || [];
 const failed = r.failedChanges || [];
 
@@ -208,49 +400,139 @@ const headline = applied.length || failed.length
   : r.proposed + ' to rename, ' + r.movesProposed + ' to move, ' +
     r.blocked + ' left alone, ' + r.compliant + ' already correct';
 
-// The reasons are the part worth reading, so they come out as their own list
+// The reasons are the part worth reading, so they come out as their own lists
 // rather than buried inside every row.
-const refused = [];
-for (const row of (r.rows || [])) {
-  if (row.compliant || row.proposed) continue;
-  if (!row.blocked) continue;
-  refused.push({ file: row.current, because: row.blocked });
-}
-
 const toRename = [];
-for (const row of (r.rows || [])) {
-  if (!row.proposed) continue;
-  toRename.push({ file: row.current, becomes: row.proposed, assuming: row.assumptions || [] });
-}
-
+const refused = [];
 const toMove = [];
 for (const row of (r.rows || [])) {
-  if (row.placement !== 'move' || !row.destination) continue;
-  toMove.push({ file: row.current, into: row.destination, because: row.placementWhy });
+  if (row.proposed) {
+    toRename.push({
+      file: row.current,
+      becomes: row.proposed,
+      namedBy: row.namedBy || 'rules',
+      why: row.why || '',
+      assuming: row.assumptions || []
+    });
+  } else if (!row.compliant && row.blocked) {
+    refused.push({ file: row.current, because: row.blocked });
+  }
+  if (row.placement === 'move' && row.destination) {
+    toMove.push({ file: row.current, into: row.destination, because: row.placementWhy });
+  }
 }
 
-return [{
-  json: {
-    headline: headline,
-    library: r.library,
-    site: r.site,
-    scanned: r.scanned,
-    compliant: r.compliant,
-    toRename: toRename,
-    toMove: toMove,
-    refused: refused,
-    unfiled: r.unfiled,
-    switches: { applyRenames: r.applyRenames === true, applyMoves: r.applyMoves === true, cap: r.cap },
-    applied: applied,
-    failed: failed
-  }
-}];
+return [{ json: {
+  headline: headline,
+  library: r.library,
+  site: r.site,
+  scanned: r.scanned,
+  compliant: r.compliant,
+  naming: r.modelNote,
+  namedByModel: r.namedByModel,
+  readContents: r.readContents,
+  toRename: toRename,
+  toMove: toMove,
+  refused: refused,
+  unfiled: r.unfiled,
+  switches: { applyRenames: r.applyRenames === true, applyMoves: r.applyMoves === true, cap: r.cap },
+  applied: applied,
+  failed: failed
+}}];
 `;
 
 export const NAME = 'WF-F · Organise Documents';
 
+const HEADER_NOTE = [
+  '## WF-F · Organise Documents',
+  '',
+  'Reviews a SharePoint library and answers three questions about every document: **what is it**, **what should it be called**, and **is it in the right place**.',
+  '',
+  '```',
+  '[Project]_[Document Name]_[YYYY-MM-DD]_[Status]_v#.#',
+  'SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1.docx',
+  '```',
+  '',
+  '### Why a model names them',
+  '',
+  'The first version used regular expressions, and a regular expression can only rearrange the characters already in a file name. The convention opens with a **project code** and then a **short descriptive name**, and neither of those is in `Metrics .xlsx` — they are inside the document. So it produced `Metrics_2025-04-15_Draft_v0.1.xlsx`: the old junk with a date bolted on, wearing the convention as a costume.',
+  '',
+  'On the 28 August call the ask was specific: *"I want to see if it can rename things and I want to see if it can organize it in a way, **but I want the AI to be able to do it**."*',
+  '',
+  '### The division of labour',
+  '',
+  '| | |',
+  '|---|---|',
+  '| the model supplies | the **words** — project, document name, status, date |',
+  '| the code enforces | the **shape** — format, guards, collisions, validation |',
+  '',
+  'The model never writes a file name. It returns parts, and `proposeFileName` assembles them, so a malformed name is not something it can produce. Every proposal is then read back by `diagnose`, and one that does not satisfy the convention is dropped.',
+  '',
+  'The judgement lives in `src/naming.js`, `src/filenames.js` and `src/library.js`, where it is tested. **Do not edit the code in these nodes** — the next rebuild overwrites it.',
+].join('\n');
+
+const READING_NOTE = [
+  '### What the model is shown',
+  '',
+  '`readContents` is the consent switch. With it **off**, the model sees only names, folders and kinds, and nothing from inside a document leaves the tenant.',
+  '',
+  'With it **on**:',
+  '',
+  '| Kind | What travels |',
+  '|---|---|',
+  '| `.docx` `.pptx` `.xlsx` | unzipped on the server; only the extracted text is sent |',
+  '| `.pdf` | the file itself, because a scan has no text layer to extract |',
+  '| images | the image itself — the only way to tell two same-day screenshots apart |',
+  '| everything else | nothing; named from its name, folder and kind |',
+  '',
+  'A file that will not download or will not open is named from its path rather than failing the run, and the summary says which. `maxNamed` caps how many documents are read at all, `maxContentBytes` refuses anything large, and `textPerFile` caps how much of each one is sent.',
+  '',
+  '**Power BI never reaches this branch at all.** Reports and the workbooks they read are filtered out before anything is downloaded, so no answer the model could give would be worth the risk.',
+  '',
+  '**If the model call fails, the run carries on with what the rules could work out.** The naming degrades; it does not break.',
+].join('\n');
+
+const SAFETY_NOTE = [
+  '### What stops this going wrong',
+  '',
+  '**Off by default.** `applyRenames` and `applyMoves` are both false, and they are separate switches because they are separate promises. Either one breaks every saved link, Teams tab and Power BI data source pointing at the old path, so a person reads the review first.',
+  '',
+  '**Capped.** `maxChangesPerRun` limits one run to a handful, renames and moves together, small enough to check by eye and undo by hand.',
+  '',
+  '**Never overwrites.** The call uses `flags=0`, so if anything already sits on the new path it fails rather than destroying it.',
+  '',
+  '**Never collides.** Two files in one folder that would land on the same name are both refused — and that is checked again *after* the model answers, because a model can land two files on one name just as easily as a rule can.',
+  '',
+  '**Never touches Power BI.** A `.pbix` keeps the paths of the files it reads inside itself, where nothing outside can see them. Reports are never renamed, and neither is a workbook that shares a report’s folder or opens with a report’s words. The refusal names the report.',
+  '',
+  '**Moves one thing, and only on evidence.** A move changes a path exactly as a rename changes a name. It will never move a report, a workbook a report reads, or anything inside a numbered stage folder — that last would assert how far work has got, which no file records. The single case it offers is a document sitting above the filing with no folder of its own, and only where exactly one folder beside it says in its own name what it holds. Two candidates is a choice, and choosing belongs to a person.',
+  '',
+  '**Never renames a folder.** Anything without a file extension is refused.',
+  '',
+  '**Never invents.** The model is told an invented project code is worse than none, and an empty answer falls back to a disclosed assumption. Status defaults to the weakest claim, Draft, and says so. An eight-digit run like `04042025` is resolved only if the document states the date unambiguously; otherwise the date comes from the file timestamp and the proposal says so.',
+].join('\n');
+
 export async function build() {
-  const planCode = await codeNode(HELPERS['wf-f/Plan Renames'], PLAN);
+  // The mirror of the seeder's refusal to build for production. A target with
+  // no SharePoint credential cannot reach the library, and a build that quietly
+  // produced a workflow authenticating as nobody would be worse than no build.
+  if (!TARGET.sharepointCredential) {
+    throw new Error(
+      'refusing to build the organiser for a target with no sharepointCredential. ' +
+        'Set targets.' +
+        TARGET.name +
+        '.sharepointCredential in config/deploy.json, or build for a target that owns the library.',
+    );
+  }
+
+  const reviewCode = await codeNode(HELPERS['wf-f/Review The Library'], REVIEW);
+  const pickCode = await codeNode(HELPERS['wf-f/Pick What To Name'], PICK);
+  const readCode = await codeNode(HELPERS['wf-f/Read Contents'], READ_CONTENTS);
+  const composeCode = await codeNode(HELPERS['wf-f/Compose Request'], COMPOSE);
+  const applyCode = await codeNode(HELPERS['wf-f/Apply Proposals'], APPLY);
+
+  const sp = TARGET.sharepointCredential;
+  const openai = (DEPLOY.credentials && DEPLOY.credentials.openai && DEPLOY.credentials.openai.name) || 'OpenAI account';
 
   return `${SDK_IMPORT}
 
@@ -296,45 +578,199 @@ const listFiles = node({
       headers: { parameters: [{ name: 'Accept', value: 'application/json;odata=nometadata' }] },
       options: { timeout: 60000 }
     },
-    credentials: { microsoftSharePointOAuth2Api: newCredential('Microsoft SharePoint account') },
+    credentials: { microsoftSharePointOAuth2Api: newCredential(${S(sp)}) },
     position: [400, 0]
   },
-  output: [{ value: [{ FileLeafRef: 'Working TimesKV.xlsx', FileRef: '/sites/TaskManagement/Shared Documents/Working TimesKV.xlsx', Modified: '2025-05-01T10:00:00Z', FSObjType: 0 }] }]
+  output: [{ value: [{ FileLeafRef: 'Metrics .xlsx', FileRef: '/sites/TaskManagement/Shared Documents/Metrics .xlsx', Modified: '2025-04-15T10:00:00Z', FSObjType: 0 }] }]
 });
 
-const plan = node({
+const review = node({
   type: 'n8n-nodes-base.code',
   version: 2,
   config: {
-    name: 'Plan Renames',
-    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(planCode)} },
+    name: 'Review The Library',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(reviewCode)} },
     position: [620, 0]
   },
-  output: [{ nothingToDo: false, kind: 'rename', oldName: 'Working TimesKV.xlsx', newName: 'Working-TimesKV_2025-05-01_Draft_v0.1.xlsx' }]
+  output: [{ library: 'Documents', files: [], folders: [], rows: [] }]
+});
+
+const pick = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Pick What To Name',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(pickCode)} },
+    position: [840, 0]
+  },
+  output: [{ nothing: false, readIt: true, name: 'Metrics .xlsx', path: '/sites/TaskManagement/Shared Documents/Metrics .xlsx' }]
+});
+
+const anyToName = ifElse({
+  version: 2.2,
+  config: {
+    name: 'Any To Name?',
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'loose' },
+        conditions: [
+          { id: 'has-candidates', leftValue: ${E('{{ $json.nothing }}')}, operator: { type: 'boolean', operation: 'false', singleValue: true } }
+        ],
+        combinator: 'and'
+      }
+    },
+    position: [1060, 0]
+  }
+});
+
+const readThem = ifElse({
+  version: 2.2,
+  config: {
+    name: 'Read Them?',
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'loose' },
+        conditions: [
+          { id: 'read-contents', leftValue: ${E('{{ $json.readIt }}')}, operator: { type: 'boolean', operation: 'true', singleValue: true } }
+        ],
+        combinator: 'and'
+      }
+    },
+    position: [1280, -180]
+  }
+});
+
+const fetchContents = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.5,
+  config: {
+    name: 'Fetch Contents',
+    onError: 'continueRegularOutput',
+    parameters: {
+      method: 'GET',
+      url: ${E('{{ $json.downloadUrl }}')},
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'microsoftSharePointOAuth2Api',
+      options: {
+        timeout: 120000,
+        response: { response: { responseFormat: 'file', outputPropertyName: 'data' } },
+        batching: { batch: { batchSize: 3, batchInterval: 300 } }
+      }
+    },
+    credentials: { microsoftSharePointOAuth2Api: newCredential(${S(sp)}) },
+    position: [1500, -300]
+  },
+  output: [{}]
+});
+
+const toBase64 = node({
+  type: 'n8n-nodes-base.extractFromFile',
+  version: 1.1,
+  config: {
+    name: 'To Base64',
+    onError: 'continueRegularOutput',
+    parameters: {
+      operation: 'binaryToPropery',
+      binaryPropertyName: 'data',
+      destinationKey: 'contentBytes',
+      options: { keepSource: 'json' }
+    },
+    position: [1720, -300]
+  },
+  output: [{ contentBytes: 'UEsDBBQ' }]
+});
+
+const readContents = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Read Contents',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(readCode)} },
+    position: [1940, -300]
+  },
+  output: [{ name: 'Metrics .xlsx', text: 'District | Poles | Idling cost' }]
+});
+
+const contentsReady = merge({
+  version: 3.2,
+  config: { name: 'Read Or Not', parameters: { mode: 'append', numberInputs: 2 }, position: [2160, -180] }
+});
+
+const composeRequest = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Compose Request',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(composeCode)} },
+    position: [2380, -180]
+  },
+  output: [{ toName: 1, modelRequest: {} }]
+});
+
+const nameThem = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.5,
+  config: {
+    name: 'Name Them',
+    onError: 'continueRegularOutput',
+    retryOnFail: true,
+    maxTries: 2,
+    waitBetweenTries: 5000,
+    parameters: {
+      method: 'POST',
+      url: 'https://api.openai.com/v1/responses',
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'openAiApi',
+      sendBody: true,
+      contentType: 'json',
+      specifyBody: 'json',
+      jsonBody: ${E('{{ JSON.stringify($json.modelRequest) }}')},
+      options: { timeout: 300000 }
+    },
+    credentials: { openAiApi: newCredential(${S(openai)}) },
+    position: [2600, -180]
+  },
+  output: [{ output: [{ content: [{ text: '{"proposals":[]}' }] }] }]
+});
+
+const namedOrNot = merge({
+  version: 3.2,
+  config: { name: 'Named Or Not', parameters: { mode: 'append', numberInputs: 2 }, position: [2820, 0] }
+});
+
+const applyProposals = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Apply Proposals',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(applyCode)} },
+    position: [3040, 0]
+  },
+  output: [{ nothingToDo: true, scanned: 21, compliant: 6, proposed: 13 }]
 });
 
 const shouldApply = ifElse({
   version: 2.2,
   config: {
-    name: 'Apply Them?',
+    name: 'Anything To Apply?',
     parameters: {
       conditions: {
         options: { caseSensitive: true, leftValue: '', typeValidation: 'loose' },
         conditions: [
-          { id: 'has-renames', leftValue: ${E('{{ $json.nothingToDo }}')}, operator: { type: 'boolean', operation: 'false', singleValue: true } }
+          { id: 'has-changes', leftValue: ${E('{{ $json.nothingToDo }}')}, operator: { type: 'boolean', operation: 'false', singleValue: true } }
         ],
         combinator: 'and'
       }
     },
-    position: [840, 0]
+    position: [3260, 0]
   }
 });
 
-const rename = node({
+const applyChange = node({
   type: 'n8n-nodes-base.httpRequest',
   version: 4.5,
   config: {
-    name: 'Rename In SharePoint',
+    name: 'Apply The Change',
     onError: 'continueRegularOutput',
     parameters: {
       method: 'POST',
@@ -343,13 +779,10 @@ const rename = node({
       nodeCredentialType: 'microsoftSharePointOAuth2Api',
       sendHeaders: true,
       headers: { parameters: [{ name: 'Accept', value: 'application/json;odata=nometadata' }] },
-      options: {
-        timeout: 60000,
-        batching: { batch: { batchSize: 1, batchInterval: 400 } }
-      }
+      options: { timeout: 60000, batching: { batch: { batchSize: 1, batchInterval: 400 } } }
     },
-    credentials: { microsoftSharePointOAuth2Api: newCredential('Microsoft SharePoint account') },
-    position: [1060, -120]
+    credentials: { microsoftSharePointOAuth2Api: newCredential(${S(sp)}) },
+    position: [3480, -180]
   },
   output: [{ ok: true }]
 });
@@ -358,52 +791,71 @@ const confirm = node({
   type: 'n8n-nodes-base.code',
   version: 2,
   config: {
-    name: 'Confirm What Moved',
+    name: 'Confirm What Changed',
     parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(CONFIRM)} },
-    position: [1280, -120]
+    position: [3700, -180]
   },
   output: [{ applied: [], failedChanges: [] }]
 });
 
 const both = merge({
   version: 3.2,
-  config: { name: 'Either Way', parameters: { mode: 'append', numberInputs: 2 }, position: [1500, 0] }
+  config: { name: 'Either Way', parameters: { mode: 'append', numberInputs: 2 }, position: [3920, 0] }
 });
 
-const report = node({
+const summary = node({
   type: 'n8n-nodes-base.code',
   version: 2,
   config: {
-    name: 'Report',
-    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(REPORT)} },
-    position: [1720, 0]
+    name: 'Summary',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(SUMMARY)} },
+    position: [4140, 0]
   },
-  output: [{}]
+  output: [{ headline: '13 to rename, 0 to move, 2 left alone, 6 already correct' }]
 });
 
 const noteHeader = sticky(
-  ${S('## WF-F · Organise Documents\n\nReviews a SharePoint library. For every document it answers three questions: **what is it**, **what should it be called**, and **is it in the right place**. It renames only when told to, and it never moves anything.\n\n```\n[Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.#\nSCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1.docx\n```\n\nWhat a file should be *called* lives in `src/filenames.js`. What it *is* and *where it sits* live in `src/library.js`, because both depend on the other files around it. Both are tested against his four worked examples and against the real contents of this library. These nodes only carry SharePoint\'s fields in and the answers back out — **do not edit the code here**, the next rebuild overwrites it.\n\n**Nothing is ever opened.** Every judgement comes from the file name, its extension, and what sits beside it. Reading the contents of a client library would mean sending those contents somewhere, and that is a decision to take knowingly.')},
-  [run, config, listFiles, plan],
-  { color: 6, width: 820, height: 330 },
+  ${S(HEADER_NOTE)},
+  [run, config, listFiles, review, pick],
+  { color: 6, width: 1020, height: 460 },
+);
+
+const noteReading = sticky(
+  ${S(READING_NOTE)},
+  [readThem, fetchContents, toBase64, readContents, contentsReady, composeRequest, nameThem],
+  { color: 4, width: 1560, height: 340 },
 );
 
 const noteSafety = sticky(
-  ${S('### What stops this going wrong\n\n**Off by default.** `applyRenames` and `applyMoves` are both false, and they are separate switches because they are separate promises. Either one breaks every saved link, Teams tab and Power BI data source pointing at the old path, so a person reads the review first.\n\n**Capped.** `maxChangesPerRun` limits one run to a handful, renames and moves together, small enough to check by eye and undo by hand.\n\n**Never overwrites.** The move uses `flags=0`, so if anything already sits on the new name the call fails rather than destroying it.\n\n**Never collides.** Two files in one folder that would land on the same name are both refused. Scoped to the folder, because that is where SharePoint requires a name to be unique.\n\n**Never touches Power BI.** A `.pbix` keeps the paths of the files it reads inside itself, where nothing outside can see them. Reports are never renamed in a sweep, and neither is a workbook that shares a report\'s folder or opens with a report\'s words. The refusal names the report.\n\n**Moves one thing, and only on evidence.** A move changes a path exactly as a rename changes a name, so it breaks a refresh the same way. It will never move a report, a workbook a report reads, or anything inside a numbered stage folder — that last would assert how far work has got, which no file records. The single case it offers is a document sitting above the filing with no folder of its own, and only where exactly one folder beside it says in its own name what it holds. Two candidates is a choice, and choosing belongs to a person.\n\n**Never renames a folder.** Anything without a file extension is refused, so a folder cannot be renamed even if the listing filter is ever changed.\n\n**Never invents a status.** Where the name does not carry one, `assumeStatus` supplies the weakest — Draft — and the proposal says it was assumed. Set it to `""` to refuse instead.\n\n**Says where the date came from.** Using the file\'s timestamp instead of a date in the name is an assumption, and it is reported rather than left to be discovered. An eight-digit run like `04042025` is never read, because day-first and month-first disagree and being right by luck is not being right.')},
-  [shouldApply, rename, confirm],
-  { color: 5, width: 700, height: 560 },
+  ${S(SAFETY_NOTE)},
+  [namedOrNot, applyProposals, shouldApply, applyChange, confirm, both, summary],
+  { color: 5, width: 1540, height: 480 },
 );
 
 export default workflow('upperform-wf-f-organizer', ${S(NAME)})
   .add(run)
   .to(config)
   .to(listFiles)
-  .to(plan)
+  .to(review)
+  .to(pick)
+  .to(anyToName
+    .onTrue(readThem
+      .onTrue(fetchContents.to(toBase64).to(readContents).to(contentsReady.input(0)))
+      .onFalse(contentsReady.input(1)))
+    .onFalse(namedOrNot.input(1)))
+  .add(contentsReady)
+  .to(composeRequest)
+  .to(nameThem)
+  .to(namedOrNot.input(0))
+  .add(namedOrNot)
+  .to(applyProposals)
   .to(shouldApply
-    .onTrue(rename.to(confirm).to(both.input(0)))
+    .onTrue(applyChange.to(confirm).to(both.input(0)))
     .onFalse(both.input(1)))
   .add(both)
-  .to(report)
+  .to(summary)
   .add(noteHeader)
+  .add(noteReading)
   .add(noteSafety);
 `;
 }

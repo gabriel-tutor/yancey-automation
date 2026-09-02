@@ -449,9 +449,15 @@ function planRenames(files, options) {
   const rows = list.map((f) => planRename(f, options));
 
   // Power BI first, because a file refused here has no proposal left to collide.
+  //
+  // The report guards run even when a row is already blocked for some other
+  // reason. A .pbix whose name carries an ambiguous date was refused for the
+  // date, and that reads as a problem a person could fix — fix the date and the
+  // rename goes ahead. It would not: being a report is the stronger fact and the
+  // one that does not go away, so it is the reason that gets shown.
   const reports = reportsIn(list);
   for (const row of rows) {
-    if (!row.proposed) continue;
+    if (row.compliant) continue;
 
     if (isReport(row.current)) {
       row.blocked =
@@ -459,6 +465,8 @@ function planRenames(files, options) {
       row.proposed = '';
       continue;
     }
+
+    if (!row.proposed && !row.blocked) continue;
 
     const reading = reportReading(row.current, row.path, reports);
     if (reading) {

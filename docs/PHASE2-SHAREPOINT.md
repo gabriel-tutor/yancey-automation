@@ -22,7 +22,13 @@
 >   admin.**
 > - The host is **`upperformpartners.sharepoint.com`**, not `partnersperform`.
 > - Reading and writing both work. WF-F reviews the Task Management library and
->   renamed six files on 2 September 2026.
+>   renamed six files and moved one on 2 September 2026.
+> - WF-F was rebuilt the same day as an actual agent (`CC8jik1RGti4JXZk`). The
+>   first version named files with regular expressions, which can only rearrange
+>   characters already in the name; the project code and the descriptive name
+>   his convention asks for are inside the document. It now reads the documents
+>   and a model returns the naming parts, which the code assembles and validates.
+>   See `docs/DEPLOY.md` under "Rebuilt as an agent".
 >
 > The one real trap was the scope. The credential asks for `.default`, which
 > means *whatever this app is already consented for* — so a permission that has

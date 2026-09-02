@@ -19,30 +19,47 @@
  * reading the canvas, and a mangled dash there is cosmetic rather than a
  * silently broken regex.
  */
-import { describe, expect, it, beforeAll } from 'vitest';
+import { describe, expect, it, beforeAll, vi } from 'vitest';
 
-// The seeder refuses to build for production, and shared.mjs reads the target
-// once at import. Set it before anything pulls that module in.
-process.env.TARGET = 'dev';
-
-const GENERATORS = [
+/**
+ * Two generators refuse to build for the wrong environment, and they refuse in
+ * opposite directions: the seeder will not build for production because it
+ * plants fabricated mail, and the organiser will not build for dev because dev
+ * has no SharePoint credential. So each is built under the target that owns it
+ * rather than under one target with the guards worked around — a check that has
+ * to disarm a safety rule to run is checking the wrong thing.
+ *
+ * shared.mjs reads the target once at import, so the registry is reset between
+ * the two passes and the module is re-evaluated.
+ */
+const UNDER_PROD = [
   'wf-a-classify.mjs',
   'wf-b-draft.mjs',
   'wf-c-digest.mjs',
   'wf-d-attachments.mjs',
   'wf-e-errors.mjs',
   'wf-f-organizer.mjs',
-  'wf-s-seed.mjs',
   'wf-t-preflight.mjs',
 ];
+const UNDER_DEV = ['wf-s-seed.mjs'];
+const GENERATORS = [...UNDER_PROD, ...UNDER_DEV].sort();
 
 /** @type {Record<string, string>} */
 const built = {};
 
 beforeAll(async () => {
-  for (const file of GENERATORS) {
-    const mod = await import('../workflows/' + file);
-    built[file] = await mod.build();
+  /** @type {Array<[string, string[]]>} */
+  const passes = [
+    ['prod', UNDER_PROD],
+    ['dev', UNDER_DEV],
+  ];
+  for (const [target, files] of passes) {
+    vi.resetModules();
+    process.env.TARGET = target;
+    for (const file of files) {
+      const mod = await import('../workflows/' + file);
+      built[file] = await mod.build();
+    }
   }
 }, 60000);
 

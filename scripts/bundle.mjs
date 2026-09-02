@@ -6,7 +6,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 
 /**
- * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[], filenames?: string[], library?: string[] }} HelperNeeds
+ * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[], filenames?: string[], library?: string[], naming?: string[] }} HelperNeeds
  */
 
 /** @type {Record<string, string>} */
@@ -22,10 +22,13 @@ const SOURCES = {
   // What a document is and where it sits — the judgements that only make
   // sense across a whole library rather than one name at a time.
   library: './src/library.js',
+  // Naming by a model, checked by code. The model supplies the words; this
+  // supplies the shape and refuses anything that does not hold.
+  naming: './src/naming.js',
 };
 
-/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments' | 'filenames' | 'library'>} */
-const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments', 'filenames', 'library'];
+/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments' | 'filenames' | 'library' | 'naming'>} */
+const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments', 'filenames', 'library', 'naming'];
 
 
 /**

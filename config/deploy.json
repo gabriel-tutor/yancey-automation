@@ -59,7 +59,7 @@
         "wfD": "ZYV9V281C1Kojzpz",
         "wfE": "XSKk6eHTFGqftrUM",
         "wfT": "1fCjIsw2JjVGkNJb",
-        "wfF": "qh29SRwChF2g9bYB",
+        "wfF": "CC8jik1RGti4JXZk",
         "wfP": "c6gA3jbwVxR4cWoY"
       },
       "digestTo": "YDawson@partnersperform.com",
@@ -75,7 +75,7 @@
       "sharepointCredentialId": "We80s2s9pbxJWWp2",
       "sharepointSite": "/sites/TaskManagement",
       "sharepointHost": "https://upperformpartners.sharepoint.com",
-      "_wfFNote": "WF-F reviews the Task Management library: it categorises every document, checks each name against Yancey's convention, and reviews where each file sits. It rests with applyRenames false, so a run produces a review and changes nothing; arming it is a deliberate edit to the Config node and the cap limits one run to a handful of files. It proposes no moves at all - a move changes a path exactly as a rename changes a name, so it breaks a Power BI refresh the same way, and moving anything between the numbered stage folders would assert how far work has got, which no file records. Six renames were applied on 2026-09-02 after the plan was read; the record and the undo list are in fixtures/sharepoint/renames-applied.json and on the review page."
+      "_wfFNote": "WF-F reviews the Task Management library. It is an agent, not a rule engine: the deterministic pass categorises every document and works out what must never be touched, then the documents themselves are read (Office files unzipped on the server, PDFs and images sent as themselves) and a model returns the naming PARTS - project, document name, status, date. proposeFileName assembles the name and diagnose validates it, so the model cannot produce a malformed name and a proposal that fails the convention is dropped. The first version named files with regular expressions and could only rearrange characters already present, which is why Metrics .xlsx became Metrics_2025-04-15_Draft_v0.1.xlsx; Yancey asked for the AI to do it on the 28 August call. readContents is the consent switch and is on. It rests with applyRenames and applyMoves both false, so a run produces a review and changes nothing; arming either is a deliberate edit to the Config node and maxChangesPerRun caps one run at five. Power BI reports and the workbooks they read are filtered out before anything is downloaded, so they never reach the model at all. Six renames were applied on 2026-09-02 under the old rule-based version; the record and the undo list are in fixtures/sharepoint/renames-applied.json. The previous workflow id was qh29SRwChF2g9bYB, archived when the agent replaced it."
     },
     "dev": {
       "label": "gtutor sandbox",
@@ -128,6 +128,6 @@
     "tags": "Exactly one environment tag (prod | dev) and exactly one system tag (email-agent | documents) on every workflow, plus \"diagnostic\" on anything that must never be scheduled or left published. Production used to be identified only by the absence of a dev tag, which no filter can express. \"phase-1\" and \"upperform\" were removed: they were on every workflow and so selected nothing.",
     "archiving": "Archive scaffolding once the answer it was built for is written down, and archive anything that would now give a wrong answer. But keep what creates test conditions: reading execution data replaced the helpers that inspected a run, and nothing replaces a seeder. Never archive a workflow the dev sandbox needs to exercise a path end to end.",
     "everything_is_generated": "Every workflow in the instance is generated from workflows/*.mjs, with no exceptions. A workflow in n8n with no generator here is scaffolding: archive it once the answer it was built for is written down, and if one earns a permanent place, write its generator first. That rule was briefly softened to accommodate three hand-built tools; the right response was to generate them instead, which is what happened.",
-    "guards": "Two generators refuse to build for the wrong target, and they mirror each other. wf-s-seed.mjs refuses production because it plants fabricated mail in whatever mailbox the target names. wf-p-permissions.mjs refuses any target with no sharepointCredential, because a probe that cannot reach SharePoint reports a refusal that means nothing. A build that skips one of these is working as intended."
+    "guards": "Three generators refuse to build for the wrong target, and they refuse in opposite directions. wf-s-seed.mjs refuses production because it plants fabricated mail in whatever mailbox the target names. wf-p-permissions.mjs and wf-f-organizer.mjs refuse any target with no sharepointCredential, because a probe that cannot reach SharePoint reports a refusal that means nothing, and an organiser authenticating as nobody is worse than no organiser. A build that skips one of these is working as intended, and src/generated-ascii.test.js builds each generator under the target that owns it rather than disarming the guard."
   }
 }

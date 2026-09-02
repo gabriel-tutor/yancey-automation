@@ -1,43 +1,51 @@
 /**
- * Fill the organiser plan artifact from a real library listing.
+ * Fill the organiser plan artifact from a real run of WF-F.
  *
  *   node scripts/build-organiser-plan.mjs
  *
  * Same rule as the Gate 2 artifact: nothing is transcribed. Hand-copying the
  * Gate 2 drafts once dropped a sign-off and would have had Yancey mark the
  * system down for a fault it never committed. Here the risk is worse — a
- * mistyped file name in a rename plan is a plan for the wrong rename. So the
- * page is generated from the listing WF-F actually read, through the same
- * planRenames the workflow runs.
+ * mistyped file name in a rename plan is a plan for the wrong rename.
  *
- * The listing comes from WF-F's `List The Library` node, saved as
- * fixtures/sharepoint/task-management-listing.json.
+ * This used to re-derive the plan locally by calling planRenames, which was
+ * honest while the names came from rules. It is not any more: the names now
+ * come from a model reading the documents, and no local rerun can reproduce
+ * them. Deriving anything here would produce a page that agrees with itself and
+ * with nothing else. So the page is built from the run WF-F actually did, saved
+ * whole:
+ *
+ *   fixtures/sharepoint/organiser-run.json   the run — rows, folders, summary
+ *   fixtures/sharepoint/renames-applied.json what has already been changed
+ *
+ * To refresh it: run WF-F, then save its `Review The Library`, `Apply Proposals`
+ * and `Summary` node output into the run fixture.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { planRenames } from '../src/filenames.js';
-import { categoriseAll, folderOf, planPlacements } from '../src/library.js';
+import { folderOf } from '../src/library.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const listingPath = join(root, 'fixtures/sharepoint/task-management-listing.json');
+const runPath = join(root, 'fixtures/sharepoint/organiser-run.json');
 const appliedPath = join(root, 'fixtures/sharepoint/renames-applied.json');
 const htmlPath = join(root, 'docs/organiser-plan.html');
 
-if (!existsSync(listingPath)) {
-  console.error('fixtures/sharepoint/task-management-listing.json is missing.');
+if (!existsSync(runPath)) {
+  console.error('fixtures/sharepoint/organiser-run.json is missing. Run WF-F and save its output.');
   process.exit(2);
 }
 
-/** @type {Array<{ name: string, path: string, modified: string }>} */
-const listed = JSON.parse(readFileSync(listingPath, 'utf8'));
-
-// WF-F's Plan node drops folders by FSObjType. The listing keeps no such field
-// once saved, and planRename refuses anything without an extension anyway, but
-// filtering here keeps the counts on the page equal to the counts in the run.
-const files = listed.filter((f) => /\.[A-Za-z0-9]+$/.test(String(f.name)));
-
-const rows = planRenames(files, { assumeStatus: 'Draft', assumeVersion: { major: 0, minor: 1 } });
+/**
+ * @typedef {{
+ *   current: string, path: string, compliant: boolean, proposed: string, blocked: string,
+ *   assumptions: string[], namedBy?: string, why?: string,
+ *   category?: string, categoryWhy?: string, placement?: string, placementWhy?: string
+ * }} Row
+ */
+/** @type {{ executionId: string, ranAt: string, summary: any, folders: string[], rows: Row[] }} */
+const run = JSON.parse(readFileSync(runPath, 'utf8'));
+const rows = run.rows || [];
 
 /**
  * Why a file was refused, as a group a person can act on. The reason text is
@@ -47,11 +55,11 @@ const rows = planRenames(files, { assumeStatus: 'Draft', assumeVersion: { major:
  * @returns {string}
  */
 function refusalGroup(blocked) {
-  if (blocked.indexOf('is a date under one convention') !== -1) return 'ambiguous-date';
-  if (blocked.indexOf('already carries a version') !== -1) return 'unreadable-version';
   if (blocked.indexOf('a Power BI report is referenced by path') !== -1) return 'is-a-report';
   if (blocked.indexOf('opens with the same words as the report') !== -1) return 'feeds-a-report';
   if (blocked.indexOf('shares a folder with the report') !== -1) return 'feeds-a-report';
+  if (blocked.indexOf('is a date under one convention') !== -1) return 'ambiguous-date';
+  if (blocked.indexOf('already carries a version') !== -1) return 'unreadable-version';
   if (blocked.indexOf('same name') !== -1) return 'collision';
   if (blocked.indexOf('no file extension') !== -1) return 'not-a-document';
   return 'other';
@@ -69,32 +77,32 @@ function folderLabel(path) {
   return trimmed || '(library root)';
 }
 
-// What each document is, and whether it is where it should be. Keyed by path
-// so the three passes cannot drift out of step.
-/** @type {Record<string, { kind: string, kindWhy: string, placement: string, placementWhy: string }>} */
-const extra = {};
-for (const c of categoriseAll(files)) {
-  extra[c.path] = { kind: c.category, kindWhy: c.evidence, placement: '', placementWhy: '' };
-}
-for (const pl of planPlacements(files)) {
-  const entry = extra[pl.path];
-  if (!entry) continue;
-  entry.placement = pl.verdict;
-  entry.placementWhy = pl.reason;
-}
+/** @param {string} path */
+const asFolderLabel = (path) =>
+  String(path).replace(/^\/sites\/TaskManagement\/Shared Documents\/?/, '') || '(library root)';
 
+// The folder tree, counted from the rows so the page and the run cannot
+// disagree about how many files sit where. Folders the run listed but that hold
+// no documents are kept, because an empty folder is a fact about the library.
 /** @type {Record<string, { path: string, depth: number, files: number, kinds: Record<string, number> }>} */
 const folders = {};
-for (const f of files) {
-  const label = folderLabel(f.path);
-  const seen = folders[label] || (folders[label] = {
-    path: label,
-    depth: label === '(library root)' ? 0 : label.split('/').length - 1,
-    files: 0,
-    kinds: {},
-  });
+/** @param {string} label */
+function folderEntry(label) {
+  return (
+    folders[label] ||
+    (folders[label] = {
+      path: label,
+      depth: label === '(library root)' ? 0 : label.split('/').length - 1,
+      files: 0,
+      kinds: {},
+    })
+  );
+}
+for (const path of run.folders || []) folderEntry(asFolderLabel(path));
+for (const row of rows) {
+  const seen = folderEntry(folderLabel(row.path));
   seen.files += 1;
-  const kind = (extra[f.path] || { kind: 'other' }).kind;
+  const kind = row.category || 'other';
   seen.kinds[kind] = (seen.kinds[kind] || 0) + 1;
 }
 
@@ -102,7 +110,7 @@ for (const f of files) {
 // also the undo list: every line is a rename that can be reversed by hand.
 /** @type {Array<{ kind?: string, from: string, to: string, fromFolder?: string, assumptions: string[], applied: string, run: string }>} */
 const applied = existsSync(appliedPath) ? JSON.parse(readFileSync(appliedPath, 'utf8')) : [];
-const byName = new Map(files.map((f) => [f.name, f]));
+const byName = new Map(rows.map((r) => [r.current, r]));
 for (const r of applied) {
   if (!byName.has(r.to)) {
     console.error('the record claims a rename to ' + r.to + ', which is not in the library.');
@@ -113,7 +121,11 @@ for (const r of applied) {
 const data = {
   library: 'Documents',
   site: '/sites/TaskManagement',
-  generated: new Date().toISOString().slice(0, 10),
+  generated: String(run.ranAt || '').slice(0, 10),
+  execution: String(run.executionId || ''),
+  naming: String(run.summary?.modelNote || ''),
+  namedByModel: Number(run.summary?.namedByModel || 0),
+  readContents: run.summary?.readContents === true,
   scanned: rows.length,
   folders: Object.values(folders).sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
   applied: applied.map((r) => ({
@@ -125,22 +137,23 @@ const data = {
     assumptions: r.assumptions,
     folder: folderLabel(String((byName.get(r.to) || { path: '' }).path)),
   })),
-  rows: rows.map((r) => {
-    const found = extra[r.path] || { kind: '', kindWhy: '', placement: '', placementWhy: '' };
-    return {
-      current: r.current,
-      folder: folderLabel(r.path),
-      compliant: r.compliant,
-      proposed: r.proposed,
-      blocked: r.blocked,
-      group: r.blocked ? refusalGroup(r.blocked) : '',
-      assumptions: r.assumptions,
-      kind: found.kind,
-      kindWhy: found.kindWhy,
-      placement: found.placement,
-      placementWhy: found.placementWhy,
-    };
-  }),
+  rows: rows.map((r) => ({
+    current: r.current,
+    folder: folderLabel(r.path),
+    compliant: r.compliant,
+    proposed: r.proposed,
+    blocked: r.blocked,
+    group: r.blocked ? refusalGroup(r.blocked) : '',
+    assumptions: r.assumptions || [],
+    // Which of the two named it, and on what evidence. This is the whole point
+    // of the rewrite, so it goes on the page rather than staying in the run.
+    namedBy: r.proposed ? r.namedBy || 'rules' : '',
+    why: r.why || '',
+    kind: r.category || '',
+    kindWhy: r.categoryWhy || '',
+    placement: r.placement || '',
+    placementWhy: r.placementWhy || '',
+  })),
 };
 
 const html = readFileSync(htmlPath, 'utf8');
@@ -160,5 +173,5 @@ const refused = data.rows.filter((r) => r.blocked).length;
 const correct = data.rows.filter((r) => r.compliant).length;
 const unfiled = data.rows.filter((r) => r.placement === 'unfiled').length;
 console.log(
-  `scanned=${data.scanned} renamed=${data.applied.length} correct=${correct} outstanding=${ready} refused=${refused} unfiled=${unfiled} folders=${data.folders.length} -> docs/organiser-plan.html`,
+  `scanned=${data.scanned} renamed=${data.applied.length} correct=${correct} outstanding=${ready} (${data.namedByModel} named by the model) refused=${refused} unfiled=${unfiled} folders=${data.folders.length} -> docs/organiser-plan.html`,
 );
