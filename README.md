@@ -46,26 +46,60 @@ OPENAI_API_KEY=sk-... npm run gate1
 
 ## Live workflows
 
-| Workflow | ID | Trigger | Publish when |
+Fourteen, and every one is generated from `workflows/*.mjs`. A workflow in n8n
+with no generator here is scaffolding, and scaffolding gets archived once the
+question it was built to answer is written down.
+
+**Production** — tagged `prod`:
+
+| Workflow | ID | Trigger | Tags |
 |---|---|---|---|
-| WF-A · Poll & Classify | `dSGzw1yk46JTHD3Z` | every minute | credentials attached + Gate 1 passed |
-| WF-B · Draft Reply | `Rjpk5KuPopQCpCQL` | called by WF-A | credentials attached |
-| WF-D · Read Attachments | `ZYV9V281C1Kojzpz` | called by WF-A | live since 2026-09-02 |
-| WF-C · Daily Digest & Follow-ups | `vCbgJoNqfuVOqWGH` | weekdays 07:30 CT | after shadow mode |
-| WF-E · Error Handler | `XSKk6eHTFGqftrUM` | on failure | before the others |
-| WF-F · Organise Documents | `qh29SRwChF2g9bYB` | manual | never — it has no trigger but the manual one, and must not run unattended |
-| WF-T · Preflight (scope proof) | `1fCjIsw2JjVGkNJb` | manual | never — diagnostic only |
-| WF-S · Seed Test Inbox | `CNttEItjnRC4RkZZ` | manual | never — dev mailbox only, refuses to build for prod |
+| WF-A · Poll & Classify | `dSGzw1yk46JTHD3Z` | every minute | `prod` `email-agent` |
+| WF-B · Draft Reply | `Rjpk5KuPopQCpCQL` | called by WF-A | `prod` `email-agent` |
+| WF-C · Daily Digest & Follow-ups | `vCbgJoNqfuVOqWGH` | weekdays 07:30 CT | `prod` `email-agent` |
+| WF-D · Read Attachments | `ZYV9V281C1Kojzpz` | called by WF-A | `prod` `email-agent` |
+| WF-E · Error Handler | `XSKk6eHTFGqftrUM` | on failure | `prod` `email-agent` |
+| WF-F · Organise Documents | `qh29SRwChF2g9bYB` | manual | `prod` `documents` |
+| WF-T · Preflight (scope proof) | `1fCjIsw2JjVGkNJb` | manual | `prod` `email-agent` `diagnostic` |
+
+**Dev sandbox** — tagged `dev`, pointed at the `gtutor` mailbox:
+
+| Workflow | ID | Tags |
+|---|---|---|
+| WF-A · Poll & Classify · dev | `O6f4ck4gjG2KePBL` | `dev` `email-agent` |
+| WF-B · Draft Reply · dev | `Ps0RYrfT3auUNwKw` | `dev` `email-agent` |
+| WF-C · Daily Digest & Follow-ups · dev | `bbKJUs1WTX8kjixP` | `dev` `email-agent` |
+| WF-D · Read Attachments · dev | `P2BfDd7Y782I13ZD` | `dev` `email-agent` |
+| WF-E · Error Handler · dev | `E302rNL5D7NuBy5c` | `dev` `email-agent` |
+| WF-T · Preflight (scope proof) · dev | `8Y3MEkP7A4kEiuGK` | `dev` `email-agent` `diagnostic` |
+| WF-S · Seed Test Inbox · dev | `CNttEItjnRC4RkZZ` | `dev` `email-agent` `diagnostic` |
+
+WF-F has no dev copy: there is no second SharePoint library to point one at, and
+it changes nothing unless deliberately armed.
+
+### The conventions, and why each one
+
+**Names.** `WF-X · Title` in production, the same plus ` · dev` in the sandbox —
+composed by the generator as `NAME + targets.<env>.nameSuffix`, never typed into
+the n8n editor, because the next build renames it back. Sorting the list by name
+puts a unit beside its own dev copy, which is how you notice one has drifted.
+
+**Tags.** Exactly one environment tag and one system tag on everything, plus
+`diagnostic` on anything that must never be scheduled or left published. `prod`
+exists because production used to be identified by the *absence* of `dev`, and
+no filter can express an absence. `phase-1` and `upperform` were removed: both
+sat on every workflow, so neither selected anything.
+
+**Nothing falls back.** Each target names its own workflow IDs and the build
+throws if one is missing. There is no shared block to inherit from — a dev build
+of WF-A once inherited the production WF-B and would have drafted into Yancey's
+mailbox from the sandbox. `src/deployment.test.js` holds these rules, including
+that no ID and no mailbox credential may serve two environments, and that the
+seeder never appears under production.
 
 Base URL: `https://n8n-wevu.srv1921545.hstgr.cloud`
 Data tables: `agent_email_log_yancey` (`cKOjAskKEn5wYTuf`), `agent_error_log` (`Q6j7VEadubVstttP`)
 SharePoint: `https://upperformpartners.sharepoint.com/sites/TaskManagement`, credential `We80s2s9pbxJWWp2`
-
-Every id above is prod. The dev equivalents live under `targets.dev` in
-`config/deploy.json` — never hard-code one, because a dev workflow naming a
-production id is how drafts end up in the wrong mailbox.
-
-Next steps are in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Changing behaviour
 

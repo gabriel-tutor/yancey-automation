@@ -5,15 +5,6 @@
     "emailLog": "cKOjAskKEn5wYTuf",
     "errorLog": "Q6j7VEadubVstttP"
   },
-  "workflows": {
-    "wfA": "dSGzw1yk46JTHD3Z",
-    "wfB": "Rjpk5KuPopQCpCQL",
-    "wfC": "vCbgJoNqfuVOqWGH",
-    "wfE": "XSKk6eHTFGqftrUM",
-    "wfT": "1fCjIsw2JjVGkNJb",
-    "wfS": "CNttEItjnRC4RkZZ",
-    "wfF": "qh29SRwChF2g9bYB"
-  },
   "n8nBaseUrl": "https://n8n-wevu.srv1921545.hstgr.cloud",
   "credentials": {
     "_note": "IDs only. Secrets live in n8n, encrypted under N8N_ENCRYPTION_KEY. Never store keys here.",
@@ -49,7 +40,7 @@
     "wfS": false,
     "wfD": false
   },
-  "_note": "Two targets. `npm run build` uses prod; `TARGET=dev npm run build` uses dev. The credential is referenced by NAME in the generated SDK, so renaming one in n8n silently repoints every workflow built afterwards — which is why the name lives here.",
+  "_note": "IDs only. Secrets live in n8n, encrypted under N8N_ENCRYPTION_KEY. Never store keys here. There is deliberately no top-level workflows block: it duplicated the production ids and a missing id in a target silently fell back to it, which once had a dev build of WF-A calling the production WF-B. Every id is read from targets.<env>.workflows or the build fails.",
   "targets": {
     "prod": {
       "label": "Yancey (live)",
@@ -68,7 +59,6 @@
         "wfD": "ZYV9V281C1Kojzpz",
         "wfE": "XSKk6eHTFGqftrUM",
         "wfT": "1fCjIsw2JjVGkNJb",
-        "wfS": "CNttEItjnRC4RkZZ",
         "wfF": "qh29SRwChF2g9bYB"
       },
       "digestTo": "YDawson@partnersperform.com",
@@ -102,7 +92,8 @@
         "wfC": "bbKJUs1WTX8kjixP",
         "wfE": "E302rNL5D7NuBy5c",
         "wfT": "8Y3MEkP7A4kEiuGK",
-        "wfD": "P2BfDd7Y782I13ZD"
+        "wfD": "P2BfDd7Y782I13ZD",
+        "wfS": "CNttEItjnRC4RkZZ"
       },
       "digestTo": "gtutor@partnersperform.com",
       "mailboxLabel": "gtutor@partnersperform.com (dev sandbox)",
@@ -129,5 +120,12 @@
     "_note": "Answering Yancey's question of 2026-08-28. n8n execution history — which holds full message bodies while a run is in flight — is pruned after 168 hours (7 days) by EXECUTIONS_DATA_PRUNE and EXECUTIONS_DATA_MAX_AGE on the VPS. The decision log (agent_email_log_yancey) holds subject, sender, label, reasoning and links, and is retained indefinitely so the audit trail survives; rows are closed after autoCloseDays but never deleted. Deleting a client's decision record is his call, not ours, so logRetentionDays defaults to 0 (never). Set it to a number of days to enable purging of closed rows.",
     "executionHistoryDays": 7,
     "logRetentionDays": 0
+  },
+  "_conventions": {
+    "_note": "How the n8n instance is kept organised. Enforced by src/deployment.test.js where it can be, and by reading where it cannot.",
+    "naming": "Every workflow name is NAME + targets.<t>.nameSuffix, composed by the generator. Production is \"WF-X - Title\"; dev is the same plus \" . dev\". Sorting by name therefore puts a unit and its dev copy next to each other, which is how you notice one has drifted from the other. Never rename a workflow in the n8n editor: the next build renames it back.",
+    "tags": "Exactly one environment tag (prod | dev) and exactly one system tag (email-agent | documents) on every workflow, plus \"diagnostic\" on anything that must never be scheduled or left published. Production used to be identified only by the absence of a dev tag, which no filter can express. \"phase-1\" and \"upperform\" were removed: they were on every workflow and so selected nothing.",
+    "archiving": "Scaffolding built to answer one question is archived once the answer is written down. A probe that would now give the wrong answer is worse than no probe.",
+    "everything_is_generated": "Every workflow in the instance is generated from workflows/*.mjs. Hand-built workflows are scaffolding and get archived; if one earns a permanent place, write its generator first."
   }
 }

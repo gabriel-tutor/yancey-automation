@@ -1,7 +1,7 @@
 import { codeNode } from '../scripts/bundle.mjs';
 import { CLASSIFY_SCHEMA } from '../src/prompts.js';
 import { HELPERS } from './helpers-manifest.mjs';
-import { DEPLOY, E, GRAPH, POLICY, S, SDK_IMPORT, contextLoaderNodes, OUTLOOK_CREDENTIAL, SUFFIX, TABLES, TARGET } from './shared.mjs';
+import { E, GRAPH, POLICY, S, SDK_IMPORT, contextLoaderNodes, OUTLOOK_CREDENTIAL, SUFFIX, TABLES, TARGET } from './shared.mjs';
 
 const CONFIG = {
   modelClassify: 'gpt-5.6-luna',
@@ -182,11 +182,17 @@ return {
 export const NAME = 'WF-A · Poll & Classify' + SUFFIX;
 
 export async function build() {
-  // Per target. The top-level block holds production IDs, so reading it
-  // directly made a dev build of WF-A call the *production* WF-B — drafting
-  // into Yancey's mailbox from the sandbox.
-  const wfB = (TARGET.workflows && TARGET.workflows.wfB) || DEPLOY.workflows.wfB;
-  if (!wfB) throw new Error('config/deploy.json: workflows.wfB must be set before building WF-A');
+  // Per target, with no fallback. A dev build of WF-A once called the
+  // *production* WF-B — drafting into Yancey's mailbox from the sandbox —
+  // because a missing id quietly resolved to the top-level block, which held
+  // production ids. A target that does not name its own WF-B is a mistake, and
+  // the build should say so rather than pick one.
+  const wfB = TARGET.workflows && TARGET.workflows.wfB;
+  if (!wfB) {
+    throw new Error(
+      'config/deploy.json: targets.' + TARGET.name + '.workflows.wfB must be set before building WF-A',
+    );
+  }
 
   // Attachment reading is switched on by the presence of a WF-D id for this
   // target, and nothing else. Yancey was told in writing that the assistant

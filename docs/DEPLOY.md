@@ -1775,6 +1775,85 @@ library now reads 21 scanned, 6 compliant, 0 outstanding, 15 refused with a
 reason each, 1 unfiled. The record and the undo list are in
 `fixtures/sharepoint/renames-applied.json`.
 
+## Organising the n8n instance, 2026-09-02
+
+Twenty-four workflows, two naming conventions, tags that selected nothing, a
+duplicate, and eight pieces of scaffolding whose questions were already
+answered. Fourteen remain.
+
+**The duplicate.** Two workflows were called `WF-F · Organise Documents`. The
+first, `ZEIPYYQTBsmOuRek`, was created at 02:01 and abandoned at 02:03; the one
+that was built out is `qh29SRwChF2g9bYB`, created at 02:14. Identical names are
+how the wrong one gets opened and edited, so the dead one is renamed
+`zz · WF-F duplicate` until it is archived.
+
+**Two naming conventions.** WF-A, B, C and E carried a `dev - ` prefix; WF-D, T
+and the probes carried a ` · dev` suffix. The generators compose every name as
+`NAME + targets.<env>.nameSuffix`, and `targets.dev.nameSuffix` is `" · dev"` —
+so the prefixed four were drift from before that existed. All four renamed. The
+suffix form also sorts a unit beside its own dev copy, which is how you notice
+one has drifted from the other.
+
+**`WF-S · Seed Test Inbox` carried no environment marker at all.** It plants six
+fabricated emails into whatever mailbox its credential owns, and it read as
+production. It is bound to the dev credential and its generator refuses to build
+for production, so only the name was wrong — but until 28 August it really was
+bound to Yancey's live mailbox, through a credential whose cached display name
+said "Outlook – Dev (gtutor)" while the ID belonged to Yancey. Renamed
+`· dev`, tagged `diagnostic`, and its description now names the credential ID
+rather than its label.
+
+**Tags selected nothing.** `phase-1` and `upperform` sat on every tagged
+workflow, and production was identified by the *absence* of `dev`, which no
+filter can express. Replaced with one environment tag (`prod` | `dev`), one
+system tag (`email-agent` | `documents`), and `diagnostic` on anything that must
+never be scheduled or left published. WF-D and WF-F had no tags at all and were
+invisible to every filter.
+
+**Descriptions that had gone wrong.** WF-A said it polls every 2 minutes; it has
+polled every minute since 28 August. WF-C said the digest goes out over SMTP;
+it has been written into the mailbox over Graph for days, which is a stronger
+guarantee than the sentence claimed. Every dev copy carried production's
+description verbatim, so four workflows pointed at the `gtutor` mailbox while
+claiming to act on Yancey's.
+
+### Two config faults found while doing it
+
+**The seeder's ID was recorded under production.** `targets.prod.workflows.wfS`
+held the dev seeder's ID and `targets.dev.workflows` had no `wfS` at all —
+exactly backwards for the one workflow that must never touch a client mailbox.
+
+**A missing ID fell back to production.** `wf-a-classify.mjs` read
+`(TARGET.workflows && TARGET.workflows.wfB) || DEPLOY.workflows.wfB`, and the
+comment directly above it described the bug that fallback causes: a dev build of
+WF-A calling the production WF-B, drafting into Yancey's mailbox from the
+sandbox. The fallback is gone, the build throws instead, and the top-level
+`workflows` block — which duplicated the production IDs and existed only to be
+fallen back to — is deleted.
+
+`src/deployment.test.js` holds all of this: no ID and no mailbox credential may
+serve two environments, the seeder never appears under production, there is no
+top-level block to inherit from, every named workflow has a generator, and the
+conventions are written into `config/deploy.json` rather than left to memory.
+
+### Waiting on approval: ten to archive
+
+Archiving is a destructive action on a client instance, so it needs a person.
+All ten are tagged `stale` — filter by that tag and archive the selection.
+
+| Workflow | Why |
+|---|---|
+| `zz · WF-F duplicate` | abandoned after two minutes; nothing references it |
+| `WF-S0 · SharePoint access probe · dev` | **would give the wrong answer today** — probed SharePoint with the Outlook credential |
+| `WF-S8 · SharePoint permissions probe` | answered; the two-endpoint technique is recorded above |
+| `WF-S9 · Find the Task Management site` | answered; the host is in `deploy.json` |
+| `WF-S1`, `WF-S3`, `WF-S6`, `WF-S7` | one-shot scaffolding for attachment ingestion, now live and tested |
+| `WF-S4`, `WF-S5` | read logs and drafts back before execution data could be fetched directly |
+
+`workflows/wf-s0-probe.mjs` is deleted outright rather than archived: a
+generator that rebuilds a workflow whose premise was disproved is worse than
+having no probe.
+
 ## Still open
 
 Three things, none of them mine to close.
