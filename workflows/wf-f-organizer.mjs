@@ -1,6 +1,23 @@
 import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from './helpers-manifest.mjs';
-import { DEPLOY, E, S, SDK_IMPORT, TARGET } from './shared.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { DEPLOY, E, ROOT, S, SDK_IMPORT, TARGET } from './shared.mjs';
+
+/**
+ * The plan a person has read and signed off, kept as data rather than typed
+ * into the Config node by hand. Only the from/to pairs travel into the
+ * workflow; the reasons and assumptions stay in the file, where they are what
+ * the review page was built from.
+ */
+function approvedPlan() {
+  try {
+    const file = JSON.parse(readFileSync(join(ROOT, 'config/approved-plan.json'), 'utf8'));
+    return (file.plan || []).map((line) => ({ from: String(line.from), to: String(line.to) }));
+  } catch {
+    return [];
+  }
+}
 
 /**
  * WF-F — the document organiser.
@@ -59,7 +76,7 @@ const CONFIG = {
   //
   // Leave it empty and the switches apply whatever the current run proposes,
   // which is fine for a sandbox and wrong for a library someone relies on.
-  approvedPlan: [],
+  approvedPlan: approvedPlan(),
 
   // readContents is the consent switch. With it off the model sees only names,
   // folders and kinds, and nothing from inside a document leaves the tenant.
