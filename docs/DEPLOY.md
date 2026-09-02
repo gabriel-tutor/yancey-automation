@@ -1827,9 +1827,9 @@ the refusal names the report in each case. Sample of what changed:
 | was | becomes |
 |---|---|
 | `Screenshot 2025-04-06 at 6.34.18 PM.png` | `Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png` |
-| `Screenshot 2025-04-06 at 6.34.50 PM.png` | `Net-Profit-Dashboard_2025-04-06_Draft_v0.1.png` |
-| `Metrics_2025-04-15_Draft_v0.1.xlsx` | `Upperform_Metric-Development-Tracker_2025-04-15_Draft_v0.1.xlsx` |
-| `Power BI TCO Pilot_YD_04072025.xlsx` | `TCO_Project-Portfolio-Tracker_2025-04-08_Draft_v0.1.xlsx` |
+| `Screenshot 2025-04-06 at 6.34.50 PM.png` | `Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png` |
+| `Metrics_2025-04-15_Draft_v0.1.xlsx` | `Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx` |
+| `Power BI TCO Pilot_YD_04072025.xlsx` | `TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx` |
 | `DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf` | `DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf` |
 
 Files renamed on 2 September appear here again. That is not a loop: the first
@@ -1842,6 +1842,34 @@ person could fix — fix the date and the rename goes ahead. It would not: being
 Power BI report is the stronger fact and the one that does not go away. The
 report guards in `planRenames` now run even when a row is already blocked for
 another reason.
+
+### Approval has to bind, 2026-09-02
+
+Runs 9006 and 9068 disagreed on **7 of 12 names** over an unchanged library.
+`Time-Zone-Conversion-Table` then `Timezone-Conversion-Table`.
+`Net-Profit-Period-Dashboard` then `Profit-Performance-Dashboard`. Both
+reasonable; neither the one on the page that was approved. Arming `applyRenames`
+would have re-run the model and applied whatever it said that time, which makes
+the review a demonstration rather than an approval.
+
+`config/approved-plan.json` now holds the signed-off plan and the generator
+lifts the `from`/`to` pairs into Config as `approvedPlan`. Filled in, the apply
+path uses exactly those and ignores the run's own proposals; anything not on the
+list is left alone and says so. Every guard still runs over each line, plus one
+this turned up: **a rename may not change the file extension.**
+
+It also makes re-running safe. Once applied, the `from` names no longer exist,
+so a second run is a no-op rather than renaming everything again.
+
+**The plan half-applied the first time, and that is worth recording.** Run 9090
+applied 9 of 12. The three misses were macOS screenshots, whose names carry
+**U+202F**, a narrow no-break space, before `PM`. The plan had been typed into
+the Config node by hand with an ordinary space, so those lines matched nothing.
+The guard did the right thing — an unmatched line renames nothing — but it did
+it silently. `approvedNotFound` now reports them, `src/plan-names.test.js` holds
+every file name quoted in a document to one that exists in the plan or the
+library, and the lesson is the repo's own rule, broken by me: **nothing is
+transcribed.**
 
 **The page is no longer re-derived.** `scripts/build-organiser-plan.mjs` used to
 rerun `planRenames` locally to fill `docs/organiser-plan.html`, which was honest

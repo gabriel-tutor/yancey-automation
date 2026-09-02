@@ -266,11 +266,11 @@
         </thead>
         <tbody>
           <tr><td class="was">Screenshot 2025-04-06 at 6.34.18 PM.png</td><td class="now">Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png</td></tr>
-          <tr><td class="was">Screenshot 2025-04-06 at 6.34.50 PM.png</td><td class="now">Net-Profit-Dashboard_2025-04-06_Draft_v0.1.png</td></tr>
-          <tr><td class="was">Screenshot 2025-04-06 at 6.35.10 PM.png</td><td class="now">Units-Sold-Dashboard_2025-04-06_Draft_v0.1.png</td></tr>
-          <tr><td class="was">Power BI TCO Pilot_YD_04072025.xlsx</td><td class="now">TCO_Project-Portfolio-Tracker_2025-04-08_Draft_v0.1.xlsx</td></tr>
-          <tr><td class="was">DEL-asme-b31-8s-2004.pdf</td><td class="now">DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf</td></tr>
-          <tr><td class="was">Metrics .xlsx</td><td class="now">Upperform_Metric-Development-Tracker_2025-04-15_Draft_v0.1.xlsx</td></tr>
+          <tr><td class="was">Screenshot 2025-04-06 at 6.34.50 PM.png</td><td class="now">Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png</td></tr>
+          <tr><td class="was">Screenshot 2025-04-06 at 6.35.10 PM.png</td><td class="now">Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png</td></tr>
+          <tr><td class="was">Power BI TCO Pilot_YD_04072025.xlsx</td><td class="now">TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx</td></tr>
+          <tr><td class="was">DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf</td><td class="now">DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf</td></tr>
+          <tr><td class="was">Metrics_2025-04-15_Draft_v0.1.xlsx</td><td class="now">Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx</td></tr>
         </tbody>
       </table>
     </div>
@@ -387,6 +387,30 @@
 
   <section>
     <div class="sec-head">
+      <h2>What you approve is what gets applied</h2>
+      <p>The model does not give the same answer twice, so the plan has to be pinned. Otherwise arming the switch would apply names nobody read.</p>
+    </div>
+
+    <div class="callout">
+      <p>Two runs an hour apart disagreed on seven of twelve names.</p>
+      <p>Same library, nothing changed between them. One called a file <code>Time-Zone-Conversion-Table</code>, the next called it <code>Timezone-Conversion-Table</code>. One said <code>Net-Profit-Period-Dashboard</code>, the next said <code>Profit-Performance-Dashboard</code>. Both are reasonable names. Neither is necessarily the one on the page that was approved.</p>
+      <p>That is not a flaw to hide &mdash; it is what a language model is. But it means a review that does not <em>bind</em> to what gets applied is a demonstration, not an approval.</p>
+    </div>
+
+    <p class="prose" style="margin-top:20px;color:var(--ink-soft)">So the approved plan is pinned. <code>approvedPlan</code> holds the twelve <code>from</code> &rarr; <code>to</code> pairs that were read and signed off, and when it is filled in the run applies <strong>exactly those</strong> and ignores what its own model call said this time. Anything not on the list is left alone and says so.</p>
+
+    <p class="prose" style="margin-top:14px;color:var(--ink-soft)">An approved line is a request, not an instruction. Every guard still runs over it: the file must still be there, still be un-guarded, keep its extension, satisfy the convention, and not collide with another name. And a line whose file is not there any more &mdash; already renamed, or renamed by hand &mdash; is <em>reported</em> rather than quietly skipped.</p>
+
+    <div class="callout" style="margin-top:20px">
+      <p>That last check exists because the plan half-applied once.</p>
+      <p>Nine of twelve lines matched. The three that did not were macOS screenshots, whose file names contain <code>U+202F</code> &mdash; a narrow no-break space &mdash; before <code>PM</code>. Retyped with an ordinary space they look identical and match nothing. Leaving those three alone was the right thing to do; doing it without saying so was not, and now the run says so.</p>
+    </div>
+
+    <p class="prose" style="margin-top:20px;color:var(--ink-soft)">It also makes re-running safe. Once the approved names are applied, the <code>from</code> names no longer exist, so running it again does nothing rather than renaming everything a second time with fresh wording.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
       <h2>How to run it</h2>
       <p>It is manual only &mdash; no schedule, not published. Nothing happens in that library unless a person clicks the button.</p>
     </div>
@@ -406,6 +430,10 @@
       <div class="step">
         <div class="when">Read</div>
         <div class="what"><b>Click the Summary node and open its output.</b> That is the whole answer in one place: a headline, every proposed rename with the reason the model chose it, every assumption it made, and every refusal with the reason in full.</div>
+      </div>
+      <div class="step">
+        <div class="when">Arm</div>
+        <div class="what"><b>To actually rename, set <code>applyRenames</code> to <code>true</code> and run again.</b> It applies the pinned <code>approvedPlan</code>, five files at a time &mdash; so twelve names takes three runs. Check the Summary&rsquo;s <code>applied</code> and <code>failed</code> lists after each. Set it back to <code>false</code> when you are done.</div>
       </div>
       <div class="step">
         <div class="when">Publish</div>
@@ -432,7 +460,8 @@
         <tbody>
           <tr><td class="k">applyRenames</td><td class="v">false</td><td class="d">Whether it actually renames. Off, so a run produces a review and changes nothing. Arming it is a deliberate edit.</td></tr>
           <tr><td class="k">applyMoves</td><td class="v">false</td><td class="d">Whether it actually moves files. A separate switch from renaming, because it is a separate promise.</td></tr>
-          <tr><td class="k">maxChangesPerRun</td><td class="v">5</td><td class="d">Even armed, one run touches at most this many files &mdash; renames and moves together. Few enough to check by eye and undo by hand.</td></tr>
+          <tr><td class="k">maxChangesPerRun</td><td class="v">5</td><td class="d">Even armed, one run touches at most this many files &mdash; renames and moves together. Few enough to check by eye and undo by hand. Twelve approved names therefore take three runs.</td></tr>
+          <tr><td class="k">approvedPlan</td><td class="v">12 lines</td><td class="d">The plan that was read and signed off, as <code>from</code> &rarr; <code>to</code> pairs. Filled in, the run applies exactly these and ignores its own proposals; empty, the switches apply whatever the current run says, which is fine for a sandbox and wrong for a library someone relies on.</td></tr>
           <tr><td class="k">readContents</td><td class="v">true</td><td class="d">Whether it opens the documents it is naming. Off, and the model sees only names, folders and kinds.</td></tr>
           <tr><td class="k">modelNaming</td><td class="v">gpt-5.6-luna</td><td class="d">The model that writes the names. It returns the parts; the code assembles and validates.</td></tr>
           <tr><td class="k">maxNamed</td><td class="v">30</td><td class="d">How many documents one run will open at all. A ceiling on both cost and exposure.</td></tr>
@@ -504,6 +533,7 @@
       <li><b>A red node on the canvas</b> The run failed, which is different from the organiser finding nothing to do. A run that finds nothing still finishes green and says so in the Summary.</li>
       <li><b>&ldquo;the model call failed, so the rules named what they could&rdquo;</b> The OpenAI call did not come back. The run carries on and finishes &mdash; the naming degrades, it does not break. Run it again.</li>
       <li><b>A document named from its path rather than its contents</b> It would not download, would not open, or was over the size cap. The Summary names which, on that document&rsquo;s line.</li>
+      <li><b>&ldquo;N approved file(s) are no longer in the library under that name&rdquo;</b> A line on the approved plan matched nothing. Either it has already been applied &mdash; which is expected on a second run &mdash; or the name was retyped and a character does not match. The Summary lists exactly which lines.</li>
       <li><b>A rename that failed when armed</b> Almost always something already sitting on the new name. The call refuses rather than overwriting, and the reason comes back on that line.</li>
       <li><b>SharePoint refusing everything</b> A scope problem rather than a permission one, usually. There is a read-only diagnostic, <code>WF-P &middot; SharePoint Permissions</code>, that compares what the token can do against what the person may do &mdash; when the second is wider, it is the scope.</li>
     </ul>

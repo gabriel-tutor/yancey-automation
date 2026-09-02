@@ -39,5 +39,5 @@ export const HELPERS = {
   'wf-f/Pick What To Name': { naming: ['namingCandidates'], library: ['reportsIn'] },
   'wf-f/Read Contents': { unzip: ['officeText'] },
   'wf-f/Compose Request': { naming: ['buildNamingRequest'] },
-  'wf-f/Apply Proposals': { naming: ['applyProposals', 'applyApprovedPlan'], library: ['reportsIn'] },
+  'wf-f/Apply Proposals': { naming: ['applyProposals', 'applyApprovedPlan', 'approvedNotFound'], library: ['reportsIn'] },
 };

@@ -344,6 +344,30 @@ function refuseCollisions(rows) {
 }
 
 /**
+ * Approved lines whose file is not in the library any more.
+ *
+ * This exists because a hand-typed plan silently half-applied. Three macOS
+ * screenshots carry U+202F, a narrow no-break space, before "PM" — and a plan
+ * typed with an ordinary space matched nine of twelve lines and quietly skipped
+ * the other three. Leaving a file alone is the right thing to do with a line
+ * that does not match; doing it without saying so is not.
+ *
+ * A line can also go missing for an ordinary reason: it was applied already, or
+ * somebody renamed the file by hand. Either way it is worth reporting.
+ *
+ * @param {any[]} rows
+ * @param {Array<{ from: string, to: string }>} approved
+ * @returns {string[]}
+ */
+export function approvedNotFound(rows, approved) {
+  const present = new Set((Array.isArray(rows) ? rows : []).map((r) => String(r.current)));
+  return (Array.isArray(approved) ? approved : [])
+    .filter((a) => a && a.from)
+    .map((a) => String(a.from))
+    .filter((from) => !present.has(from));
+}
+
+/**
  * Apply a plan a person has already read and approved, instead of whatever this
  * run's model call happens to say.
  *

@@ -1,7 +1,7 @@
 {
-  "executionId": "9006",
+  "executionId": "9087",
   "workflowId": "CC8jik1RGti4JXZk",
-  "ranAt": "2026-09-02T19:10:34.408Z",
+  "ranAt": "2026-09-02T20:26:48.847Z",
   "summary": {
     "headline": "12 to rename, 0 to move, 9 left alone, 0 already correct",
     "library": "Documents",
@@ -9,14 +9,16 @@
     "scanned": 21,
     "compliant": 0,
     "naming": "the model read and named 12 documents",
+    "plan": "this run proposed these names",
     "namedByModel": 12,
+    "approvedCount": 0,
     "readContents": true,
     "toRename": [
       {
         "file": "Task Management Channel Guide_YD_04042025.docx",
-        "becomes": "Task-Management-Channel-Guide_2025-04-07_Draft_v0.1.docx",
+        "becomes": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
         "namedBy": "model",
-        "why": "The contents describe task-channel folders, workflow stages, and naming conventions, but evidence no project, status, version, or unambiguous document date.",
+        "why": "The contents describe task-channel folders, workflow stages, and naming conventions, but evidence no project or unambiguous document date.",
         "assuming": [
           "no project code was evidenced, so none was added",
           "status assumed to be Draft, the document does not say",
@@ -26,9 +28,9 @@
       },
       {
         "file": "Daily_Employee_Project_Time_Trackingv1.xlsx",
-        "becomes": "Employee-Time-Tracking-Log_2025-08-08_Draft_v0.1.xlsx",
+        "becomes": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
         "namedBy": "model",
-        "why": "The spreadsheet contains daily employee, project, task, time, and notes fields, with no evidenced project, status, version, or document date.",
+        "why": "The spreadsheet contains daily employee, project, task, time, and notes fields without identifying a project, status, date, or formatted version.",
         "assuming": [
           "no project code was evidenced, so none was added",
           "status assumed to be Draft, the document does not say",
@@ -38,18 +40,18 @@
       },
       {
         "file": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
-        "becomes": "Time-Zone-Conversion-Table_2025-04-07_Draft_v0.1.xlsx",
+        "becomes": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
         "namedBy": "model",
-        "why": "The sheet maps Central Time to Philippines Time, while the filename provides the ISO date, Draft status, and version.",
+        "why": "The sheet maps Central Time to Philippines Time, while the name states the date, Draft status, and version.",
         "assuming": [
           "no project code was evidenced, so none was added"
         ]
       },
       {
         "file": "Power BI TCO Pilot_YD_04072025.xlsx",
-        "becomes": "TCO_Project-Portfolio-Tracker_2025-04-08_Draft_v0.1.xlsx",
+        "becomes": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
         "namedBy": "model",
-        "why": "The filename evidences the TCO project, and the sheet contains project IDs, budgets, schedules, managers, stages, and statuses; the numeric date is ambiguous.",
+        "why": "The name identifies TCO and the workbook lists project IDs, budgets, stages, managers, and statuses; its numeric date is ambiguous.",
         "assuming": [
           "status assumed to be Draft, the document does not say",
           "date taken from the file timestamp, not the document",
@@ -60,7 +62,7 @@
         "file": "Screenshot_2025-04-06_Draft_v0.1.png",
         "becomes": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
         "namedBy": "model",
-        "why": "The image shows a Project Management Insights dashboard, and the filename provides the ISO date, Draft status, and version.",
+        "why": "The image shows a Project Management Insights dashboard with project costs, tasks, resources, and timelines, and the name states the date, status, and version.",
         "assuming": [
           "no project code was evidenced, so none was added"
         ]
@@ -69,25 +71,23 @@
         "file": "Screenshot_2025-04-14_Draft_v0.1.png",
         "becomes": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
         "namedBy": "model",
-        "why": "The image is headed Enterprise Performance Summary and Level 1 Metrics Performance, with date, Draft status, and version evidenced by the filename.",
+        "why": "The image is headed Enterprise Performance Summary and presents Level 1 metric performance, while the name states the date, status, and version.",
         "assuming": [
           "no project code was evidenced, so none was added"
         ]
       },
       {
         "file": "Metrics_2025-04-15_Draft_v0.1.xlsx",
-        "becomes": "Metric-Development-Tracker_2025-04-15_Draft_v0.1.xlsx",
+        "becomes": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
         "namedBy": "model",
-        "why": "The sheet tracks metric issues, approvals, and development actions, and references NiSource and Upperform; the filename provides the date, Draft status, and version.",
-        "assuming": [
-          "no project code was evidenced, so none was added"
-        ]
+        "why": "The workbook tracks deliverables, issues, actions, and metric additions approved for Upperform to build, and the name states the date, status, and version.",
+        "assuming": []
       },
       {
         "file": "Screenshot 2025-04-06 at 6.34.18 PM.png",
-        "becomes": "Sales-Performance-Dashboard_2025-04-06_Draft_v0.1.png",
+        "becomes": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
         "namedBy": "model",
-        "why": "The image shows an Adventure Works dashboard with units sold, gross sales, net profit, channels, categories, countries, products, resellers, and customers.",
+        "why": "The image shows an Adventure Works sales dashboard overview with units sold, gross sales, net profit, channels, products, resellers, and customers.",
         "assuming": [
           "no project code was evidenced, so none was added",
           "status assumed to be Draft, the document does not say",
@@ -96,9 +96,9 @@
       },
       {
         "file": "Screenshot 2025-04-06 at 6.34.50 PM.png",
-        "becomes": "Net-Profit-Period-Dashboard_2025-04-06_Draft_v0.1.png",
+        "becomes": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
         "namedBy": "model",
-        "why": "The image shows Adventure Works net profit by fiscal quarter, fiscal year, reporting period, and percentage to goal.",
+        "why": "The image shows an Adventure Works period view focused on net profit by fiscal quarter, fiscal year, and reporting period.",
         "assuming": [
           "no project code was evidenced, so none was added",
           "status assumed to be Draft, the document does not say",
@@ -107,9 +107,9 @@
       },
       {
         "file": "Screenshot 2025-04-06 at 6.35.10 PM.png",
-        "becomes": "Units-Sold-Period-Dashboard_2025-04-06_Draft_v0.1.png",
+        "becomes": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
         "namedBy": "model",
-        "why": "The image shows Adventure Works units sold by fiscal quarter and fiscal year, including period detail and percentage-to-average results.",
+        "why": "The image shows an Adventure Works period view focused on units sold by fiscal quarter, fiscal year, and reporting period.",
         "assuming": [
           "no project code was evidenced, so none was added",
           "status assumed to be Draft, the document does not say",
@@ -120,14 +120,14 @@
         "file": "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
         "becomes": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
         "namedBy": "model",
-        "why": "The DIMP folder and sheet title evidence a Table E-1 performance-measures table covering multiple states.",
+        "why": "The DIMP-folder workbook is headed Table E-1 Performance Measures and contains all-state threat, baseline, trend, collection, and responsibility fields.",
         "assuming": []
       },
       {
         "file": "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
         "becomes": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
         "namedBy": "model",
-        "why": "The DIMP folder and filename identify an ASME B31.8S-2004 technical document, with date, Draft status, and version shown in the filename.",
+        "why": "The DIMP-folder PDF name identifies ASME B31.8S-2004 and states the date, Draft status, and version.",
         "assuming": []
       }
     ],
@@ -201,7 +201,7 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "Task-Management-Channel-Guide_2025-04-07_Draft_v0.1.docx",
+      "proposed": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
@@ -216,7 +216,7 @@
       "placementWhy": "filed under Resources and References",
       "destination": "",
       "namedBy": "model",
-      "why": "The contents describe task-channel folders, workflow stages, and naming conventions, but evidence no project, status, version, or unambiguous document date."
+      "why": "The contents describe task-channel folders, workflow stages, and naming conventions, but evidence no project or unambiguous document date."
     },
     {
       "current": "Daily_Employee_Project_Time_Trackingv1.xlsx",
@@ -225,7 +225,7 @@
       "problems": [
         "ends with \"Trackingv1\" rather than a version like v0.1 or v1.0"
       ],
-      "proposed": "Employee-Time-Tracking-Log_2025-08-08_Draft_v0.1.xlsx",
+      "proposed": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
@@ -233,21 +233,21 @@
         "version assumed to be v0.1"
       ],
       "blocked": "",
-      "category": "Time Tracker",
+      "category": "Time Log",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Resources and References",
       "placement": "settled",
       "placementWhy": "filed under Resources and References",
       "destination": "",
       "namedBy": "model",
-      "why": "The spreadsheet contains daily employee, project, task, time, and notes fields, with no evidenced project, status, version, or document date."
+      "why": "The spreadsheet contains daily employee, project, task, time, and notes fields without identifying a project, status, date, or formatted version."
     },
     {
       "current": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
       "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
       "compliant": false,
       "problems": [],
-      "proposed": "Time-Zone-Conversion-Table_2025-04-07_Draft_v0.1.xlsx",
+      "proposed": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
       "assumptions": [
         "no project code was evidenced, so none was added"
       ],
@@ -259,7 +259,7 @@
       "placementWhy": "filed under Resources and References",
       "destination": "",
       "namedBy": "model",
-      "why": "The sheet maps Central Time to Philippines Time, while the filename provides the ISO date, Draft status, and version."
+      "why": "The sheet maps Central Time to Philippines Time, while the name states the date, Draft status, and version."
     },
     {
       "current": "Power BI TCO Pilot_YD_04072025.xlsx",
@@ -270,21 +270,21 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "TCO_Project-Portfolio-Tracker_2025-04-08_Draft_v0.1.xlsx",
+      "proposed": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
       "assumptions": [
         "status assumed to be Draft, the document does not say",
         "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
       "blocked": "",
-      "category": "Project Tracker",
+      "category": "Project Register",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "1. Assigned Tasks",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The filename evidences the TCO project, and the sheet contains project IDs, budgets, schedules, managers, stages, and statuses; the numeric date is ambiguous."
+      "why": "The name identifies TCO and the workbook lists project IDs, budgets, stages, managers, and statuses; its numeric date is ambiguous."
     },
     {
       "current": "Screenshot_2025-04-06_Draft_v0.1.png",
@@ -303,7 +303,7 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image shows a Project Management Insights dashboard, and the filename provides the ISO date, Draft status, and version."
+      "why": "The image shows a Project Management Insights dashboard with project costs, tasks, resources, and timelines, and the name states the date, status, and version."
     },
     {
       "current": "TCO Pilot Program Oversight Dashboard Data.xlsx",
@@ -373,26 +373,24 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image is headed Enterprise Performance Summary and Level 1 Metrics Performance, with date, Draft status, and version evidenced by the filename."
+      "why": "The image is headed Enterprise Performance Summary and presents Level 1 metric performance, while the name states the date, status, and version."
     },
     {
       "current": "Metrics_2025-04-15_Draft_v0.1.xlsx",
       "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Metrics_2025-04-15_Draft_v0.1.xlsx",
       "compliant": false,
       "problems": [],
-      "proposed": "Metric-Development-Tracker_2025-04-15_Draft_v0.1.xlsx",
-      "assumptions": [
-        "no project code was evidenced, so none was added"
-      ],
+      "proposed": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
+      "assumptions": [],
       "blocked": "",
-      "category": "Metrics Tracker",
+      "category": "Metrics Register",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The sheet tracks metric issues, approvals, and development actions, and references NiSource and Upperform; the filename provides the date, Draft status, and version."
+      "why": "The workbook tracks deliverables, issues, actions, and metric additions approved for Upperform to build, and the name states the date, status, and version."
     },
     {
       "current": "Screenshot 2025-04-06 at 6.34.18 PM.png",
@@ -403,7 +401,7 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "Sales-Performance-Dashboard_2025-04-06_Draft_v0.1.png",
+      "proposed": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
@@ -417,7 +415,7 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image shows an Adventure Works dashboard with units sold, gross sales, net profit, channels, categories, countries, products, resellers, and customers."
+      "why": "The image shows an Adventure Works sales dashboard overview with units sold, gross sales, net profit, channels, products, resellers, and customers."
     },
     {
       "current": "Screenshot 2025-04-06 at 6.34.50 PM.png",
@@ -428,7 +426,7 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "Net-Profit-Period-Dashboard_2025-04-06_Draft_v0.1.png",
+      "proposed": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
@@ -442,7 +440,7 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image shows Adventure Works net profit by fiscal quarter, fiscal year, reporting period, and percentage to goal."
+      "why": "The image shows an Adventure Works period view focused on net profit by fiscal quarter, fiscal year, and reporting period."
     },
     {
       "current": "Screenshot 2025-04-06 at 6.35.10 PM.png",
@@ -453,7 +451,7 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "Units-Sold-Period-Dashboard_2025-04-06_Draft_v0.1.png",
+      "proposed": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
@@ -467,7 +465,7 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image shows Adventure Works units sold by fiscal quarter and fiscal year, including period detail and percentage-to-average results."
+      "why": "The image shows an Adventure Works period view focused on units sold by fiscal quarter, fiscal year, and reporting period."
     },
     {
       "current": "NiSource Metric Dashboard.pbix",
@@ -503,14 +501,14 @@
       "proposed": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
       "assumptions": [],
       "blocked": "",
-      "category": "Performance Table",
+      "category": "Performance Measures",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "DIMP Folder",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The DIMP folder and sheet title evidence a Table E-1 performance-measures table covering multiple states."
+      "why": "The DIMP-folder workbook is headed Table E-1 Performance Measures and contains all-state threat, baseline, trend, collection, and responsibility fields."
     },
     {
       "current": "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
@@ -527,7 +525,7 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The DIMP folder and filename identify an ASME B31.8S-2004 technical document, with date, Draft status, and version shown in the filename."
+      "why": "The DIMP-folder PDF name identifies ASME B31.8S-2004 and states the date, Draft status, and version."
     },
     {
       "current": "DIMP E-1.xlsx",

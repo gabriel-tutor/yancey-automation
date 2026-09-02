@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyApprovedPlan, applyProposals, buildNamingRequest, namingCandidates } from './naming.js';
+import { applyApprovedPlan, applyProposals, approvedNotFound, buildNamingRequest, namingCandidates } from './naming.js';
 import { planRenames } from './filenames.js';
 import { reportsIn } from './library.js';
 
@@ -334,5 +334,37 @@ describe('applying a plan that was actually approved', () => {
     applyApprovedPlan(rows, [{ from: name, to: name }], { reports: [] });
     expect(rows[0]?.compliant).toBe(true);
     expect(rows[0]?.proposed).toBe('');
+  });
+});
+
+/**
+ * The check that would have caught a half-applied plan the first time.
+ */
+describe('an approved line whose file is not there', () => {
+  it('is reported rather than silently skipped', () => {
+    const rows = freshRows();
+    const missing = approvedNotFound(rows, [
+      { from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx' },
+      { from: 'Gone.xlsx', to: 'NIPSCO_Gone_2026-03-02_Review_v0.4.xlsx' },
+    ]);
+    expect(missing).toEqual(['Gone.xlsx']);
+  });
+
+  /**
+   * The exact shape of the failure: macOS writes U+202F, a narrow no-break
+   * space, before AM/PM. Retyping the name with an ordinary space produces a
+   * line that looks identical and matches nothing.
+   */
+  it('catches a name retyped with an ordinary space where the file has U+202F', () => {
+    const real = 'Screenshot 2025-04-06 at 6.34.18\u202fPM.png';
+    const rows = planRenames([{ name: real, path: ROOT + '/Task 2/' + real, modified: '2026-04-15T10:00:00Z' }], {});
+    const retyped = 'Screenshot 2025-04-06 at 6.34.18 PM.png';
+    expect(retyped).not.toBe(real);
+    expect(approvedNotFound(rows, [{ from: retyped, to: 'NIPSCO_Chart_2026-01-01_Draft_v0.1.png' }])).toEqual([retyped]);
+    expect(approvedNotFound(rows, [{ from: real, to: 'NIPSCO_Chart_2026-01-01_Draft_v0.1.png' }])).toEqual([]);
+  });
+
+  it('says nothing when every approved line is present', () => {
+    expect(approvedNotFound(freshRows(), [{ from: 'Metrics .xlsx', to: 'x' }])).toEqual([]);
   });
 });

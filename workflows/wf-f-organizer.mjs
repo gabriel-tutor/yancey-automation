@@ -317,9 +317,16 @@ applyProposals(rows, proposals, {
 // extension, satisfy the convention and not collide.
 const approved = Array.isArray(cfg.approvedPlan) ? cfg.approvedPlan : [];
 let planNote = 'this run proposed these names';
+let approvedMissing = [];
 if (approved.length > 0) {
   applyApprovedPlan(rows, approved, { reports: reports });
+  // A line whose file is not there any more is skipped, which is right - but
+  // silently skipping it is how a plan half-applies without anyone noticing.
+  approvedMissing = approvedNotFound(rows, approved);
   planNote = 'applying the approved plan of ' + approved.length + ', not this run';
+  if (approvedMissing.length > 0) {
+    planNote += ' - ' + approvedMissing.length + ' approved file(s) are no longer in the library under that name';
+  }
 }
 
 const toRename = rows.filter(function (r) { return r.proposed; });
@@ -336,6 +343,7 @@ const summary = {
   movesProposed: movable.length,
   namedByModel: rows.filter(function (r) { return r.namedBy === 'model'; }).length,
   approvedCount: approved.length,
+  approvedMissing: approvedMissing,
   planNote: planNote,
   modelNote: modelNote,
   readContents: cfg.readContents === true,
@@ -476,6 +484,7 @@ return [{ json: {
   plan: r.planNote,
   namedByModel: r.namedByModel,
   approvedCount: r.approvedCount,
+  approvedMissing: r.approvedMissing || [],
   readContents: r.readContents,
   toRename: toRename,
   toMove: toMove,

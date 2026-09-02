@@ -39,8 +39,8 @@ April used to be indistinguishable. Now:
 | was | becomes |
 |---|---|
 | `Screenshot 2025-04-06 at 6.34.18 PM.png` | `Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png` |
-| `Screenshot 2025-04-06 at 6.34.50 PM.png` | `Net-Profit-Dashboard_2025-04-06_Draft_v0.1.png` |
-| `Screenshot 2025-04-06 at 6.35.10 PM.png` | `Units-Sold-Dashboard_2025-04-06_Draft_v0.1.png` |
+| `Screenshot 2025-04-06 at 6.34.50 PM.png` | `Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png` |
+| `Screenshot 2025-04-06 at 6.35.10 PM.png` | `Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png` |
 
 And it now finds project codes, which is the part a pattern-matcher could never
 do — `TCO`, `DIMP` and `Upperform` below were read out of the contents and the
@@ -48,9 +48,9 @@ folder path, not the file name:
 
 | was | becomes |
 |---|---|
-| `Power BI TCO Pilot_YD_04072025.xlsx` | `TCO_Project-Portfolio-Tracker_2025-04-08_Draft_v0.1.xlsx` |
-| `DEL-asme-b31-8s-2004.pdf` | `DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf` |
-| `Metrics .xlsx` | `Upperform_Metric-Development-Tracker_2025-04-15_Draft_v0.1.xlsx` |
+| `Power BI TCO Pilot_YD_04072025.xlsx` | `TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx` |
+| `DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf` | `DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf` |
+| `Metrics_2025-04-15_Draft_v0.1.xlsx` | `Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx` |
 
 Where nothing in the document evidences a project, it adds none and says so. An
 invented project code would be worse than none.
