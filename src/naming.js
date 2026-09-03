@@ -37,14 +37,15 @@ const FIRST_DRAFT = { major: 0, minor: 1 };
  *
  * @param {Array<{ current: string, path: string, blocked?: string, compliant?: boolean }>} rows
  * @param {Array<{ name: string, path?: string }>} reports
+ * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  * @returns {Array<{ current: string, path: string }>}
  */
-export function namingCandidates(rows, reports) {
+export function namingCandidates(rows, reports, options) {
   return (Array.isArray(rows) ? rows : []).filter((row) => {
     const name = String(row.current || '');
     if (!splitExtension(name).extension) return false;
     if (isReport(name)) return false;
-    if (reportReading(name, String(row.path || ''), reports || [])) return false;
+    if (reportReading(name, String(row.path || ''), reports || [], options)) return false;
     return true;
   });
 }
@@ -228,7 +229,7 @@ function readDate(value) {
  *
  * @param {any[]} rows plan rows from planRenames
  * @param {any[]} proposals model output
- * @param {{ files?: any[], reports?: any[], assumeStatus?: string }} [options]
+ * @param {{ files?: any[], reports?: any[], assumeStatus?: string, dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  */
 export function applyProposals(rows, proposals, options) {
   const opts = options || {};
@@ -237,7 +238,7 @@ export function applyProposals(rows, proposals, options) {
   const modified = new Map(
     (opts.files || []).map((f) => [String(f.path), String(f.modified || '').slice(0, 10)]),
   );
-  const allowed = new Set(namingCandidates(rows, reports).map((r) => String(r.current)));
+  const allowed = new Set(namingCandidates(rows, reports, opts).map((r) => String(r.current)));
   const byName = new Map(
     (Array.isArray(proposals) ? proposals : []).map((p) => [String(p && p.file), p]),
   );
@@ -386,11 +387,11 @@ export function approvedNotFound(rows, approved) {
  *
  * @param {any[]} rows plan rows, already carrying this run's proposals
  * @param {Array<{ from: string, to: string }>} approved the signed-off plan
- * @param {{ reports?: any[] }} [options]
+ * @param {{ reports?: any[], dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  */
 export function applyApprovedPlan(rows, approved, options) {
   const opts = options || {};
-  const allowed = new Set(namingCandidates(rows, opts.reports || []).map((r) => String(r.current)));
+  const allowed = new Set(namingCandidates(rows, opts.reports || [], opts).map((r) => String(r.current)));
   const byFrom = new Map(
     (Array.isArray(approved) ? approved : [])
       .filter((a) => a && a.from && a.to)

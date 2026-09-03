@@ -97,11 +97,87 @@ const CONFIG = {
   assumeVersion: { major: 0, minor: 1 },
 };
 
-/** The deterministic pass: what each document is, and what must never be touched. */
-const REVIEW = `
+/**
+ * The reports, and where to fetch each one from.
+ *
+ * A .pbix is never renamed and never shown to the model. It is downloaded for
+ * one reason: to find out what it reads, so the guard can refuse on evidence
+ * rather than on two files having similar names.
+ */
+const PICK_REPORTS = `
 const cfg = $('Config').first().json;
 const listed = $input.first().json || {};
 const items = Array.isArray(listed.value) ? listed.value : [];
+
+const files = [];
+for (const it of items) {
+  if (!it) continue;
+  if (String(it.FSObjType) === '1') continue;
+  const name = String(it.FileLeafRef || '');
+  if (name) files.push({ name: name, path: String(it.FileRef || '') });
+}
+
+const reports = reportsIn(files);
+// Always emit one item so the chain runs. A library with no reports has no
+// dependencies to discover, which is a finding rather than a reason to branch.
+if (reports.length === 0) return [{ json: { name: '', path: '', downloadUrl: '' } }];
+
+const lit = function (p) { return String(p).replace(/'/g, "''").replace(/ /g, '%20'); };
+const base = String(cfg.host || '') + String(cfg.sitePath || '') + '/_api/web';
+
+return reports.map(function (r) {
+  return { json: {
+    name: r.name,
+    path: r.path,
+    downloadUrl: base + "/GetFileByServerRelativePath(decodedurl='" + lit(r.path) + "')/$value"
+  }};
+});
+`;
+
+/** The deterministic pass: what each document is, and what must never be touched. */
+/**
+ * What each report actually reads, taken from the report rather than guessed at
+ * from the outside.
+ *
+ * Matched to its metadata by position, the same way the document contents are.
+ * A report that will not open is recorded as unreadable rather than as reading
+ * nothing, because those are opposite conclusions.
+ */
+const READ_REPORTS = `
+const meta = $('Pick The Reports').all().map(function (i) { return i.json || {}; });
+const got = $input.all();
+
+const opened = [];
+for (let i = 0; i < meta.length; i++) {
+  const report = meta[i];
+  if (!report || !report.name) continue;
+  const payload = (got[i] && got[i].json) || {};
+  const b64 = typeof payload.contentBytes === 'string' ? payload.contentBytes : '';
+  if (!b64) { opened.push({ name: report.name, readable: false, sources: [] }); continue; }
+  try {
+    opened.push({ name: report.name, bytes: Uint8Array.from(Buffer.from(b64, 'base64')) });
+  } catch (err) {
+    opened.push({ name: report.name, readable: false, sources: [] });
+  }
+}
+
+const dependencies = dependencyIndex(opened);
+return [{ json: {
+  dependencies: dependencies,
+  read: dependencies.read,
+  unreadable: dependencies.unreadable,
+  reads: Object.keys(dependencies.byFile).map(function (k) {
+    return { file: k, report: dependencies.byFile[k].report, where: dependencies.byFile[k].where };
+  })
+}}];
+`;
+
+const REVIEW = `
+const cfg = $('Config').first().json;
+const listed = $('List The Library').first().json || {};
+const items = Array.isArray(listed.value) ? listed.value : [];
+
+const dependencies = ($input.first().json || {}).dependencies || { byFile: {}, unreadable: [], read: [] };
 
 // FileLeafRef is the name, FileRef the server-relative path. List items span
 // every folder in the library, so nested files are seen too.
@@ -119,16 +195,17 @@ for (const it of items) {
 
 const rows = planRenames(files, {
   assumeStatus: cfg.assumeStatus === '' ? '' : String(cfg.assumeStatus || 'Draft'),
-  assumeVersion: cfg.assumeVersion || null
+  assumeVersion: cfg.assumeVersion || null,
+  dependencies: dependencies
 });
 
 // What each document is, and whether it is where it should be. Keyed by path
 // rather than by position, so the passes cannot drift out of step.
 const extra = {};
-for (const c of categoriseAll(files)) {
+for (const c of categoriseAll(files, { dependencies: dependencies })) {
   extra[c.path] = { category: c.category, categoryWhy: c.evidence };
 }
-for (const pl of planPlacements(files, { folders: folders })) {
+for (const pl of planPlacements(files, { folders: folders, dependencies: dependencies })) {
   const entry = extra[pl.path] || (extra[pl.path] = {});
   entry.folder = pl.folder;
   entry.placement = pl.verdict;
@@ -154,7 +231,10 @@ return [{ json: {
   site: String(cfg.sitePath || ''),
   files: files,
   folders: folders,
-  rows: rows
+  rows: rows,
+  dependencies: dependencies,
+  reportsRead: dependencies.read,
+  reportsUnreadable: dependencies.unreadable
 }}];
 `;
 
@@ -166,7 +246,7 @@ const rows = review.rows || [];
 const files = review.files || [];
 
 const reports = reportsIn(files);
-const candidates = namingCandidates(rows, reports).slice(0, Number(cfg.maxNamed) || 30);
+const candidates = namingCandidates(rows, reports, { dependencies: review.dependencies }).slice(0, Number(cfg.maxNamed) || 30);
 
 // Always emit something, so the branch below runs even when there is nothing
 // to name and the summary still gets to speak.
@@ -306,9 +386,11 @@ if (incoming.error) {
 }
 
 const reports = reportsIn(files);
+const dependencies = review.dependencies || { byFile: {}, unreadable: [], read: [] };
 applyProposals(rows, proposals, {
   files: files,
   reports: reports,
+  dependencies: dependencies,
   assumeStatus: cfg.assumeStatus === '' ? '' : String(cfg.assumeStatus || 'Draft')
 });
 
@@ -319,7 +401,7 @@ const approved = Array.isArray(cfg.approvedPlan) ? cfg.approvedPlan : [];
 let planNote = 'this run proposed these names';
 let approvedMissing = [];
 if (approved.length > 0) {
-  applyApprovedPlan(rows, approved, { reports: reports });
+  applyApprovedPlan(rows, approved, { reports: reports, dependencies: dependencies });
   // A line whose file is not there any more is skipped, which is right - but
   // silently skipping it is how a plan half-applies without anyone noticing.
   approvedMissing = approvedNotFound(rows, approved);
@@ -342,6 +424,8 @@ const summary = {
   unfiled: rows.filter(function (r) { return r.placement === 'unfiled'; }).length,
   movesProposed: movable.length,
   namedByModel: rows.filter(function (r) { return r.namedBy === 'model'; }).length,
+  reportsRead: (dependencies.read || []).length,
+  reportsUnreadable: dependencies.unreadable || [],
   approvedCount: approved.length,
   approvedMissing: approvedMissing,
   planNote: planNote,
@@ -483,6 +567,8 @@ return [{ json: {
   naming: r.modelNote,
   plan: r.planNote,
   namedByModel: r.namedByModel,
+  reportsRead: r.reportsRead,
+  reportsUnreadable: r.reportsUnreadable || [],
   approvedCount: r.approvedCount,
   approvedMissing: r.approvedMissing || [],
   readContents: r.readContents,
@@ -523,7 +609,13 @@ const HEADER_NOTE = [
   '',
   'The model never writes a file name. It returns parts, and `proposeFileName` assembles them, so a malformed name is not something it can produce. Every proposal is then read back by `diagnose`, and one that does not satisfy the convention is dropped.',
   '',
-  'The judgement lives in `src/naming.js`, `src/filenames.js` and `src/library.js`, where it is tested. **Do not edit the code in these nodes** — the next rebuild overwrites it.',
+  '### The reports are opened too',
+  '',
+  'A `.pbix` is never renamed and never shown to the model. It is downloaded for one reason: it is a ZIP, and its `DataMashup` part holds the Power Query text that names every workbook it reads. So the guard no longer refuses a document because it *resembles* a report — it refuses one the report actually names, and quotes the query. A look-alike that no report names is cleared to be renamed.',
+  '',
+  'A report that will not open is recorded as unreadable rather than as reading nothing, and the old resemblance guess is used for that one alone.',
+  '',
+  'The judgement lives in `src/naming.js`, `src/filenames.js`, `src/library.js` and `src/powerbi.js`, where it is tested. **Do not edit the code in these nodes** — the next rebuild overwrites it.',
 ].join('\n');
 
 const READING_NOTE = [
@@ -580,6 +672,8 @@ export async function build() {
     );
   }
 
+  const pickReportsCode = await codeNode(HELPERS['wf-f/Pick The Reports'], PICK_REPORTS);
+  const readReportsCode = await codeNode(HELPERS['wf-f/Read Reports'], READ_REPORTS);
   const reviewCode = await codeNode(HELPERS['wf-f/Review The Library'], REVIEW);
   const pickCode = await codeNode(HELPERS['wf-f/Pick What To Name'], PICK);
   const readCode = await codeNode(HELPERS['wf-f/Read Contents'], READ_CONTENTS);
@@ -639,15 +733,77 @@ const listFiles = node({
   output: [{ value: [{ FileLeafRef: 'Metrics .xlsx', FileRef: '/sites/TaskManagement/Shared Documents/Metrics .xlsx', Modified: '2025-04-15T10:00:00Z', FSObjType: 0 }] }]
 });
 
+const pickReports = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Pick The Reports',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(pickReportsCode)} },
+    position: [620, 0]
+  },
+  output: [{ name: 'DIMP E-1 Performance Measures.pbix', downloadUrl: 'https://...' }]
+});
+
+const fetchReports = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.5,
+  config: {
+    name: 'Fetch Reports',
+    onError: 'continueRegularOutput',
+    parameters: {
+      method: 'GET',
+      url: ${E('{{ $json.downloadUrl }}')},
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'microsoftSharePointOAuth2Api',
+      options: {
+        timeout: 180000,
+        response: { response: { responseFormat: 'file', outputPropertyName: 'data' } },
+        batching: { batch: { batchSize: 2, batchInterval: 400 } }
+      }
+    },
+    credentials: { microsoftSharePointOAuth2Api: newCredential(${S(sp)}) },
+    position: [840, 0]
+  },
+  output: [{}]
+});
+
+const reportsToBase64 = node({
+  type: 'n8n-nodes-base.extractFromFile',
+  version: 1.1,
+  config: {
+    name: 'Reports To Base64',
+    onError: 'continueRegularOutput',
+    parameters: {
+      operation: 'binaryToPropery',
+      binaryPropertyName: 'data',
+      destinationKey: 'contentBytes',
+      options: { keepSource: 'json' }
+    },
+    position: [1060, 0]
+  },
+  output: [{ contentBytes: 'UEsDBBQ' }]
+});
+
+const readReports = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Read Reports',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(readReportsCode)} },
+    position: [1280, 0]
+  },
+  output: [{ read: ['DIMP E-1 Performance Measures.pbix'], unreadable: [], reads: [] }]
+});
+
 const review = node({
   type: 'n8n-nodes-base.code',
   version: 2,
   config: {
     name: 'Review The Library',
     parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(reviewCode)} },
-    position: [620, 0]
+    position: [1500, 0]
   },
-  output: [{ library: 'Documents', files: [], folders: [], rows: [] }]
+  output: [{ library: 'Documents', files: [], folders: [], rows: [], dependencies: {} }]
 });
 
 const pick = node({
@@ -656,7 +812,7 @@ const pick = node({
   config: {
     name: 'Pick What To Name',
     parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(pickCode)} },
-    position: [840, 0]
+    position: [1720, 0]
   },
   output: [{ nothing: false, readIt: true, name: 'Metrics .xlsx', path: '/sites/TaskManagement/Shared Documents/Metrics .xlsx' }]
 });
@@ -674,7 +830,7 @@ const anyToName = ifElse({
         combinator: 'and'
       }
     },
-    position: [1060, 0]
+    position: [1940, 0]
   }
 });
 
@@ -691,7 +847,7 @@ const readThem = ifElse({
         combinator: 'and'
       }
     },
-    position: [1280, -180]
+    position: [2160, -180]
   }
 });
 
@@ -713,7 +869,7 @@ const fetchContents = node({
       }
     },
     credentials: { microsoftSharePointOAuth2Api: newCredential(${S(sp)}) },
-    position: [1500, -300]
+    position: [2380, -300]
   },
   output: [{}]
 });
@@ -730,7 +886,7 @@ const toBase64 = node({
       destinationKey: 'contentBytes',
       options: { keepSource: 'json' }
     },
-    position: [1720, -300]
+    position: [2600, -300]
   },
   output: [{ contentBytes: 'UEsDBBQ' }]
 });
@@ -741,14 +897,14 @@ const readContents = node({
   config: {
     name: 'Read Contents',
     parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(readCode)} },
-    position: [1940, -300]
+    position: [2820, -300]
   },
   output: [{ name: 'Metrics .xlsx', text: 'District | Poles | Idling cost' }]
 });
 
 const contentsReady = merge({
   version: 3.2,
-  config: { name: 'Read Or Not', parameters: { mode: 'append', numberInputs: 2 }, position: [2160, -180] }
+  config: { name: 'Read Or Not', parameters: { mode: 'append', numberInputs: 2 }, position: [3040, -180] }
 });
 
 const composeRequest = node({
@@ -757,7 +913,7 @@ const composeRequest = node({
   config: {
     name: 'Compose Request',
     parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(composeCode)} },
-    position: [2380, -180]
+    position: [3260, -180]
   },
   output: [{ toName: 1, modelRequest: {} }]
 });
@@ -783,14 +939,14 @@ const nameThem = node({
       options: { timeout: 300000 }
     },
     credentials: { openAiApi: newCredential(${S(openai)}) },
-    position: [2600, -180]
+    position: [3480, -180]
   },
   output: [{ output: [{ content: [{ text: '{"proposals":[]}' }] }] }]
 });
 
 const namedOrNot = merge({
   version: 3.2,
-  config: { name: 'Named Or Not', parameters: { mode: 'append', numberInputs: 2 }, position: [2820, 0] }
+  config: { name: 'Named Or Not', parameters: { mode: 'append', numberInputs: 2 }, position: [3700, 0] }
 });
 
 const applyProposals = node({
@@ -799,7 +955,7 @@ const applyProposals = node({
   config: {
     name: 'Apply Proposals',
     parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(applyCode)} },
-    position: [3040, 0]
+    position: [3920, 0]
   },
   output: [{ nothingToDo: true, scanned: 21, compliant: 6, proposed: 13 }]
 });
@@ -817,7 +973,7 @@ const shouldApply = ifElse({
         combinator: 'and'
       }
     },
-    position: [3260, 0]
+    position: [4140, 0]
   }
 });
 
@@ -837,7 +993,7 @@ const applyChange = node({
       options: { timeout: 60000, batching: { batch: { batchSize: 1, batchInterval: 400 } } }
     },
     credentials: { microsoftSharePointOAuth2Api: newCredential(${S(sp)}) },
-    position: [3480, -180]
+    position: [4360, -180]
   },
   output: [{ ok: true }]
 });
@@ -848,14 +1004,14 @@ const confirm = node({
   config: {
     name: 'Confirm What Changed',
     parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(CONFIRM)} },
-    position: [3700, -180]
+    position: [4580, -180]
   },
   output: [{ applied: [], failedChanges: [] }]
 });
 
 const both = merge({
   version: 3.2,
-  config: { name: 'Either Way', parameters: { mode: 'append', numberInputs: 2 }, position: [3920, 0] }
+  config: { name: 'Either Way', parameters: { mode: 'append', numberInputs: 2 }, position: [4800, 0] }
 });
 
 const summary = node({
@@ -864,15 +1020,15 @@ const summary = node({
   config: {
     name: 'Summary',
     parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(SUMMARY)} },
-    position: [4140, 0]
+    position: [5020, 0]
   },
   output: [{ headline: '13 to rename, 0 to move, 2 left alone, 6 already correct' }]
 });
 
 const noteHeader = sticky(
   ${S(HEADER_NOTE)},
-  [run, config, listFiles, review, pick],
-  { color: 6, width: 1020, height: 460 },
+  [run, config, listFiles, pickReports, fetchReports, reportsToBase64, readReports, review, pick],
+  { color: 6, width: 1680, height: 460 },
 );
 
 const noteReading = sticky(
@@ -891,6 +1047,10 @@ export default workflow('upperform-wf-f-organizer', ${S(NAME)})
   .add(run)
   .to(config)
   .to(listFiles)
+  .to(pickReports)
+  .to(fetchReports)
+  .to(reportsToBase64)
+  .to(readReports)
   .to(review)
   .to(pick)
   .to(anyToName

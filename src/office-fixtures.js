@@ -47,7 +47,11 @@ function utf8(text) {
 /**
  * A ZIP archive with every entry stored uncompressed.
  *
- * @param {Array<{ name: string, text: string }>} entries
+ * An entry carries either `text`, which is encoded as UTF-8, or `bytes` for a
+ * part that is not text at all — a `.pbix` nests a whole second ZIP inside its
+ * DataMashup part, and that cannot be expressed as a string.
+ *
+ * @param {Array<{ name: string, text?: string, bytes?: Uint8Array }>} entries
  * @returns {Uint8Array}
  */
 export function zipStored(entries) {
@@ -57,7 +61,7 @@ export function zipStored(entries) {
 
   for (const entry of entries) {
     const name = utf8(entry.name);
-    const body = utf8(entry.text);
+    const body = entry.bytes ? entry.bytes : utf8(entry.text || '');
     const sum = crc32(body);
 
     const local = new Uint8Array(30 + name.length);
@@ -320,4 +324,34 @@ export function toBase64(bytes) {
     out += has > 2 ? B64[c & 63] : '=';
   }
   return out;
+}
+
+/**
+ * A `.pbix` carrying the M queries a real report would carry.
+ *
+ * The DataMashup part is not a ZIP on its own: it is four bytes of version,
+ * four of package length, and then the package — which *is* a ZIP. Building it
+ * for real is the only way to prove the reader unwraps it for real.
+ *
+ * @param {string[]} queries M query lines, e.g. File.Contents("C:\\x.xlsx")
+ * @param {{ connections?: string }} [extra]
+ * @returns {Uint8Array}
+ */
+export function pbixFixture(queries, extra) {
+  const section = 'section Section1;\n' + (queries || []).join('\n') + '\n';
+  const pkg = zipStored([{ name: 'Formulas/Section1.m', text: section }]);
+
+  const mashup = new Uint8Array(8 + pkg.length);
+  const view = new DataView(mashup.buffer);
+  view.setUint32(0, 0, true); // version
+  view.setUint32(4, pkg.length, true); // package length
+  mashup.set(pkg, 8);
+
+  const entries = [
+    { name: '[Content_Types].xml', text: '<?xml version="1.0"?><Types/>' },
+    { name: 'DataMashup', bytes: mashup },
+    { name: 'Report/Layout', text: '{"config":"{}"}' },
+  ];
+  if (extra && extra.connections) entries.push({ name: 'Connections', text: extra.connections });
+  return zipStored(entries);
 }

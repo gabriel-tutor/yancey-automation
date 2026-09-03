@@ -102,24 +102,45 @@ export function reportsIn(files) {
 }
 
 /**
- * The report that is likely reading this file, if any.
+ * The report reading this file, if any.
  *
- * A .pbix keeps the paths of its data sources inside itself, where nothing
- * outside can see them. These are the two signals that survive to the outside:
- * a report and its source usually share an opening, and they usually share a
- * folder. Neither is proof, and the caller is told which one fired so it can
- * say so rather than assert more than it knows.
+ * A .pbix keeps the paths of its data sources inside itself. That made this a
+ * guess for a long time, resting on two signals that survive to the outside: a
+ * report and its source usually share an opening, and they usually share a
+ * folder. Neither is proof, and both refuse far more than they need to — nine
+ * documents in this library were held back by them.
+ *
+ * They are now the fallback rather than the method. When the reports have been
+ * opened and their queries read (see src/powerbi.js), `options.dependencies`
+ * carries the answer and the guessing stops:
+ *
+ *   named in a query        refused, and the query line is the proof
+ *   not named, all read     safe — the reports have said what they read
+ *   some report unreadable  fall back to the guess, because we still cannot tell
+ *
+ * The middle case is the point. Certainty that a file is *not* a dependency is
+ * worth as much as certainty that it is, and only reading the report gives it.
  *
  * @param {string} name
  * @param {string} path
  * @param {Array<{ name: string, path?: string }>} reports
- * @returns {{ report: string, because: 'name' | 'folder' } | null}
+ * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
+ * @returns {{ report: string, because: 'query' | 'name' | 'folder', where?: string } | null}
  */
-export function reportReading(name, path, reports) {
+export function reportReading(name, path, reports, options) {
   if (isReport(name) || !couldFeedAReport(name)) return null;
   const list = Array.isArray(reports) ? reports : [];
-  const mine = wordsOf(name);
 
+  const known = options && options.dependencies;
+  if (known && known.byFile) {
+    const hit = known.byFile[String(name).toLowerCase()];
+    if (hit) return { report: hit.report, because: 'query', where: hit.where };
+    // Every report opened and none of them named this file. That is an answer,
+    // not an absence of one, so the guesses below are not consulted.
+    if ((known.unreadable || []).length === 0) return null;
+  }
+
+  const mine = wordsOf(name);
   const named = list.find((r) => sharedOpening(mine, wordsOf(r.name)) >= SHARED_WORDS_MEANING_PAIRED);
   if (named) return { report: named.name, because: 'name' };
 
@@ -176,9 +197,10 @@ const SCREEN_CAPTURE = /\b(?:screen[ _-]?shot|screen[ _-]?capture|capture d[eu])
  *
  * @param {{ name: string, path?: string }} file
  * @param {Array<{ name: string, path?: string }>} reports
+ * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  * @returns {{ category: string, evidence: string }}
  */
-export function categorise(file, reports) {
+export function categorise(file, reports, options) {
   const spec = file || { name: '' };
   const name = String(spec.name || '');
   const path = String(spec.path || '');
@@ -193,7 +215,7 @@ export function categorise(file, reports) {
     return { category: 'screenshot', evidence: 'the name says it is a screen capture' };
   }
 
-  const reading = reportReading(name, path, reports);
+  const reading = reportReading(name, path, reports, options);
   if (reading) {
     return {
       category: 'report data',
@@ -282,7 +304,7 @@ function lastSegment(path) {
  * it cannot see, or assert a workflow stage that no file records.
  *
  * @param {Array<{ name: string, path: string }>} files
- * @param {{ reports?: Array<{ name: string, path?: string }>, folders?: string[] }} [options]
+ * @param {{ reports?: Array<{ name: string, path?: string }>, folders?: string[], dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  * @returns {Array<{ name: string, path: string, folder: string, verdict: 'settled' | 'unfiled' | 'move', reason: string, destination: string }>}
  */
 export function planPlacements(files, options) {
@@ -307,7 +329,7 @@ export function planPlacements(files, options) {
       };
     }
 
-    const reading = reportReading(name, path, reports);
+    const reading = reportReading(name, path, reports, opts);
     if (reading) {
       return {
         ...base,
@@ -376,13 +398,14 @@ export function planPlacements(files, options) {
  * Categorise a whole listing in one pass, so the reports only get found once.
  *
  * @param {Array<{ name: string, path: string }>} files
+ * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  * @returns {Array<{ name: string, path: string, category: string, evidence: string }>}
  */
-export function categoriseAll(files) {
+export function categoriseAll(files, options) {
   const list = Array.isArray(files) ? files : [];
   const reports = reportsIn(list);
   return list.map((file) => {
-    const found = categorise(file, reports);
+    const found = categorise(file, reports, options);
     return { name: String(file.name || ''), path: String(file.path || ''), ...found };
   });
 }

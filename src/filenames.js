@@ -441,10 +441,12 @@ function planRename(file, options) {
  * @param {Array<{ name: string, path?: string, modified?: string }>} files
  * @param {{ assumeStatus?: string | null,
  *           assumeVersion?: { major: number, minor: number } | null,
- *           project?: string }} [options]
+ *           project?: string,
+ *           dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  * @returns {ReturnType<typeof planRename>[]}
  */
 function planRenames(files, options) {
+  const opts = options || {};
   const list = Array.isArray(files) ? files : [];
   const rows = list.map((f) => planRename(f, options));
 
@@ -468,16 +470,22 @@ function planRenames(files, options) {
 
     if (!row.proposed && !row.blocked) continue;
 
-    const reading = reportReading(row.current, row.path, reports);
+    const reading = reportReading(row.current, row.path, reports, opts);
     if (reading) {
       row.blocked =
-        reading.because === 'name'
-          ? 'opens with the same words as the report ' +
+        reading.because === 'query'
+          ? 'the report ' +
             reading.report +
-            ', so that report very likely reads from it \u2014 renaming breaks the refresh until the report is repointed'
-          : 'shares a folder with the report ' +
-            reading.report +
-            ', which may read from it \u2014 a .pbix hides its source paths inside the file, so a rename can break a dashboard unseen';
+            ' reads it by name \u2014 its query points at ' +
+            String(reading.where || row.current) +
+            ', so renaming breaks the refresh until the report is repointed'
+          : reading.because === 'name'
+            ? 'opens with the same words as the report ' +
+              reading.report +
+              ', so that report very likely reads from it \u2014 renaming breaks the refresh until the report is repointed'
+            : 'shares a folder with the report ' +
+              reading.report +
+              ', which may read from it \u2014 a .pbix hides its source paths inside the file, so a rename can break a dashboard unseen';
       row.proposed = '';
     }
   }

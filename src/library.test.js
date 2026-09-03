@@ -296,3 +296,54 @@ describe('offering a home to a document that has none', () => {
     }
   });
 });
+
+/**
+ * The unlock. Nine documents were refused on the guess that a report "very
+ * likely" read them. Once the reports have been opened and their queries read,
+ * the guess is not needed — and the answer it was standing in for is often the
+ * opposite one.
+ */
+describe('refusing on evidence rather than on resemblance', () => {
+  const REPORTS = [{ name: 'DIMP E-1 Performance Measures.pbix', path: '/lib/DIMP E-1 Performance Measures.pbix' }];
+
+  it('refuses a file a report names, and carries the query as proof', () => {
+    const found = reportReading('DIMP E-1.xlsx', '/lib/DIMP E-1.xlsx', REPORTS, {
+      dependencies: {
+        byFile: { 'dimp e-1.xlsx': { report: 'DIMP E-1 Performance Measures.pbix', where: 'C:\\work\\DIMP E-1.xlsx' } },
+        unreadable: [],
+      },
+    });
+    expect(found?.because).toBe('query');
+    expect(found?.where).toBe('C:\\work\\DIMP E-1.xlsx');
+  });
+
+  /**
+   * The case that matters. The name heuristic would refuse this outright; the
+   * report itself says it never reads it.
+   */
+  it('clears a look-alike once every report has been read and none names it', () => {
+    const found = reportReading('DIMP E-1.xlsx', '/lib/DIMP E-1.xlsx', REPORTS, {
+      dependencies: { byFile: {}, unreadable: [] },
+    });
+    expect(found).toBeNull();
+  });
+
+  it('still guesses while any report could not be opened', () => {
+    const found = reportReading('DIMP E-1.xlsx', '/lib/DIMP E-1.xlsx', REPORTS, {
+      dependencies: { byFile: {}, unreadable: ['DIMP E-1 Performance Measures.pbix'] },
+    });
+    expect(found?.because).toBe('name');
+  });
+
+  it('guesses when given no evidence at all, exactly as before', () => {
+    expect(reportReading('DIMP E-1.xlsx', '/lib/DIMP E-1.xlsx', REPORTS)?.because).toBe('name');
+  });
+
+  it('never offers a report itself, however the evidence reads', () => {
+    expect(
+      reportReading('DIMP E-1 Performance Measures.pbix', '/lib/x.pbix', REPORTS, {
+        dependencies: { byFile: {}, unreadable: [] },
+      }),
+    ).toBeNull();
+  });
+});
