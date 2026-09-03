@@ -1,72 +1,141 @@
 {
-  "executionId": "9849",
+  "executionId": "9929",
   "workflowId": "CC8jik1RGti4JXZk",
-  "ranAt": "2026-09-03T08:51:30.773Z",
+  "ranAt": "2026-09-03T10:06:16.228Z",
   "summary": {
-    "headline": "0 to rename, 0 to move, 9 left alone, 12 already correct",
+    "headline": "10 to rename, 1 to move, 0 left alone, 11 already correct",
     "library": "Documents",
     "site": "/sites/TaskManagement",
     "scanned": 21,
-    "compliant": 12,
-    "naming": "the model read and named 12 documents",
-    "plan": "applying the approved plan of 12, not this run - 12 approved file(s) are no longer in the library under that name",
-    "namedByModel": 12,
-    "approvedCount": 12,
-    "approvedMissing": [
-      "Task Management Channel Guide_YD_04042025.docx",
-      "Daily_Employee_Project_Time_Trackingv1.xlsx",
-      "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
-      "Power BI TCO Pilot_YD_04072025.xlsx",
-      "Screenshot_2025-04-06_Draft_v0.1.png",
-      "Screenshot_2025-04-14_Draft_v0.1.png",
-      "Metrics_2025-04-15_Draft_v0.1.xlsx",
-      "Screenshot 2025-04-06 at 6.34.18 PM.png",
-      "Screenshot 2025-04-06 at 6.34.50 PM.png",
-      "Screenshot 2025-04-06 at 6.35.10 PM.png",
-      "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
-      "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf"
-    ],
+    "compliant": 11,
+    "naming": "the model read and named 21 documents",
+    "plan": "this run proposed these names",
+    "namedByModel": 10,
+    "reportsRead": 4,
+    "reportsUnreadable": [],
+    "approvedCount": 0,
+    "approvedMissing": [],
     "readContents": true,
-    "toRename": [],
-    "toMove": [],
-    "refused": [
+    "toRename": [
+      {
+        "file": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
+        "becomes": "Channel-Guide_2025-04-07_Draft_v0.1.docx",
+        "namedBy": "model",
+        "why": "The contents describe task-management channels, folder stages, and naming conventions.",
+        "assuming": [
+          "no project code was evidenced, so none was added"
+        ]
+      },
       {
         "file": "TCO Pilot Program Oversight Dashboard Data.xlsx",
-        "because": "opens with the same words as the report TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed"
+        "becomes": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
+        "namedBy": "model",
+        "why": "The filename identifies TCO and the workbook contains active-project and dropdown data for an oversight dashboard.",
+        "assuming": [
+          "status assumed to be Draft, the document does not say",
+          "date taken from the file timestamp, not the document",
+          "version assumed to be v0.1"
+        ]
       },
       {
         "file": "TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix",
-        "because": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep"
+        "becomes": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
+        "namedBy": "model",
+        "why": "The filename identifies the TCO pilot oversight dashboard and explicitly marks it Review.",
+        "assuming": [
+          "date taken from the file timestamp, not the document",
+          "version assumed to be v0.1"
+        ]
       },
       {
         "file": "NiSource Metric Dashboard.pbix",
-        "because": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep"
+        "becomes": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
+        "namedBy": "model",
+        "why": "The filename identifies a metric dashboard, but the folder and available evidence do not establish a project code.",
+        "assuming": [
+          "no project code was evidenced, so none was added",
+          "status assumed to be Draft, the document does not say",
+          "date taken from the file timestamp, not the document",
+          "version assumed to be v0.1"
+        ]
       },
       {
         "file": "DIMP E-1.xlsx",
-        "because": "opens with the same words as the report DIMP E-1 Performance Measures.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed"
+        "becomes": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
+        "namedBy": "model",
+        "why": "The filename identifies DIMP E-1 and the workbook contains raw and original performance-measure data.",
+        "assuming": [
+          "status assumed to be Draft, the document does not say",
+          "date taken from the file timestamp, not the document",
+          "version assumed to be v0.1"
+        ]
       },
       {
         "file": "DIMP E-1 Performance Measures.pbix",
-        "because": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep"
+        "becomes": "DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
+        "namedBy": "model",
+        "why": "The filename identifies DIMP E-1 performance measures and the file is a Power BI report.",
+        "assuming": [
+          "status assumed to be Draft, the document does not say",
+          "date taken from the file timestamp, not the document",
+          "version assumed to be v0.1"
+        ]
       },
       {
         "file": "DIMP E-1 Proposed Data.xlsx",
-        "because": "opens with the same words as the report DIMP E-1 Performance Measures.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed"
+        "becomes": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
+        "namedBy": "model",
+        "why": "The filename identifies DIMP E-1 and the workbook contains proposed performance-measure records and values.",
+        "assuming": [
+          "status assumed to be Draft, the document does not say",
+          "date taken from the file timestamp, not the document",
+          "version assumed to be v0.1"
+        ]
       },
       {
         "file": "NIPSCO_Master Roster_2025.xlsx",
-        "because": "shares a folder with the report NiSource Metric Dashboard.pbix, which may read from it — a .pbix hides its source paths inside the file, so a rename can break a dashboard unseen"
+        "becomes": "NIPSCO_Master-Roster_2025-07-31_Draft_v0.1.xlsx",
+        "namedBy": "model",
+        "why": "The filename identifies NIPSCO and the workbook contains department, work-function, and responsibility lists.",
+        "assuming": [
+          "status assumed to be Draft, the document does not say",
+          "date taken from the file timestamp, not the document",
+          "version assumed to be v0.1"
+        ]
       },
       {
         "file": "Performance Management System.xlsx",
-        "because": "opens with the same words as the report Performance Management System.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed"
+        "becomes": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
+        "namedBy": "model",
+        "why": "The instructions describe an Excel performance-management system with initiative, action, sub-action, and metrics registers.",
+        "assuming": [
+          "no project code was evidenced, so none was added",
+          "status assumed to be Draft, the document does not say",
+          "date taken from the file timestamp, not the document",
+          "version assumed to be v0.1"
+        ]
       },
       {
         "file": "Performance Management System.pbix",
-        "because": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep"
+        "becomes": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
+        "namedBy": "model",
+        "why": "The filename and file type identify a Power BI report for the performance-management system.",
+        "assuming": [
+          "no project code was evidenced, so none was added",
+          "status assumed to be Draft, the document does not say",
+          "date taken from the file timestamp, not the document",
+          "version assumed to be v0.1"
+        ]
       }
     ],
+    "toMove": [
+      {
+        "file": "TCO Pilot Program Oversight Dashboard Data.xlsx",
+        "into": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/TCO Pilot Program Oversight Dashboard Data.xlsx",
+        "because": "it sits above the filing with no folder of its own, and Resources and References is the only folder beside it that says in its own name what it holds"
+      }
+    ],
+    "refused": [],
     "unfiled": 0,
     "switches": {
       "applyRenames": false,
@@ -92,24 +161,21 @@
     {
       "current": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
       "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
-      "compliant": true,
+      "compliant": false,
       "problems": [],
-      "proposed": "",
+      "proposed": "Channel-Guide_2025-04-07_Draft_v0.1.docx",
       "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
+        "no project code was evidenced, so none was added"
       ],
       "blocked": "",
-      "category": "Process Guide",
+      "category": "Process guide",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Resources and References",
       "placement": "settled",
       "placementWhy": "filed under Resources and References",
       "destination": "",
       "namedBy": "model",
-      "why": "The contents describe the Task Management Channel, its folders, workflow, and naming conventions."
+      "why": "The contents describe task-management channels, folder stages, and naming conventions."
     },
     {
       "current": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
@@ -117,21 +183,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Time Log",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "Resources and References",
       "placement": "settled",
       "placementWhy": "filed under Resources and References",
       "destination": "",
-      "namedBy": "model",
-      "why": "The spreadsheet contains daily employee names, projects, tasks, work times, total hours, and notes."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
@@ -139,21 +200,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Reference Table",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "Resources and References",
       "placement": "settled",
       "placementWhy": "filed under Resources and References",
       "destination": "",
-      "namedBy": "model",
-      "why": "The sheet maps Central Time to Philippines Time."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
@@ -161,20 +217,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Project Register",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "1. Assigned Tasks",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The filename identifies TCO and the sheet lists pilot project IDs, budgets, dates, managers, and statuses."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
@@ -182,21 +234,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Dashboard Screenshot",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "image",
+      "categoryWhy": "from the .png extension",
       "folder": "Task 1",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The image is headed Project Management Insights and shows project costs, tasks, resources, and timelines."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "TCO Pilot Program Oversight Dashboard Data.xlsx",
@@ -207,22 +254,21 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "",
+      "proposed": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "blocked": "opens with the same words as the report TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
-      "category": "report data",
-      "categoryWhy": "the report TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix opens with the same words",
+      "blocked": "",
+      "category": "Dashboard data",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "Power BI Task Management",
-      "placement": "settled",
-      "placementWhy": "the report TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix very likely reads it, and a move changes the path exactly as a rename changes the name",
-      "destination": "",
-      "namedBy": "",
-      "why": ""
+      "placement": "move",
+      "placementWhy": "it sits above the filing with no folder of its own, and Resources and References is the only folder beside it that says in its own name what it holds",
+      "destination": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/TCO Pilot Program Oversight Dashboard Data.xlsx",
+      "namedBy": "model",
+      "why": "The filename identifies TCO and the workbook contains active-project and dropdown data for an oversight dashboard."
     },
     {
       "current": "TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix",
@@ -233,21 +279,20 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "ends with \"14042025\" rather than a version like v0.1 or v1.0"
       ],
-      "proposed": "",
+      "proposed": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
+      "blocked": "",
       "category": "Power BI report",
-      "categoryWhy": "a .pbix is a Power BI report",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "4. Completed Tasks",
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
-      "namedBy": "",
-      "why": ""
+      "namedBy": "model",
+      "why": "The filename identifies the TCO pilot oversight dashboard and explicitly marks it Review."
     },
     {
       "current": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
@@ -255,21 +300,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Performance Summary",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "image",
+      "categoryWhy": "from the .png extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The image is headed Enterprise Performance Summary and presents level-one metrics, targets, trends, and insights."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
@@ -277,20 +317,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Metric Register",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The filename identifies Upperform and the sheet tracks metric deliverables, issues, actions, and approvals."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
@@ -298,21 +334,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Dashboard Screenshot",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "image",
+      "categoryWhy": "from the .png extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The image shows Adventure Works sales, units sold, gross sales, net profit, channels, products, resellers, and customers."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
@@ -320,21 +351,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Profit Analysis",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "image",
+      "categoryWhy": "from the .png extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The image analyzes net profit by fiscal quarter and year against goals."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
@@ -342,21 +368,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Sales Analysis",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "image",
+      "categoryWhy": "from the .png extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The image analyzes units sold by fiscal year, quarter, and reporting period."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "NiSource Metric Dashboard.pbix",
@@ -367,22 +388,22 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "",
+      "proposed": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
+      "blocked": "",
       "category": "Power BI report",
-      "categoryWhy": "a .pbix is a Power BI report",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "2. In Progress",
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
-      "namedBy": "",
-      "why": ""
+      "namedBy": "model",
+      "why": "The filename identifies a metric dashboard, but the folder and available evidence do not establish a project code."
     },
     {
       "current": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
@@ -390,20 +411,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Performance Table",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "DIMP Folder",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The DIMP folder and sheet title identify a performance-measures table with threats, baselines, trends, sources, and collection processes."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
@@ -411,20 +428,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Standards Document",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "document",
+      "categoryWhy": "from the .pdf extension",
       "folder": "DIMP Folder",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The DIMP folder and filename identify an ASME B31.8S standards document."
+      "namedBy": "",
+      "why": ""
     },
     {
       "current": "DIMP E-1.xlsx",
@@ -435,22 +448,21 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "",
+      "proposed": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "blocked": "opens with the same words as the report DIMP E-1 Performance Measures.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
-      "category": "report data",
-      "categoryWhy": "the report DIMP E-1 Performance Measures.pbix opens with the same words",
+      "blocked": "",
+      "category": "Performance data",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "2. In Progress",
       "placement": "settled",
-      "placementWhy": "the report DIMP E-1 Performance Measures.pbix very likely reads it, and a move changes the path exactly as a rename changes the name",
+      "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "",
-      "why": ""
+      "namedBy": "model",
+      "why": "The filename identifies DIMP E-1 and the workbook contains raw and original performance-measure data."
     },
     {
       "current": "DIMP E-1 Performance Measures.pbix",
@@ -461,22 +473,21 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "",
+      "proposed": "DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
+      "blocked": "",
       "category": "Power BI report",
-      "categoryWhy": "a .pbix is a Power BI report",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "2. In Progress",
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
-      "namedBy": "",
-      "why": ""
+      "namedBy": "model",
+      "why": "The filename identifies DIMP E-1 performance measures and the file is a Power BI report."
     },
     {
       "current": "DIMP E-1 Proposed Data.xlsx",
@@ -487,22 +498,21 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "",
+      "proposed": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "blocked": "opens with the same words as the report DIMP E-1 Performance Measures.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
-      "category": "report data",
-      "categoryWhy": "the report DIMP E-1 Performance Measures.pbix opens with the same words",
+      "blocked": "",
+      "category": "Proposed data",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "2. In Progress",
       "placement": "settled",
-      "placementWhy": "the report DIMP E-1 Performance Measures.pbix very likely reads it, and a move changes the path exactly as a rename changes the name",
+      "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "",
-      "why": ""
+      "namedBy": "model",
+      "why": "The filename identifies DIMP E-1 and the workbook contains proposed performance-measure records and values."
     },
     {
       "current": "NIPSCO_Master Roster_2025.xlsx",
@@ -513,22 +523,21 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "",
+      "proposed": "NIPSCO_Master-Roster_2025-07-31_Draft_v0.1.xlsx",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "blocked": "shares a folder with the report NiSource Metric Dashboard.pbix, which may read from it — a .pbix hides its source paths inside the file, so a rename can break a dashboard unseen",
-      "category": "report data",
-      "categoryWhy": "the report NiSource Metric Dashboard.pbix sits in the same folder",
+      "blocked": "",
+      "category": "Employee roster",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "2. In Progress",
       "placement": "settled",
-      "placementWhy": "the report NiSource Metric Dashboard.pbix very likely reads it, and a move changes the path exactly as a rename changes the name",
+      "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "",
-      "why": ""
+      "namedBy": "model",
+      "why": "The filename identifies NIPSCO and the workbook contains department, work-function, and responsibility lists."
     },
     {
       "current": "Performance Management System.xlsx",
@@ -539,22 +548,22 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "",
+      "proposed": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "blocked": "opens with the same words as the report Performance Management System.pbix, so that report very likely reads from it — renaming breaks the refresh until the report is repointed",
-      "category": "report data",
-      "categoryWhy": "the report Performance Management System.pbix opens with the same words",
+      "blocked": "",
+      "category": "Management workbook",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "PD alignment Excel and Power BI - Karen",
       "placement": "settled",
-      "placementWhy": "the report Performance Management System.pbix very likely reads it, and a move changes the path exactly as a rename changes the name",
+      "placementWhy": "filed under PD alignment Excel and Power BI - Karen",
       "destination": "",
-      "namedBy": "",
-      "why": ""
+      "namedBy": "model",
+      "why": "The instructions describe an Excel performance-management system with initiative, action, sub-action, and metrics registers."
     },
     {
       "current": "Performance Management System.pbix",
@@ -565,22 +574,22 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "",
+      "proposed": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
       "assumptions": [
-        "no project prefix, the library does not say which project this belongs to",
-        "date taken from the file timestamp, not the name",
-        "status assumed to be Draft, the name does not say",
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
-      "blocked": "a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library — rename it deliberately, not in a sweep",
+      "blocked": "",
       "category": "Power BI report",
-      "categoryWhy": "a .pbix is a Power BI report",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "PD alignment Excel and Power BI - Karen",
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
-      "namedBy": "",
-      "why": ""
+      "namedBy": "model",
+      "why": "The filename and file type identify a Power BI report for the performance-management system."
     }
   ]
 }

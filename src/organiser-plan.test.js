@@ -187,7 +187,15 @@ describe('the review page renders', () => {
     expect(box('applied').children.length).toBe(data.applied.length);
     expect(box('unfiled').children.length).toBeGreaterThan(0);
     expect(box('settled').children.length).toBeGreaterThan(0);
-    expect(box('refused').children.length).toBeGreaterThan(0);
+    // Refusals are a finding, not a fixture. Once the reports were opened and
+    // none of them named a document in this library, there were none left — so
+    // the check is that the page agrees with the run, either way.
+    const refusedRows = data.rows.filter((/** @type {any} */ r) => r.blocked && !r.compliant);
+    if (refusedRows.length === 0) {
+      expect(box('refused').children.length).toBe(0);
+    } else {
+      expect(box('refused').children.length).toBeGreaterThan(0);
+    }
     expect(box('stamp').textContent).toContain('renamed');
   });
 });
