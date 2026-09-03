@@ -605,14 +605,14 @@
   "library": "Documents",
   "site": "/sites/TaskManagement",
   "generated": "2026-09-03",
-  "execution": "10302",
+  "execution": "10341",
   "naming": "the model read and named 27 documents",
   "namedByModel": 9,
   "readContents": true,
   "scanned": 27,
   "pinned": true,
   "truncated": false,
-  "listed": 0,
+  "listed": 39,
   "beyondModel": 0,
   "heldBack": [],
   "unreachableFolders": [],
@@ -621,7 +621,7 @@
   "folderRefusals": [
     {
       "file": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
-      "folder": "TCO Program",
+      "folder": "TCO Programme",
       "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
     },
     {
@@ -631,7 +631,7 @@
     },
     {
       "file": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
-      "folder": "TCO Program",
+      "folder": "TCO Programme",
       "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
     },
     {
@@ -701,8 +701,38 @@
     },
     {
       "file": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
-      "folder": "TCO Program",
+      "folder": "TCO Programme",
       "because": "only this one document was put in it, and a folder holding one file is the pile it came from with an extra click in front"
+    },
+    {
+      "file": "",
+      "folder": "1. Assigned Tasks",
+      "because": "it is a numbered stage folder, and the numbering is what makes the sequence readable"
+    },
+    {
+      "file": "",
+      "folder": "Task 1",
+      "because": "it sits inside a numbered stage folder, and renaming a folder repaths everything in it — those documents are held back one at a time for the same reason"
+    },
+    {
+      "file": "",
+      "folder": "Task 2",
+      "because": "it sits inside a numbered stage folder, and renaming a folder repaths everything in it — those documents are held back one at a time for the same reason"
+    },
+    {
+      "file": "",
+      "folder": "2. In Progress",
+      "because": "it is a numbered stage folder, and the numbering is what makes the sequence readable"
+    },
+    {
+      "file": "",
+      "folder": "3. Under Review",
+      "because": "it is a numbered stage folder, and the numbering is what makes the sequence readable"
+    },
+    {
+      "file": "",
+      "folder": "4. Completed Tasks",
+      "because": "it is a numbered stage folder, and the numbering is what makes the sequence readable"
     }
   ],
   "folders": [
@@ -751,8 +781,9 @@
       "depth": 0,
       "files": 5,
       "kinds": {
-        "Power BI report": 2,
-        "spreadsheet": 3
+        "Power BI Dashboard": 1,
+        "spreadsheet": 3,
+        "Power BI report": 1
       }
     },
     {
@@ -789,7 +820,7 @@
       "depth": 0,
       "files": 8,
       "kinds": {
-        "Process Guide": 1,
+        "document": 1,
         "spreadsheet": 3,
         "Assessment Tool": 1,
         "DIMP Dashboard": 1,
@@ -1049,15 +1080,13 @@
       "proposed": "",
       "blocked": "",
       "group": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added"
-      ],
-      "namedBy": "model",
-      "why": "The document describes Task Management channels, folder purposes, and naming conventions.",
+      "assumptions": [],
+      "namedBy": "",
+      "why": "",
       "approved": false,
       "awaiting": "",
-      "kind": "Process Guide",
-      "kindWhy": "from reading the document, not its extension",
+      "kind": "document",
+      "kindWhy": "from the .docx extension",
       "placement": "unfiled",
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "into": ""
@@ -1267,13 +1296,15 @@
       "proposed": "",
       "blocked": "",
       "group": "",
-      "assumptions": [],
-      "namedBy": "",
-      "why": "",
+      "assumptions": [
+        "no project code was evidenced, so none was added"
+      ],
+      "namedBy": "model",
+      "why": "The filename identifies a Power BI metric dashboard.",
       "approved": false,
       "awaiting": "",
-      "kind": "Power BI report",
-      "kindWhy": "a .pbix is a Power BI report",
+      "kind": "Power BI Dashboard",
+      "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "into": ""
@@ -1440,7 +1471,7 @@
         "version assumed to be v0.1"
       ],
       "namedBy": "model",
-      "why": "The workbook contains an electric operations executive dashboard and LOA compliance scorecard.",
+      "why": "The workbook is titled Electric Operations Executive Dashboard and contains gate and LOA compliance scorecards.",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it",
       "kind": "Operations Dashboard",
@@ -1453,15 +1484,14 @@
       "current": "Draft_Assessment Tool_6 Walkthru_26-Jan-2026_YD.xlsx",
       "folder": "Resources and References",
       "compliant": false,
-      "proposed": "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
+      "proposed": "Assessment-Tool-Walkthrough_2026-01-26_Draft_v0.1.xlsx",
       "blocked": "",
       "group": "",
       "assumptions": [
-        "no project code was evidenced, so none was added",
-        "version assumed to be v0.1"
+        "no project code was evidenced, so none was added"
       ],
       "namedBy": "model",
-      "why": "The instructions describe a reusable Wiring for Success assessment and scoring tool.",
+      "why": "The instructions describe a structured Wiring for Success assessment tool and its triage and impact-scoring workflow.",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it",
       "kind": "Assessment Tool",
@@ -1474,7 +1504,7 @@
       "current": "DIMP_Dashboard.xlsx",
       "folder": "Resources and References",
       "compliant": false,
-      "proposed": "DIMP_Leak-Repair-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+      "proposed": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
       "blocked": "",
       "group": "",
       "assumptions": [
@@ -1483,7 +1513,7 @@
         "version assumed to be v0.1"
       ],
       "namedBy": "model",
-      "why": "The instructions explicitly identify the workbook as a DIMP leak-repair-capacity and cost-optimization dashboard.",
+      "why": "The instructions explicitly identify DIMP and describe a Leak Repair Capacity scoring dashboard.",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it",
       "kind": "DIMP Dashboard",
@@ -1506,7 +1536,7 @@
         "version assumed to be v0.1"
       ],
       "namedBy": "model",
-      "why": "The sheet title and department field identify a damage-prevention action tracker.",
+      "why": "The workbook is titled Damage Prevention Wiring Action Tracker and tracks 228 departmental actions.",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it",
       "kind": "Action Tracker",
@@ -1529,7 +1559,7 @@
         "version assumed to be v0.1"
       ],
       "namedBy": "model",
-      "why": "The workbook summarizes MOOYAH cleaning performance by equipment, day, and pass or fail result.",
+      "why": "The workbook is titled MOOYAH Cleaning Performance Summary and contains daily cleaning performance and pass-fail measures.",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it",
       "kind": "Cleaning Dashboard",
@@ -1542,7 +1572,7 @@
       "current": "PD_Reliability_Preloaded_Final.xlsx",
       "folder": "Resources and References",
       "compliant": false,
-      "proposed": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
+      "proposed": "Reliability-Data-Workbook_2026-09-03_Final_v1.0.xlsx",
       "blocked": "",
       "group": "",
       "assumptions": [
@@ -1551,7 +1581,7 @@
         "version assumed to be v1.0"
       ],
       "namedBy": "model",
-      "why": "The filename identifies a preloaded reliability workbook and explicitly marks it Final.",
+      "why": "The filename identifies a preloaded power-delivery reliability workbook and marks it Final.",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it",
       "kind": "Reliability Workbook",
