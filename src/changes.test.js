@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fileChangeUrl, folderChangeUrl, folderCreateUrl, odataQueryValue, plannedChanges } from './changes.js';
+import { fileChangeUrl, folderChangeUrl, folderCreateUrl, foldersNeeded, odataQueryValue, plannedChanges } from './changes.js';
 
 /**
  * Both of these tests exist because of a specific failure on 3 September, in
@@ -236,5 +236,32 @@ describe('the folder calls', () => {
     expect(url).toContain('GetFolderByServerRelativePath');
     expect(url).toContain('flags=0');
     expect(url.slice(0, url.indexOf('?')).length).toBeLessThan(260);
+  });
+});
+
+describe('a folder an approved destination needs', () => {
+  const REFS = LIB + '/Resources and References';
+
+  /**
+   * The run that made this necessary: the model grouped two workbooks into a
+   * new `Dashboards` folder, and an hour later grouped only one of them there,
+   * so the folder was refused by the rule that a new folder must hold two
+   * documents. Pinning the destination fixes the filing; this fixes the folder,
+   * because a person who approved the destination approved the folder with it.
+   */
+  it('names the folder a pinned destination has nowhere to land in', () => {
+    const rows = [
+      row({ approvedInto: REFS + '/Dashboards' }),
+      row({ approvedInto: REFS + '/Dashboards' }),
+    ];
+    expect(foldersNeeded(rows, [LIB, REFS])).toEqual([REFS + '/Dashboards']);
+  });
+
+  it('says nothing about a folder that is already there', () => {
+    expect(foldersNeeded([row({ approvedInto: REFS })], [LIB, REFS])).toEqual([]);
+  });
+
+  it('says nothing when no destination was approved', () => {
+    expect(foldersNeeded([row({ placement: 'move', destination: REFS + '/x.xlsx' })], [LIB])).toEqual([]);
   });
 });

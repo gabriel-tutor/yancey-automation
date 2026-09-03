@@ -461,6 +461,52 @@ describe('WF-F Apply Proposals node body', () => {
     expect(out[0].oldName).toBe('Performance Management System.xlsx');
   });
 
+  /**
+   * The folder a model suggests is no more deterministic than the name it
+   * writes. Runs 10264 and 10285, an hour apart, grouped the same two workbooks
+   * into a new Dashboards folder and then did not — so it was created once and
+   * refused the next time for holding one document. A plan line carrying only a
+   * destination pins the filing, and the folder it names is created with it.
+   */
+  it('creates the folder a pinned destination has nowhere to land in', () => {
+    const dash = REFS + '/Dashboards';
+    const out = apply({
+      cfg: config({
+        applyRenames: false,
+        applyMoves: true,
+        applyStructure: true,
+        approvedPlan: [
+          { from: 'Performance Management System.xlsx', into: dash },
+          { from: 'CAIDI deliverables .docx', into: dash },
+        ],
+      }),
+      folders: [LIB, KAREN, REFS],
+      proposals: [],
+    });
+    expect(out[0].kind).toBe('create folder');
+    expect(out[0].newPath).toBe(dash);
+    expect(out.slice(1).map((/** @type {any} */ o) => o.newPath)).toEqual([
+      dash + '/Performance Management System.xlsx',
+      dash + '/CAIDI deliverables .docx',
+    ]);
+  });
+
+  it('does not create it twice when the library already has it', () => {
+    const dash = REFS + '/Dashboards';
+    const out = apply({
+      cfg: config({
+        applyRenames: false,
+        applyMoves: true,
+        applyStructure: true,
+        approvedPlan: [{ from: 'Performance Management System.xlsx', into: dash }],
+      }),
+      folders: [LIB, KAREN, REFS, dash],
+      proposals: [],
+    });
+    expect(out.some((/** @type {any} */ o) => o.kind === 'create folder')).toBe(false);
+    expect(out[0].newPath).toBe(dash + '/Performance Management System.xlsx');
+  });
+
   it('applies nothing at all with every switch off', () => {
     const out = apply({
       cfg: config({ applyRenames: false }),

@@ -19,8 +19,10 @@ const plan = JSON.parse(readFileSync(new URL('../config/approved-plan.json', imp
 const known = new Set();
 for (const line of plan.plan) {
   known.add(String(line.from));
-  known.add(String(line.to));
+  if (line.to) known.add(String(line.to));
 }
+/** A line approves a name, a destination, or both. These carry a name. */
+const renames = plan.plan.filter((/** @type {any} */ l) => l.to);
 for (const file of JSON.parse(
   readFileSync(new URL('../fixtures/sharepoint/task-management-listing.json', import.meta.url), 'utf8'),
 )) {
@@ -61,22 +63,62 @@ describe('the demo runbook matches the pinned plan', () => {
   const block = html.match(/<script type="application\/json" id="data">([\s\S]*?)<\/script>/);
   const data = JSON.parse(block?.[1] ?? '{}');
 
-  it('lists exactly the approved plan, in order', () => {
+  it('lists exactly the approved renames, in order', () => {
     expect(data.plan.map((/** @type {any} */ p) => [p.from, p.to])).toEqual(
-      plan.plan.map((/** @type {any} */ p) => [p.from, p.to]),
+      renames.map((/** @type {any} */ p) => [p.from, p.to]),
     );
   });
 
-  it('reverses every line for the undo, and none is a no-op', () => {
-    expect(data.reverse.length).toBe(plan.plan.length);
+  it('reverses every rename for the undo, and none is a no-op', () => {
+    expect(data.reverse.length).toBe(renames.length);
     for (let i = 0; i < data.reverse.length; i += 1) {
-      expect(data.reverse[i].from).toBe(plan.plan[i].to);
-      expect(data.reverse[i].to).toBe(plan.plan[i].from);
+      expect(data.reverse[i].from).toBe(renames[i].to);
+      expect(data.reverse[i].to).toBe(renames[i].from);
       expect(data.reverse[i].from).not.toBe(data.reverse[i].to);
+    }
+  });
+
+  /**
+   * A line with only `into` says where a document belongs and nothing about its
+   * name. It is on the page because it is what makes the folder appear on the
+   * day: the model's grouping is not repeatable, and this is.
+   */
+  it('lists every filing line, each with a destination and no rename', () => {
+    expect(data.filing.map((/** @type {any} */ p) => p.from)).toEqual(
+      plan.plan.filter((/** @type {any} */ l) => !l.to && l.into).map((/** @type {any} */ p) => p.from),
+    );
+    for (const line of data.filing) {
+      expect(line.into, line.from + ' is filed nowhere').toBeTruthy();
+      expect(line.to).toBeUndefined();
     }
   });
 
   it('has something to demonstrate at all', () => {
     expect(data.plan.length, 'nothing held back means the live run shows nothing').toBeGreaterThan(0);
+  });
+});
+
+/**
+ * The plan as the workflow receives it, not as the file holds it.
+ *
+ * `String(undefined)` is the string "undefined", and a line approving only a
+ * destination has no name — so the naive mapping sent "undefined" into the
+ * Config node as an approved file name. It would have been refused rather than
+ * applied, which is the safe direction, but it would also have silently taken
+ * the two documents out of the demo.
+ */
+describe('the plan the generator hands to the workflow', () => {
+  it('never turns a missing half of a line into a name', async () => {
+    const { CONFIG } = await import('../workflows/wf-f-organizer.mjs');
+    for (const line of CONFIG.approvedPlan) {
+      expect(line.to, line.from + ' approves a name that is not one').not.toBe('undefined');
+      expect(line.into, line.from + ' is filed nowhere real').not.toBe('undefined');
+      expect(Boolean(line.to || line.into), line.from + ' approves nothing at all').toBe(true);
+    }
+  });
+
+  it('carries every filing line through with its destination', () => {
+    const filings = plan.plan.filter((/** @type {any} */ l) => !l.to && l.into);
+    expect(filings.length, 'the demo needs at least one pinned destination').toBeGreaterThan(0);
   });
 });

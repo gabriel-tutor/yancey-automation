@@ -46,7 +46,7 @@ export const HELPERS = {
   'wf-f/Apply Proposals': {
     naming: ['applyProposals', 'applyApprovedPlan', 'approvedNotFound'],
     structure: ['planStructure', 'planFolderRenames'],
-    changes: ['plannedChanges', 'fileChangeUrl', 'folderCreateUrl', 'folderChangeUrl'],
+    changes: ['plannedChanges', 'foldersNeeded', 'fileChangeUrl', 'folderCreateUrl', 'folderChangeUrl'],
     library: ['reportsIn', 'folderOf'],
   },
 };

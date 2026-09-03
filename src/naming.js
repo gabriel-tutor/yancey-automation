@@ -493,8 +493,17 @@ export function approvedNotFound(rows, approved) {
  * supposed to close never closes. So an off-list proposal is kept and marked
  * unapproved, and the run reports two lists rather than one.
  *
+ * A line can approve a name, a destination, or both. A line with `into` and no
+ * `to` is a filing decision on its own — "this document belongs in that folder,
+ * leave its name alone" — and it exists because the folder a model suggests is
+ * no more deterministic than the name it writes. Two runs an hour apart grouped
+ * the same two workbooks into `Dashboards` and then didn't, so the folder was
+ * created once and refused the next time by the rule that a new folder must
+ * hold two documents. Pinning the destination is what makes filing repeatable,
+ * exactly as pinning the name did.
+ *
  * @param {any[]} rows plan rows, already carrying this run's proposals
- * @param {Array<{ from: string, to: string, into?: string }>} approved the signed-off plan
+ * @param {Array<{ from: string, to?: string, into?: string }>} approved the signed-off plan
  * @param {{ reports?: any[], includeReports?: boolean, revert?: boolean, dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  */
 export function applyApprovedPlan(rows, approved, options) {
@@ -502,13 +511,27 @@ export function applyApprovedPlan(rows, approved, options) {
   const allowed = new Set(namingCandidates(rows, opts.reports || [], opts).map((r) => String(r.current)));
   const byFrom = new Map(
     (Array.isArray(approved) ? approved : [])
-      .filter((a) => a && a.from && a.to)
+      .filter((a) => a && a.from && (a.to || a.into))
       .map((a) => [String(a.from), a]),
   );
 
   for (const row of rows) {
     const line = byFrom.get(String(row.current));
-    const to = line ? String(line.to) : '';
+    const to = line ? String(line.to || '') : '';
+
+    // A destination is approved on its own terms. A line may carry one without
+    // a name, and then it says only where the document belongs — which is a
+    // placement decision, so it is recorded as one. Without this the folder
+    // would be created and nothing would move into it.
+    if (line && line.into) {
+      row.approvedInto = String(line.into);
+      const destination = String(line.into) + '/' + String(row.current);
+      if (destination !== String(row.path)) {
+        row.placement = 'move';
+        row.destination = destination;
+        row.placementWhy = 'approved on the plan as belonging in ' + String(line.into);
+      }
+    }
 
     // Nothing outside the approved list is APPLIED. It is still proposed.
     if (!to) {
@@ -534,10 +557,6 @@ export function applyApprovedPlan(rows, approved, options) {
     row.namedBy = 'approved';
     row.approved = false;
     row.awaiting = '';
-    // Where a plan says where a file goes, that is approved too. Where it does
-    // not, arming the move switch moves nothing: a plan silent on a destination
-    // has not approved one.
-    row.approvedInto = line && line.into ? String(line.into) : '';
 
     if (!allowed.has(String(row.current))) {
       row.blocked = row.blocked || 'approved, but it is guarded now and cannot be renamed in a sweep';

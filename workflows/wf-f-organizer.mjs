@@ -13,12 +13,12 @@ import { DEPLOY, E, ROOT, S, SDK_IMPORT, TARGET } from './shared.mjs';
 function approvedPlan() {
   try {
     const file = JSON.parse(readFileSync(join(ROOT, 'config/approved-plan.json'), 'utf8'));
+    // A line approves a name, a destination, or both, so both are conditional.
+    // `String(undefined)` is the string "undefined", which would travel into
+    // the workflow as an approved file name and be refused as one.
     return (file.plan || []).map((/** @type {any} */ line) => ({
       from: String(line.from),
-      to: String(line.to),
-      // Where a line says where the file goes, that destination is approved
-      // too. Where it is silent, arming the move switch moves nothing: a plan
-      // that did not name a destination has not approved one.
+      to: line.to ? String(line.to) : '',
       into: line.into ? String(line.into) : '',
     }));
   } catch {
@@ -508,6 +508,21 @@ const folderPlan = planFolderRenames(modelFolders, {
   includeReports: cfg.renameReports === true
 });
 
+
+// A folder the approved plan files something into, that is not there yet. A
+// person who approved the destination approved the folder with it - and without
+// this, pinning a destination would fail on exactly the run that needs it, when
+// the folder the plan names is the one the library does not have.
+//
+// This is also what makes the structure repeatable. The folder a model suggests
+// is no more deterministic than the name it writes: two runs an hour apart put
+// the same two workbooks in a new Dashboards folder and then did not, so the
+// folder was created once and refused the next time for holding one document.
+// Pinned first, proposed second, each path once.
+const pinnedFolders = foldersNeeded(rows, review.folders || []);
+const proposedFolders = structure.create.filter(function (f) { return pinnedFolders.indexOf(f) === -1; });
+const wantedFolders = pinnedFolders.concat(proposedFolders);
+
 const toRename = rows.filter(function (r) { return r.proposed && (!pinned || r.approved === true); });
 const awaiting = rows.filter(function (r) { return r.proposed && pinned && r.approved !== true; });
 const movable = rows.filter(function (r) { return r.placement === 'move' && r.destination; });
@@ -530,7 +545,7 @@ const summary = {
   pinned: pinned,
   planNote: planNote,
   modelNote: modelNote,
-  newFolders: structure.create,
+  newFolders: wantedFolders,
   folderRefusals: structure.refused,
   folderRenames: folderPlan.renames,
   folderRenameRefusals: folderPlan.refused,
@@ -554,14 +569,14 @@ const summary = {
 // worked and the second could not find the file.
 const base = String(cfg.host || '') + String(cfg.sitePath || '') + '/_api/web';
 const creating = cfg.applyStructure === true;
-const newFolders = creating ? structure.create : [];
+const newFolders = creating ? wantedFolders : [];
 
 // A move into a folder that does not exist yet cannot happen unless that folder
 // is being created on this run. Filing into a folder that is already there is
 // gated by applyMoves alone.
 const blockedByStructure = {};
 if (!creating) {
-  for (const f of structure.create) blockedByStructure[f] = true;
+  for (const f of wantedFolders) blockedByStructure[f] = true;
 }
 
 const fileChanges = plannedChanges(rows, {

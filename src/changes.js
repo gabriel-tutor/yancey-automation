@@ -168,3 +168,30 @@ export function plannedChanges(rows, options) {
 
   return changes;
 }
+
+/**
+ * Folders an approved destination needs, that are not there yet.
+ *
+ * A person who approved filing a document into a folder approved the folder
+ * with it. Without this, pinning a destination would be useless on the run that
+ * matters: the folder the plan names is exactly the one the library does not
+ * have, and every move into it would fail for want of somewhere to land.
+ *
+ * Order matters and is the caller's job — these are created before anything
+ * moves into them.
+ *
+ * @param {any[]} rows plan rows, carrying `approvedInto` where a plan named one
+ * @param {string[]} existing folders the library already has
+ * @returns {string[]}
+ */
+export function foldersNeeded(rows, existing) {
+  const there = new Set((Array.isArray(existing) ? existing : []).map(String));
+  /** @type {string[]} */
+  const needed = [];
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const into = String((row && row.approvedInto) || '');
+    if (!into || there.has(into) || needed.indexOf(into) !== -1) continue;
+    needed.push(into);
+  }
+  return needed;
+}

@@ -96,6 +96,17 @@
         "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ]
+    },
+    {
+      "from": "Electric_Operations_Daily_Review_Dashboard.xlsx",
+      "into": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards",
+      "why": "Read on run 10264: an electric operations executive dashboard. Grouped with the other dashboard workbook rather than left in the mixed Resources and References pile."
+    },
+    {
+      "from": "Mooyah_Cleaning_Gantt.xlsx",
+      "into": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards",
+      "why": "Read on run 10264: a cleaning performance dashboard by equipment and day. Same grouping."
     }
-  ]
+  ],
+  "_filingNote": "A line with `into` and no `to` approves where a document belongs and says nothing about its name. It exists because the folder a model suggests is no more deterministic than the name it writes: runs 10264 and 10285, an hour apart, grouped the same two workbooks into a new Dashboards folder and then did not, so the folder was created once and refused the next time by the rule that a new folder must hold two documents. Pinning the destination is what makes filing repeatable, exactly as pinning the name did. The folder is created if it is not there."
 }

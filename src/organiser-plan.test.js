@@ -92,7 +92,13 @@ describe('the review page agrees with the run', () => {
       ...data.applied.map((/** @type {any} */ a) => a.to),
       ...data.rows.map((/** @type {any} */ r) => r.proposed).filter(Boolean),
     ]);
-    const adrift = plan.plan.map((/** @type {any} */ l) => l.to).filter((/** @type {string} */ to) => !landed.has(to));
+    // A line approves a name, a destination, or both. Only the ones carrying a
+    // name land as a rename; a filing line moves a document and leaves its name
+    // exactly where it was.
+    const adrift = plan.plan
+      .filter((/** @type {any} */ l) => l.to)
+      .map((/** @type {any} */ l) => l.to)
+      .filter((/** @type {string} */ to) => !landed.has(to));
     expect(adrift, 'approved but neither applied nor proposed').toEqual([]);
   });
 

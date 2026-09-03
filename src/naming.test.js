@@ -422,7 +422,7 @@ describe('applying a plan that was actually approved', () => {
   it('approves a destination only where the plan names one', () => {
     const rows = withModelNames(freshRows());
     applyApprovedPlan(rows, [{ from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx' }], { reports: REPORTS });
-    expect(rows.find((r) => r.current === 'Metrics .xlsx')?.approvedInto).toBe('');
+    expect(rows.find((r) => r.current === 'Metrics .xlsx')?.approvedInto).toBeFalsy();
 
     const withInto = withModelNames(freshRows());
     applyApprovedPlan(
@@ -431,6 +431,24 @@ describe('applying a plan that was actually approved', () => {
       { reports: REPORTS },
     );
     expect(withInto.find((r) => r.current === 'Metrics .xlsx')?.approvedInto).toBe(ROOT + '/Task 2');
+  });
+
+  /**
+   * A folder a model suggests is no more deterministic than a name it writes.
+   * Two runs an hour apart grouped the same two workbooks into `Dashboards` and
+   * then did not, so the folder was created once and refused the next time by
+   * the rule that a new folder must hold two documents. A line carrying only a
+   * destination pins the filing without touching the name.
+   */
+  it('takes a line that approves where a document goes and nothing else', () => {
+    const rows = withModelNames(freshRows());
+    applyApprovedPlan(rows, [{ from: 'Metrics .xlsx', into: ROOT + '/Task 2' }], { reports: REPORTS });
+    const row = rows.find((r) => r.current === 'Metrics .xlsx');
+    expect(row?.approvedInto).toBe(ROOT + '/Task 2');
+    // The name it proposed is untouched, and still unapproved.
+    expect(row?.proposed).toBeTruthy();
+    expect(row?.approved).toBe(false);
+    expect(row?.namedBy).not.toBe('approved');
   });
 
   /**
