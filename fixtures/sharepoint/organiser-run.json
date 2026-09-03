@@ -1,6 +1,6 @@
 {
-  "executionId": "10341",
-  "ranAt": "2026-09-03T16:43:15.602Z",
+  "executionId": "10359",
+  "ranAt": "2026-09-03T17:00:44.170Z",
   "summary": {
     "nothingToDo": true,
     "library": "Documents",
@@ -12,7 +12,7 @@
     "blocked": 0,
     "unfiled": 8,
     "movesProposed": 0,
-    "namedByModel": 9,
+    "namedByModel": 7,
     "reportsRead": 4,
     "reportsUnreadable": [],
     "approvedCount": 11,
@@ -36,10 +36,11 @@
     "beyondModel": 0,
     "newFolders": [],
     "unreachableFolders": [],
+    "impossibleSwaps": [],
     "folderRefusals": [
       {
         "file": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
-        "folder": "TCO Programme",
+        "folder": "TCO Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
@@ -49,7 +50,7 @@
       },
       {
         "file": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
-        "folder": "TCO Programme",
+        "folder": "TCO Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
@@ -84,27 +85,27 @@
       },
       {
         "file": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
         "file": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
         "file": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
         "file": "DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
         "file": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
@@ -113,13 +114,13 @@
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
-        "file": "DIMP_Dashboard.xlsx",
-        "folder": "DIMP Folder",
-        "because": "that would file it inside a numbered stage folder, which asserts how far the work has got"
+        "file": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
+        "folder": "TCO Materials",
+        "because": "only this one document was put in it, and a folder holding one file is the pile it came from with an extra click in front"
       },
       {
-        "file": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
-        "folder": "TCO Programme",
+        "file": "DIMP_Dashboard.xlsx",
+        "folder": "DIMP Materials",
         "because": "only this one document was put in it, and a folder holding one file is the pile it came from with an extra click in front"
       }
     ],
@@ -148,6 +149,10 @@
       {
         "folder": "4. Completed Tasks",
         "because": "it is a numbered stage folder, and the numbering is what makes the sequence readable"
+      },
+      {
+        "folder": "DIMP Folder",
+        "because": "it sits inside a numbered stage folder, and renaming a folder repaths everything in it — those documents are held back one at a time for the same reason"
       }
     ],
     "readContents": true,
@@ -246,7 +251,7 @@
       "destination": "",
       "namedBy": "",
       "why": "",
-      "folderSuggestion": "TCO Programme",
+      "folderSuggestion": "TCO Materials",
       "approved": false
     },
     {
@@ -282,10 +287,11 @@
       "placement": "unfiled",
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "destination": "",
-      "namedBy": "",
+      "namedBy": "approved",
       "why": "",
-      "folderSuggestion": "TCO Programme",
-      "approved": false
+      "folderSuggestion": "TCO Materials",
+      "approved": false,
+      "awaiting": ""
     },
     {
       "current": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
@@ -301,10 +307,11 @@
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
-      "namedBy": "",
+      "namedBy": "approved",
       "why": "",
-      "folderSuggestion": "TCO Programme",
-      "approved": false
+      "folderSuggestion": "TCO Materials",
+      "approved": false,
+      "awaiting": ""
     },
     {
       "current": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
@@ -407,18 +414,16 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Power BI Dashboard",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "Power BI report",
+      "categoryWhy": "a .pbix is a Power BI report",
       "folder": "2. In Progress",
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
-      "namedBy": "model",
-      "why": "The filename identifies a Power BI metric dashboard.",
+      "namedBy": "approved",
+      "why": "",
       "folderSuggestion": "Dashboards",
       "approved": false,
       "awaiting": ""
@@ -439,7 +444,7 @@
       "destination": "",
       "namedBy": "",
       "why": "",
-      "folderSuggestion": "DIMP Folder",
+      "folderSuggestion": "DIMP Materials",
       "approved": false
     },
     {
@@ -450,16 +455,17 @@
       "proposed": "",
       "assumptions": [],
       "blocked": "",
-      "category": "document",
-      "categoryWhy": "from the .pdf extension",
+      "category": "Safety Standard",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "DIMP Folder",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "",
-      "why": "",
-      "folderSuggestion": "DIMP Folder",
-      "approved": false
+      "namedBy": "model",
+      "why": "The filename identifies the DIMP-related ASME B31.8S standard.",
+      "folderSuggestion": "DIMP Materials",
+      "approved": false,
+      "awaiting": ""
     },
     {
       "current": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
@@ -475,10 +481,11 @@
       "placement": "settled",
       "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "",
+      "namedBy": "approved",
       "why": "",
-      "folderSuggestion": "DIMP Folder",
-      "approved": false
+      "folderSuggestion": "DIMP Materials",
+      "approved": false,
+      "awaiting": ""
     },
     {
       "current": "DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
@@ -494,10 +501,11 @@
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
-      "namedBy": "",
+      "namedBy": "approved",
       "why": "",
-      "folderSuggestion": "DIMP Folder",
-      "approved": false
+      "folderSuggestion": "DIMP Materials",
+      "approved": false,
+      "awaiting": ""
     },
     {
       "current": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
@@ -513,10 +521,11 @@
       "placement": "settled",
       "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "",
+      "namedBy": "approved",
       "why": "",
-      "folderSuggestion": "DIMP Folder",
-      "approved": false
+      "folderSuggestion": "DIMP Materials",
+      "approved": false,
+      "awaiting": ""
     },
     {
       "current": "NIPSCO_Master-Roster_2025-07-31_Draft_v0.1.xlsx",
@@ -532,10 +541,11 @@
       "placement": "settled",
       "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "",
+      "namedBy": "approved",
       "why": "",
       "folderSuggestion": "Resources and References",
-      "approved": false
+      "approved": false,
+      "awaiting": ""
     },
     {
       "current": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
@@ -553,8 +563,8 @@
       "placement": "settled",
       "placementWhy": "filed under Performance Management",
       "destination": "",
-      "namedBy": "model",
-      "why": "The instructions define initiative, action, sub-action, and metric registers for a performance-management system.",
+      "namedBy": "approved",
+      "why": "The instructions describe initiative, action, sub-action, and metric registers for a performance-management system.",
       "folderSuggestion": "Performance Management",
       "approved": false,
       "awaiting": ""
@@ -575,7 +585,7 @@
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
-      "namedBy": "model",
+      "namedBy": "approved",
       "why": "The filename identifies a Power BI report for the performance-management system.",
       "folderSuggestion": "Performance Management",
       "approved": false,
@@ -618,19 +628,20 @@
         "contains a special character — letters, numbers, hyphens and underscores only",
         "ends with \"YD\" rather than a version like v0.1 or v1.0"
       ],
-      "proposed": "Assessment-Tool-Walkthrough_2026-01-26_Draft_v0.1.xlsx",
+      "proposed": "Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
       "assumptions": [
-        "no project code was evidenced, so none was added"
+        "no project code was evidenced, so none was added",
+        "version assumed to be v0.1"
       ],
       "blocked": "",
-      "category": "Assessment Tool",
+      "category": "Assessment Workbook",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Resources and References",
       "placement": "unfiled",
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "destination": "",
       "namedBy": "model",
-      "why": "The instructions describe a structured Wiring for Success assessment tool and its triage and impact-scoring workflow.",
+      "why": "The instructions identify a structured assessment tool for triage, wiring elements, evidence, impact, and actions.",
       "folderSuggestion": "Resources and References",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it"
@@ -642,22 +653,22 @@
       "problems": [
         "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
       ],
-      "proposed": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+      "proposed": "DIMP_Leak-Repair-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
       "assumptions": [
         "status assumed to be Draft, the document does not say",
         "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
       "blocked": "",
-      "category": "DIMP Dashboard",
+      "category": "Risk Dashboard",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Resources and References",
       "placement": "unfiled",
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "destination": "",
       "namedBy": "model",
-      "why": "The instructions explicitly identify DIMP and describe a Leak Repair Capacity scoring dashboard.",
-      "folderSuggestion": "DIMP Folder",
+      "why": "The instructions explicitly describe a DIMP dashboard calculating leak repair capacity and threat-category scores.",
+      "folderSuggestion": "DIMP Materials",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it"
     },
@@ -684,7 +695,7 @@
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "destination": "",
       "namedBy": "model",
-      "why": "The workbook is titled Damage Prevention Wiring Action Tracker and tracks 228 departmental actions.",
+      "why": "The sheet is titled Damage Prevention Wiring Action Tracker and tracks actions, ratings, impact, and status.",
       "folderSuggestion": "Resources and References",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it"
@@ -704,14 +715,14 @@
         "version assumed to be v0.1"
       ],
       "blocked": "",
-      "category": "Cleaning Dashboard",
+      "category": "Gantt Dashboard",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Dashboards",
       "placement": "settled",
       "placementWhy": "filed under Dashboards",
       "destination": "",
       "namedBy": "model",
-      "why": "The workbook is titled MOOYAH Cleaning Performance Summary and contains daily cleaning performance and pass-fail measures.",
+      "why": "The workbook summarizes Mooyah cleaning performance by equipment, day, points, and pass or fail status.",
       "folderSuggestion": "Dashboards",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it",
@@ -724,7 +735,7 @@
       "problems": [
         "has no version — keep the v#.# even when the document is Final"
       ],
-      "proposed": "Reliability-Data-Workbook_2026-09-03_Final_v1.0.xlsx",
+      "proposed": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "date taken from the file timestamp, not the document",
@@ -738,7 +749,7 @@
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "destination": "",
       "namedBy": "model",
-      "why": "The filename identifies a preloaded power-delivery reliability workbook and marks it Final.",
+      "why": "The filename identifies a preloaded reliability workbook and marks it Final.",
       "folderSuggestion": "Resources and References",
       "approved": false,
       "awaiting": "proposed on this run — approve it and the next run applies it"
