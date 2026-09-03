@@ -288,6 +288,26 @@ describe('applying a plan that was actually approved', () => {
     expect(other?.blocked).toContain('not on the approved list');
   });
 
+  /**
+   * The state after a plan has been applied. The renamed file comes back round
+   * as a fresh proposal, that proposal is dropped because it is not on the
+   * list, and the file must then read as already correct rather than blocked.
+   */
+  it('reports an already-applied file as correct, not as a problem', () => {
+    const done = [{ name: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', path: ROOT + '/Task 2/SCE_Plan_2026-04-15_Draft_v0.1.docx', modified: '2026-04-15T10:00:00Z' }];
+    const rows = planRenames(done, {});
+    applyProposals(
+      rows,
+      [{ file: done[0]?.name, project: 'SCE', document: 'Something-Else-Today', status: 'Draft', date: '2026-04-15', version: 'v0.1', category: '', why: '' }],
+      { files: done, reports: [] },
+    );
+    expect(rows[0]?.proposed).toBeTruthy();
+    applyApprovedPlan(rows, [{ from: 'Some Other File.xlsx', to: 'SCE_Other_2026-04-15_Draft_v0.1.xlsx' }], { reports: [] });
+    expect(rows[0]?.proposed).toBe('');
+    expect(rows[0]?.compliant).toBe(true);
+    expect(rows[0]?.blocked).toBe('');
+  });
+
   it('still refuses a guarded file, even when it is on the list', () => {
     const rows = freshRows();
     applyApprovedPlan(rows, [{ from: 'NiSource Metric Dashboard.pbix', to: 'NIPSCO_Metric-Dashboard_2026-01-01_Final_v1.0.pbix' }], { reports: REPORTS });

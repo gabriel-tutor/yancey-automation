@@ -66,19 +66,34 @@ describe('the review page agrees with the run', () => {
     }
   });
 
-  /**
-   * The point of the rewrite. A regex can rearrange the characters already in a
-   * name; it cannot write "Sales-Dashboard-Overview" for a file called
-   * "Screenshot 2025-04-06 at 6.34.18 PM.png", because those words are in the
-   * picture. If the page ever went back to rule-named proposals, this fails.
-   */
-  it('says which proposals were named by reading the document', () => {
+  it('agrees with itself about how many were named by reading', () => {
     const named = data.rows.filter((/** @type {any} */ r) => r.namedBy === 'model');
     expect(named.length).toBe(data.namedByModel);
-    expect(named.length).toBeGreaterThan(0);
     for (const row of named) {
       expect(row.why, row.current + ' was named by the model with no reason given').toBeTruthy();
     }
+  });
+
+  /**
+   * The point of the rewrite, checked against what actually happened rather
+   * than what is still outstanding. A regex can rearrange the characters
+   * already in a name; it cannot write "Sales-Dashboard-Overview" for a file
+   * called "Screenshot 2025-04-06 at 6.34.18 PM.png", because those words are
+   * in the picture.
+   *
+   * Every approved name has to be either applied or still proposed. A plan that
+   * quietly went nowhere would otherwise leave a page that looks finished.
+   */
+  it('carries out every line of the approved plan', () => {
+    const plan = JSON.parse(
+      readFileSync(new URL('../config/approved-plan.json', import.meta.url), 'utf8'),
+    );
+    const landed = new Set([
+      ...data.applied.map((/** @type {any} */ a) => a.to),
+      ...data.rows.map((/** @type {any} */ r) => r.proposed).filter(Boolean),
+    ]);
+    const adrift = plan.plan.map((/** @type {any} */ l) => l.to).filter((/** @type {string} */ to) => !landed.has(to));
+    expect(adrift, 'approved but neither applied nor proposed').toEqual([]);
   });
 
   // A record claiming a change that is not in the library would be worse than

@@ -12,7 +12,7 @@
     "kind": "rename"
   },
   {
-    "from": "Screenshot 2025-04-06 at 6.42.39 PM.png",
+    "from": "Screenshot 2025-04-06 at 6.42.39\u202fPM.png",
     "to": "Screenshot_2025-04-06_Draft_v0.1.png",
     "assumptions": [
       "no project prefix, the library does not say which project this belongs to",
@@ -24,7 +24,7 @@
     "kind": "rename"
   },
   {
-    "from": "Screenshot 2025-04-14 at 9.06.08 AM.png",
+    "from": "Screenshot 2025-04-14 at 9.06.08\u202fAM.png",
     "to": "Screenshot_2025-04-14_Draft_v0.1.png",
     "assumptions": [
       "no project prefix, the library does not say which project this belongs to",
@@ -84,5 +84,133 @@
     ],
     "applied": "2026-09-03",
     "run": "8956"
+  },
+  {
+    "kind": "rename",
+    "from": "Task Management Channel Guide_YD_04042025.docx",
+    "to": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "status assumed to be Draft, the document does not say",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "9841"
+  },
+  {
+    "kind": "rename",
+    "from": "Daily_Employee_Project_Time_Trackingv1.xlsx",
+    "to": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "status assumed to be Draft, the document does not say",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "9841"
+  },
+  {
+    "kind": "rename",
+    "from": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
+    "to": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
+    "assumptions": [
+      "no project code was evidenced, so none was added"
+    ],
+    "applied": "2026-09-03",
+    "run": "9841"
+  },
+  {
+    "kind": "rename",
+    "from": "Power BI TCO Pilot_YD_04072025.xlsx",
+    "to": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
+    "assumptions": [
+      "status assumed to be Draft, the document does not say",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "9841"
+  },
+  {
+    "kind": "rename",
+    "from": "Screenshot_2025-04-06_Draft_v0.1.png",
+    "to": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
+    "assumptions": [
+      "no project code was evidenced, so none was added"
+    ],
+    "applied": "2026-09-03",
+    "run": "9841"
+  },
+  {
+    "kind": "rename",
+    "from": "Screenshot_2025-04-14_Draft_v0.1.png",
+    "to": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
+    "assumptions": [
+      "no project code was evidenced, so none was added"
+    ],
+    "applied": "2026-09-03",
+    "run": "9843"
+  },
+  {
+    "kind": "rename",
+    "from": "Metrics_2025-04-15_Draft_v0.1.xlsx",
+    "to": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "9843"
+  },
+  {
+    "kind": "rename",
+    "from": "Screenshot 2025-04-06 at 6.34.18\u202fPM.png",
+    "to": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "status assumed to be Draft, the document does not say",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "9843"
+  },
+  {
+    "kind": "rename",
+    "from": "Screenshot 2025-04-06 at 6.34.50\u202fPM.png",
+    "to": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "status assumed to be Draft, the document does not say",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "9843"
+  },
+  {
+    "kind": "rename",
+    "from": "Screenshot 2025-04-06 at 6.35.10\u202fPM.png",
+    "to": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "status assumed to be Draft, the document does not say",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "9843"
+  },
+  {
+    "kind": "rename",
+    "from": "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
+    "to": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "9845"
+  },
+  {
+    "kind": "rename",
+    "from": "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
+    "to": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "9845"
   }
 ]

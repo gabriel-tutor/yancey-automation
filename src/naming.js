@@ -405,6 +405,11 @@ export function applyApprovedPlan(rows, approved, options) {
       if (row.proposed) {
         row.blocked = 'not on the approved list, so this run leaves it alone';
         row.proposed = '';
+        // A file whose approved name has already been applied comes back round
+        // as a fresh proposal, and dropping that proposal must not leave it
+        // reported as a problem. It satisfies the convention; say so.
+        row.compliant = diagnose(String(row.current)).length === 0;
+        if (row.compliant) row.blocked = '';
       }
       continue;
     }

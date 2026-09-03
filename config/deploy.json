@@ -21,12 +21,12 @@
     "_credentialNote": "n8n caches a credential's display name inside each node, so a renamed credential leaves stale labels behind and the ID is the only thing that means anything. This block used to map gBDmBd3jHGBqqQjl to 'Outlook - Dev (gtutor)'; that ID is in fact 'Outlook - Yancey', the production credential. WF-S's seeder inherited the mistake and was bound to Yancey's live mailbox while its sticky note promised dev-only. Use targets.<env>.outlookCredentialId.",
     "outlookProd": {
       "id": "gBDmBd3jHGBqqQjl",
-      "name": "Outlook – Yancey",
+      "name": "Outlook \u2013 Yancey",
       "type": "microsoftOutlookOAuth2Api"
     },
     "outlookDev": {
       "id": "vNJuWdSXhjzB0Jo1",
-      "name": "Outlook – Dev (gtutor)",
+      "name": "Outlook \u2013 Dev (gtutor)",
       "type": "microsoftOutlookOAuth2Api"
     }
   },
@@ -45,7 +45,7 @@
     "prod": {
       "label": "Yancey (live)",
       "nameSuffix": "",
-      "outlookCredential": "Outlook – Yancey",
+      "outlookCredential": "Outlook \u2013 Yancey",
       "dataTables": {
         "emailLog": "cKOjAskKEn5wYTuf",
         "emailLogName": "agent_email_log_yancey",
@@ -75,12 +75,12 @@
       "sharepointCredentialId": "We80s2s9pbxJWWp2",
       "sharepointSite": "/sites/TaskManagement",
       "sharepointHost": "https://upperformpartners.sharepoint.com",
-      "_wfFNote": "WF-F reviews the Task Management library. It is an agent, not a rule engine: the deterministic pass categorises every document and works out what must never be touched, then the documents themselves are read (Office files unzipped on the server, PDFs and images sent as themselves) and a model returns the naming PARTS - project, document name, status, date. proposeFileName assembles the name and diagnose validates it, so the model cannot produce a malformed name and a proposal that fails the convention is dropped. The first version named files with regular expressions and could only rearrange characters already present, which is why Metrics .xlsx became Metrics_2025-04-15_Draft_v0.1.xlsx; Yancey asked for the AI to do it on the 28 August call. readContents is the consent switch and is on. It rests with applyRenames and applyMoves both false, so a run produces a review and changes nothing; arming either is a deliberate edit to the Config node and maxChangesPerRun caps one run at five. Power BI reports and the workbooks they read are filtered out before anything is downloaded, so they never reach the model at all. Six renames were applied on 2026-09-02 under the old rule-based version; the record and the undo list are in fixtures/sharepoint/renames-applied.json. The previous workflow id was qh29SRwChF2g9bYB, archived when the agent replaced it."
+      "_wfFNote": "WF-F reviews the Task Management library and is an agent, not a rule engine. A deterministic pass categorises every document and works out what must never be touched; the rest are downloaded and read (Office files unzipped on the server, PDFs and images sent whole) and a model returns the naming PARTS - project, document name, status, date. proposeFileName assembles the name, diagnose validates it, and a proposal that fails the convention is dropped, so the model cannot produce a malformed name. IMPORTANT: the model is not deterministic. Runs 9006 and 9068 disagreed on 7 of 12 names over an unchanged library, so approval has to bind: config/approved-plan.json holds the signed-off plan and the generator lifts the from/to pairs into Config.approvedPlan. With it filled in, arming applyRenames applies exactly those names and ignores that run's proposals; anything off the list is left alone. approvedNotFound reports a line whose file is gone, which is expected on a second pass and is also how a half-applied plan announces itself. The twelve approved names were applied on 2026-09-03 in runs 9841, 9843 and 9845 - five, five and two, no failures - and applyRenames is back to false. A run now reports 0 to rename, 12 already correct, 9 left alone, all nine being Power BI reports or the workbooks feeding them. The undo list is fixtures/sharepoint/renames-applied.json; rename chains are collapsed on the review page so each file shows its original name beside its current one. Clearing readContents is the whole off switch for opening documents."
     },
     "dev": {
       "label": "gtutor sandbox",
-      "nameSuffix": " · dev",
-      "outlookCredential": "Outlook – Dev (gtutor)",
+      "nameSuffix": " \u00b7 dev",
+      "outlookCredential": "Outlook \u2013 Dev (gtutor)",
       "dataTables": {
         "emailLog": "JZP4Wzctro2gA3ya",
         "emailLogName": "agent_email_log_dev",
@@ -118,7 +118,7 @@
     "_confidenceNote": "Yancey set confidenceMin to 0.80 on 2026-08-28, up from 0.60. Anything the classifier is less sure of than that is surfaced with below_confidence_min rather than replied to."
   },
   "retention": {
-    "_note": "Answering Yancey's question of 2026-08-28. n8n execution history — which holds full message bodies while a run is in flight — is pruned after 168 hours (7 days) by EXECUTIONS_DATA_PRUNE and EXECUTIONS_DATA_MAX_AGE on the VPS. The decision log (agent_email_log_yancey) holds subject, sender, label, reasoning and links, and is retained indefinitely so the audit trail survives; rows are closed after autoCloseDays but never deleted. Deleting a client's decision record is his call, not ours, so logRetentionDays defaults to 0 (never). Set it to a number of days to enable purging of closed rows.",
+    "_note": "Answering Yancey's question of 2026-08-28. n8n execution history \u2014 which holds full message bodies while a run is in flight \u2014 is pruned after 168 hours (7 days) by EXECUTIONS_DATA_PRUNE and EXECUTIONS_DATA_MAX_AGE on the VPS. The decision log (agent_email_log_yancey) holds subject, sender, label, reasoning and links, and is retained indefinitely so the audit trail survives; rows are closed after autoCloseDays but never deleted. Deleting a client's decision record is his call, not ours, so logRetentionDays defaults to 0 (never). Set it to a number of days to enable purging of closed rows.",
     "executionHistoryDays": 7,
     "logRetentionDays": 0
   },

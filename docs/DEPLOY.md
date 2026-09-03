@@ -1871,6 +1871,33 @@ every file name quoted in a document to one that exists in the plan or the
 library, and the lesson is the repo's own rule, broken by me: **nothing is
 transcribed.**
 
+### The plan applied, 2026-09-03 — runs 9841, 9843, 9845
+
+Armed at the account owner's instruction and run three times at the cap of five:
+**5 applied, 5 applied, 2 applied. No failures.** All twelve approved names are
+now on the library, `applyRenames` is back to `false`, and a run reports
+`0 to rename, 12 already correct, 9 left alone`.
+
+The second run is the one worth keeping. It reported *"5 approved file(s) are no
+longer in the library under that name"* — the five the first run had already
+renamed. That is `approvedNotFound` doing its job on a second pass, and it is
+the same message that would appear if a line had been mistyped.
+
+Two things this pass turned up:
+
+**A file whose approved name is already applied came back round as a fresh
+proposal**, because the model still names it and the plan then drops that
+proposal. Dropping it was leaving the file reported as *blocked* when it is in
+fact already correct. `applyApprovedPlan` now re-reads the current name and says
+so.
+
+**The rename record became a chain.** Several files were renamed twice — once by
+the pattern-matching pass, once by the agent — so the middle name is no longer in
+the library and the review page's "every claimed change is really there" check
+failed on it. `scripts/build-organiser-plan.mjs` now collapses chains and shows
+each file's *original* name beside its current one, which is what an undo list is
+for.
+
 **The page is no longer re-derived.** `scripts/build-organiser-plan.mjs` used to
 rerun `planRenames` locally to fill `docs/organiser-plan.html`, which was honest
 while the names came from rules. It is not any more, so the page is built from

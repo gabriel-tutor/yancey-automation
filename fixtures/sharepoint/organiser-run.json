@@ -1,136 +1,33 @@
 {
-  "executionId": "9087",
+  "executionId": "9849",
   "workflowId": "CC8jik1RGti4JXZk",
-  "ranAt": "2026-09-02T20:26:48.847Z",
+  "ranAt": "2026-09-03T08:51:30.773Z",
   "summary": {
-    "headline": "12 to rename, 0 to move, 9 left alone, 0 already correct",
+    "headline": "0 to rename, 0 to move, 9 left alone, 12 already correct",
     "library": "Documents",
     "site": "/sites/TaskManagement",
     "scanned": 21,
-    "compliant": 0,
+    "compliant": 12,
     "naming": "the model read and named 12 documents",
-    "plan": "this run proposed these names",
+    "plan": "applying the approved plan of 12, not this run - 12 approved file(s) are no longer in the library under that name",
     "namedByModel": 12,
-    "approvedCount": 0,
-    "readContents": true,
-    "toRename": [
-      {
-        "file": "Task Management Channel Guide_YD_04042025.docx",
-        "becomes": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
-        "namedBy": "model",
-        "why": "The contents describe task-channel folders, workflow stages, and naming conventions, but evidence no project or unambiguous document date.",
-        "assuming": [
-          "no project code was evidenced, so none was added",
-          "status assumed to be Draft, the document does not say",
-          "date taken from the file timestamp, not the document",
-          "version assumed to be v0.1"
-        ]
-      },
-      {
-        "file": "Daily_Employee_Project_Time_Trackingv1.xlsx",
-        "becomes": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
-        "namedBy": "model",
-        "why": "The spreadsheet contains daily employee, project, task, time, and notes fields without identifying a project, status, date, or formatted version.",
-        "assuming": [
-          "no project code was evidenced, so none was added",
-          "status assumed to be Draft, the document does not say",
-          "date taken from the file timestamp, not the document",
-          "version assumed to be v0.1"
-        ]
-      },
-      {
-        "file": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
-        "becomes": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
-        "namedBy": "model",
-        "why": "The sheet maps Central Time to Philippines Time, while the name states the date, Draft status, and version.",
-        "assuming": [
-          "no project code was evidenced, so none was added"
-        ]
-      },
-      {
-        "file": "Power BI TCO Pilot_YD_04072025.xlsx",
-        "becomes": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
-        "namedBy": "model",
-        "why": "The name identifies TCO and the workbook lists project IDs, budgets, stages, managers, and statuses; its numeric date is ambiguous.",
-        "assuming": [
-          "status assumed to be Draft, the document does not say",
-          "date taken from the file timestamp, not the document",
-          "version assumed to be v0.1"
-        ]
-      },
-      {
-        "file": "Screenshot_2025-04-06_Draft_v0.1.png",
-        "becomes": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
-        "namedBy": "model",
-        "why": "The image shows a Project Management Insights dashboard with project costs, tasks, resources, and timelines, and the name states the date, status, and version.",
-        "assuming": [
-          "no project code was evidenced, so none was added"
-        ]
-      },
-      {
-        "file": "Screenshot_2025-04-14_Draft_v0.1.png",
-        "becomes": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
-        "namedBy": "model",
-        "why": "The image is headed Enterprise Performance Summary and presents Level 1 metric performance, while the name states the date, status, and version.",
-        "assuming": [
-          "no project code was evidenced, so none was added"
-        ]
-      },
-      {
-        "file": "Metrics_2025-04-15_Draft_v0.1.xlsx",
-        "becomes": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
-        "namedBy": "model",
-        "why": "The workbook tracks deliverables, issues, actions, and metric additions approved for Upperform to build, and the name states the date, status, and version.",
-        "assuming": []
-      },
-      {
-        "file": "Screenshot 2025-04-06 at 6.34.18 PM.png",
-        "becomes": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
-        "namedBy": "model",
-        "why": "The image shows an Adventure Works sales dashboard overview with units sold, gross sales, net profit, channels, products, resellers, and customers.",
-        "assuming": [
-          "no project code was evidenced, so none was added",
-          "status assumed to be Draft, the document does not say",
-          "version assumed to be v0.1"
-        ]
-      },
-      {
-        "file": "Screenshot 2025-04-06 at 6.34.50 PM.png",
-        "becomes": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
-        "namedBy": "model",
-        "why": "The image shows an Adventure Works period view focused on net profit by fiscal quarter, fiscal year, and reporting period.",
-        "assuming": [
-          "no project code was evidenced, so none was added",
-          "status assumed to be Draft, the document does not say",
-          "version assumed to be v0.1"
-        ]
-      },
-      {
-        "file": "Screenshot 2025-04-06 at 6.35.10 PM.png",
-        "becomes": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
-        "namedBy": "model",
-        "why": "The image shows an Adventure Works period view focused on units sold by fiscal quarter, fiscal year, and reporting period.",
-        "assuming": [
-          "no project code was evidenced, so none was added",
-          "status assumed to be Draft, the document does not say",
-          "version assumed to be v0.1"
-        ]
-      },
-      {
-        "file": "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
-        "becomes": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
-        "namedBy": "model",
-        "why": "The DIMP-folder workbook is headed Table E-1 Performance Measures and contains all-state threat, baseline, trend, collection, and responsibility fields.",
-        "assuming": []
-      },
-      {
-        "file": "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
-        "becomes": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
-        "namedBy": "model",
-        "why": "The DIMP-folder PDF name identifies ASME B31.8S-2004 and states the date, Draft status, and version.",
-        "assuming": []
-      }
+    "approvedCount": 12,
+    "approvedMissing": [
+      "Task Management Channel Guide_YD_04042025.docx",
+      "Daily_Employee_Project_Time_Trackingv1.xlsx",
+      "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
+      "Power BI TCO Pilot_YD_04072025.xlsx",
+      "Screenshot_2025-04-06_Draft_v0.1.png",
+      "Screenshot_2025-04-14_Draft_v0.1.png",
+      "Metrics_2025-04-15_Draft_v0.1.xlsx",
+      "Screenshot 2025-04-06 at 6.34.18 PM.png",
+      "Screenshot 2025-04-06 at 6.34.50 PM.png",
+      "Screenshot 2025-04-06 at 6.35.10 PM.png",
+      "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
+      "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf"
     ],
+    "readContents": true,
+    "toRename": [],
     "toMove": [],
     "refused": [
       {
@@ -193,15 +90,11 @@
   ],
   "rows": [
     {
-      "current": "Task Management Channel Guide_YD_04042025.docx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Task Management Channel Guide_YD_04042025.docx",
-      "compliant": false,
-      "problems": [
-        "contains a space — use hyphens within a phrase and underscores between sections",
-        "contains a special character — letters, numbers, hyphens and underscores only",
-        "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
-      ],
-      "proposed": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
+      "current": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
@@ -216,16 +109,14 @@
       "placementWhy": "filed under Resources and References",
       "destination": "",
       "namedBy": "model",
-      "why": "The contents describe task-channel folders, workflow stages, and naming conventions, but evidence no project or unambiguous document date."
+      "why": "The contents describe the Task Management Channel, its folders, workflow, and naming conventions."
     },
     {
-      "current": "Daily_Employee_Project_Time_Trackingv1.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Daily_Employee_Project_Time_Trackingv1.xlsx",
-      "compliant": false,
-      "problems": [
-        "ends with \"Trackingv1\" rather than a version like v0.1 or v1.0"
-      ],
-      "proposed": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
+      "current": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
@@ -240,37 +131,36 @@
       "placementWhy": "filed under Resources and References",
       "destination": "",
       "namedBy": "model",
-      "why": "The spreadsheet contains daily employee, project, task, time, and notes fields without identifying a project, status, date, or formatted version."
+      "why": "The spreadsheet contains daily employee names, projects, tasks, work times, total hours, and notes."
     },
     {
-      "current": "Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Working-TimesKV_2025-04-07_Draft_v0.1.xlsx",
-      "compliant": false,
+      "current": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
+      "compliant": true,
       "problems": [],
-      "proposed": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
+      "proposed": "",
       "assumptions": [
-        "no project code was evidenced, so none was added"
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
       ],
       "blocked": "",
-      "category": "Time Reference",
+      "category": "Reference Table",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Resources and References",
       "placement": "settled",
       "placementWhy": "filed under Resources and References",
       "destination": "",
       "namedBy": "model",
-      "why": "The sheet maps Central Time to Philippines Time, while the name states the date, Draft status, and version."
+      "why": "The sheet maps Central Time to Philippines Time."
     },
     {
-      "current": "Power BI TCO Pilot_YD_04072025.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Power BI TCO Pilot_YD_04072025.xlsx",
-      "compliant": false,
-      "problems": [
-        "contains a space — use hyphens within a phrase and underscores between sections",
-        "contains a special character — letters, numbers, hyphens and underscores only",
-        "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
-      ],
-      "proposed": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
+      "current": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
       "assumptions": [
         "status assumed to be Draft, the document does not say",
         "date taken from the file timestamp, not the document",
@@ -284,16 +174,19 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The name identifies TCO and the workbook lists project IDs, budgets, stages, managers, and statuses; its numeric date is ambiguous."
+      "why": "The filename identifies TCO and the sheet lists pilot project IDs, budgets, dates, managers, and statuses."
     },
     {
-      "current": "Screenshot_2025-04-06_Draft_v0.1.png",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 1/Screenshot_2025-04-06_Draft_v0.1.png",
-      "compliant": false,
+      "current": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 1/Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
+      "compliant": true,
       "problems": [],
-      "proposed": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
+      "proposed": "",
       "assumptions": [
-        "no project code was evidenced, so none was added"
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
       ],
       "blocked": "",
       "category": "Dashboard Screenshot",
@@ -303,7 +196,7 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image shows a Project Management Insights dashboard with project costs, tasks, resources, and timelines, and the name states the date, status, and version."
+      "why": "The image is headed Project Management Insights and shows project costs, tasks, resources, and timelines."
     },
     {
       "current": "TCO Pilot Program Oversight Dashboard Data.xlsx",
@@ -357,13 +250,16 @@
       "why": ""
     },
     {
-      "current": "Screenshot_2025-04-14_Draft_v0.1.png",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Screenshot_2025-04-14_Draft_v0.1.png",
-      "compliant": false,
+      "current": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
+      "compliant": true,
       "problems": [],
-      "proposed": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
+      "proposed": "",
       "assumptions": [
-        "no project code was evidenced, so none was added"
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
       ],
       "blocked": "",
       "category": "Performance Summary",
@@ -373,38 +269,39 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image is headed Enterprise Performance Summary and presents Level 1 metric performance, while the name states the date, status, and version."
+      "why": "The image is headed Enterprise Performance Summary and presents level-one metrics, targets, trends, and insights."
     },
     {
-      "current": "Metrics_2025-04-15_Draft_v0.1.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Metrics_2025-04-15_Draft_v0.1.xlsx",
-      "compliant": false,
+      "current": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
+      "compliant": true,
       "problems": [],
-      "proposed": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
-      "assumptions": [],
+      "proposed": "",
+      "assumptions": [
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
       "blocked": "",
-      "category": "Metrics Register",
+      "category": "Metric Register",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The workbook tracks deliverables, issues, actions, and metric additions approved for Upperform to build, and the name states the date, status, and version."
+      "why": "The filename identifies Upperform and the sheet tracks metric deliverables, issues, actions, and approvals."
     },
     {
-      "current": "Screenshot 2025-04-06 at 6.34.18 PM.png",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Screenshot 2025-04-06 at 6.34.18 PM.png",
-      "compliant": false,
-      "problems": [
-        "contains a space — use hyphens within a phrase and underscores between sections",
-        "contains a special character — letters, numbers, hyphens and underscores only",
-        "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
-      ],
-      "proposed": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
+      "current": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
       "blocked": "",
@@ -415,57 +312,51 @@
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image shows an Adventure Works sales dashboard overview with units sold, gross sales, net profit, channels, products, resellers, and customers."
+      "why": "The image shows Adventure Works sales, units sold, gross sales, net profit, channels, products, resellers, and customers."
     },
     {
-      "current": "Screenshot 2025-04-06 at 6.34.50 PM.png",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Screenshot 2025-04-06 at 6.34.50 PM.png",
-      "compliant": false,
-      "problems": [
-        "contains a space — use hyphens within a phrase and underscores between sections",
-        "contains a special character — letters, numbers, hyphens and underscores only",
-        "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
-      ],
-      "proposed": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
+      "current": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
       "blocked": "",
-      "category": "Dashboard Screenshot",
+      "category": "Profit Analysis",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image shows an Adventure Works period view focused on net profit by fiscal quarter, fiscal year, and reporting period."
+      "why": "The image analyzes net profit by fiscal quarter and year against goals."
     },
     {
-      "current": "Screenshot 2025-04-06 at 6.35.10 PM.png",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Screenshot 2025-04-06 at 6.35.10 PM.png",
-      "compliant": false,
-      "problems": [
-        "contains a space — use hyphens within a phrase and underscores between sections",
-        "contains a special character — letters, numbers, hyphens and underscores only",
-        "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
-      ],
-      "proposed": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
+      "current": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
       "assumptions": [
         "no project code was evidenced, so none was added",
         "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
         "version assumed to be v0.1"
       ],
       "blocked": "",
-      "category": "Dashboard Screenshot",
+      "category": "Sales Analysis",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The image shows an Adventure Works period view focused on units sold by fiscal quarter, fiscal year, and reporting period."
+      "why": "The image analyzes units sold by fiscal year, quarter, and reporting period."
     },
     {
       "current": "NiSource Metric Dashboard.pbix",
@@ -494,38 +385,46 @@
       "why": ""
     },
     {
-      "current": "ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/DIMP Folder/ALL-STATES-E-1-Table-2025_2025-06-17_Draft_v0.1.xlsx",
-      "compliant": false,
+      "current": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/DIMP Folder/DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
+      "compliant": true,
       "problems": [],
-      "proposed": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
-      "assumptions": [],
+      "proposed": "",
+      "assumptions": [
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
       "blocked": "",
-      "category": "Performance Measures",
+      "category": "Performance Table",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "DIMP Folder",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The DIMP-folder workbook is headed Table E-1 Performance Measures and contains all-state threat, baseline, trend, collection, and responsibility fields."
+      "why": "The DIMP folder and sheet title identify a performance-measures table with threats, baselines, trends, sources, and collection processes."
     },
     {
-      "current": "DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/DIMP Folder/DEL-asme-b31-8s-2004_2025-03-19_Draft_v0.1.pdf",
-      "compliant": false,
+      "current": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/DIMP Folder/DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
+      "compliant": true,
       "problems": [],
-      "proposed": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
-      "assumptions": [],
+      "proposed": "",
+      "assumptions": [
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
       "blocked": "",
-      "category": "Technical Standard",
+      "category": "Standards Document",
       "categoryWhy": "from reading the document, not its extension",
       "folder": "DIMP Folder",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
       "namedBy": "model",
-      "why": "The DIMP-folder PDF name identifies ASME B31.8S-2004 and states the date, Draft status, and version."
+      "why": "The DIMP folder and filename identify an ASME B31.8S standards document."
     },
     {
       "current": "DIMP E-1.xlsx",

@@ -109,8 +109,39 @@ for (const row of rows) {
 // What has actually been renamed, straight out of the runs that did it. This is
 // also the undo list: every line is a rename that can be reversed by hand.
 /** @type {Array<{ kind?: string, from: string, to: string, fromFolder?: string, assumptions: string[], applied: string, run: string }>} */
-const applied = existsSync(appliedPath) ? JSON.parse(readFileSync(appliedPath, 'utf8')) : [];
+const history = existsSync(appliedPath) ? JSON.parse(readFileSync(appliedPath, 'utf8')) : [];
 const byName = new Map(rows.map((r) => [r.current, r]));
+
+/**
+ * A file can be renamed more than once, and this library holds several that
+ * were: the first pass gave them well-formed but mechanical names, and the
+ * agent then gave them names that say what they hold. Showing both hops as two
+ * separate changes is noise, and it breaks the check below, because the middle
+ * name is not in the library any more.
+ *
+ * So chains are collapsed to what a person actually needs: what a file in the
+ * library today was originally called, and when it last changed.
+ */
+const supersededBy = new Map();
+for (const r of history) supersededBy.set(r.from, r);
+
+/** @param {{ from: string, to: string }} record @returns {string} */
+function originOf(record) {
+  let from = record.from;
+  const seen = new Set([from]);
+  for (;;) {
+    const earlier = history.find((h) => h.to === from);
+    if (!earlier || seen.has(earlier.from)) return from;
+    from = earlier.from;
+    seen.add(from);
+  }
+}
+
+// Only the last hop of each chain is shown, carrying the original name.
+const applied = history
+  .filter((r) => !supersededBy.has(r.to))
+  .map((r) => ({ ...r, from: originOf(r) }));
+
 for (const r of applied) {
   if (!byName.has(r.to)) {
     console.error('the record claims a rename to ' + r.to + ', which is not in the library.');
@@ -147,7 +178,10 @@ const data = {
     assumptions: r.assumptions || [],
     // Which of the two named it, and on what evidence. This is the whole point
     // of the rewrite, so it goes on the page rather than staying in the run.
-    namedBy: r.proposed ? r.namedBy || 'rules' : '',
+    // Carried through even once the name has been applied — a file whose name
+    // was written by reading it stays a file whose name was written by reading
+    // it, and blanking it here made the page disagree with its own count.
+    namedBy: r.namedBy || '',
     why: r.why || '',
     kind: r.category || '',
     kindWhy: r.categoryWhy || '',

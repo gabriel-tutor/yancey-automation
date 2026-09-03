@@ -236,7 +236,7 @@
             <rect x="950" y="262" width="114" height="68" fill="#FBF2E7" stroke="#B5610C" stroke-width="1.75" rx="2"/>
             <text x="1007" y="288" text-anchor="middle" font-size="13" font-weight="700" fill="#B5610C">A proposal</text>
             <text x="1007" y="306" text-anchor="middle" font-size="10.5" fill="#B5610C" opacity=".85" font-family="ui-monospace, Menlo, monospace">12 of them</text>
-            <text x="1007" y="321" text-anchor="middle" font-size="10.5" fill="#B5610C" opacity=".85" font-family="ui-monospace, Menlo, monospace">nothing applied</text>
+            <text x="1007" y="321" text-anchor="middle" font-size="10.5" fill="#B5610C" opacity=".85" font-family="ui-monospace, Menlo, monospace">read, then applied</text>
 
             <text x="412" y="360" font-size="11.5" fill="currentColor" opacity=".5" font-family="ui-monospace, Menlo, monospace">Office files are unzipped on our own server and only their text is sent. PDFs and images go as themselves.</text>
             <text x="412" y="378" font-size="11.5" fill="currentColor" opacity=".5" font-family="ui-monospace, Menlo, monospace">A name that fails the check is dropped, and the document is left exactly as it was.</text>
@@ -503,25 +503,27 @@
 
   <section>
     <div class="sec-head">
-      <h2>What the last run found</h2>
-      <p>Run against the real library on 2 September. Twenty-one documents, thirty-three seconds, nothing changed.</p>
+      <h2>What it has actually done</h2>
+      <p>The approved plan was applied to the real library on 3 September, in three runs of five, five and two.</p>
     </div>
     <div class="cards">
       <div class="card">
-        <h3>12 named</h3>
-        <p>Every one by reading the document rather than its file name, with the reason recorded beside it.</p>
+        <h3>12 applied</h3>
+        <p>Every name on the approved list, each one written by reading the document. <strong>No failures.</strong></p>
       </div>
       <div class="card">
         <h3>9 left alone</h3>
         <p>Every one of them is a Power BI report or a workbook feeding one. Each refusal is written out in full, not reduced to a code.</p>
       </div>
       <div class="card">
-        <h3>0 applied</h3>
-        <p>Both switches off. The run produced a plan and touched nothing in the library.</p>
+        <h3>0 outstanding</h3>
+        <p>A run now reports <em>0 to rename, 12 already correct</em> and changes nothing. The switch is back off.</p>
       </div>
     </div>
 
-    <p class="prose" style="margin-top:18px;color:var(--ink-soft)">Files renamed in the earlier pass show up again with better names. That is not a loop: the first pass gave them well-formed but mechanical names, and the agent gives them names that say what they hold. Both appear on the review page so the difference is visible rather than surprising.</p>
+    <p class="prose" style="margin-top:18px;color:var(--ink-soft)">The middle run is the one worth knowing about. It applied five and reported that <em>five approved files are no longer in the library under that name</em> &mdash; the five the first run had already renamed. That is the plan behaving correctly on a second pass, and saying so rather than leaving you to work it out.</p>
+
+    <p class="prose" style="margin-top:14px;color:var(--ink-soft)">Files renamed in the earlier, pattern-matching pass were renamed again here. That is not a loop: the first pass gave them well-formed but mechanical names, and the agent gave them names that say what they hold. The review page shows the original name beside the current one, so the whole chain stays visible and reversible.</p>
   </section>
 
   <section>
