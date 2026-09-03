@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dataSourcesIn, dependencyIndex, mashupQueries } from './powerbi.js';
+import { dataSourcesIn, dependencyIndex, entryNames, mashupQueries } from './powerbi.js';
 import { pbixFixture, zipStored } from './office-fixtures.js';
 
 /**
@@ -81,7 +81,7 @@ describe('reading what a report depends on', () => {
    */
   it('reports a file it cannot open as unreadable, not as depending on nothing', () => {
     const notAZip = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
-    expect(dataSourcesIn(notAZip)).toEqual({ readable: false, parts: [], sources: [] });
+    expect(dataSourcesIn(notAZip)).toEqual({ readable: false, parts: [], entries: [], sources: [] });
   });
 
   it('reports a zip with none of the expected parts as unreadable', () => {
@@ -122,27 +122,119 @@ describe('the dependency index', () => {
   /** @param {string} name @param {string[]} queries */
   const reading = (name, queries) => ({ name, bytes: pbixFixture(queries) });
 
-  it('says which report reads a file, and on what line', () => {
-    const index = dependencyIndex([
-      reading('Sales.pbix', ['S = Excel.Workbook(File.Contents("C:\\x\\Orders.xlsx")),']),
-    ]);
+  it('says which report reads a file, and where the query points', () => {
+    const index = dependencyIndex(
+      [reading('Sales.pbix', ['S = Excel.Workbook(File.Contents("C:\\x\\Orders.xlsx")),'])],
+      ['Orders.xlsx'],
+    );
     expect(index.byFile['orders.xlsx']).toEqual({ report: 'Sales.pbix', where: 'C:\\x\\Orders.xlsx' });
     expect(index.read).toEqual(['Sales.pbix']);
     expect(index.unreadable).toEqual([]);
   });
 
-  it('keeps unreadable reports separate from ones that read nothing', () => {
-    const index = dependencyIndex([
-      { name: 'Broken.pbix', bytes: new Uint8Array([0, 1, 2]) },
-      reading('Empty.pbix', ['S = Sql.Database("a", "b"),']),
+  /**
+   * The layout that made parsing M the wrong primitive. Two of the four reports
+   * in this library hold a DataModel and no DataMashup at all — their queries
+   * live inside the model blob, which no ZIP reader can walk. The name is still
+   * in the bytes, so the question is still answerable.
+   */
+  it('finds a name held only in the model blob, with no mashup to parse', () => {
+    const pbix = zipStored([
+      { name: '[Content_Types].xml', text: '<?xml version="1.0"?><Types/>' },
+      { name: 'DataModel', text: 'binary-ish blob mentioning DIMP E-1.xlsx somewhere inside' },
     ]);
+    const index = dependencyIndex([{ name: 'Thick.pbix', bytes: pbix }], ['DIMP E-1.xlsx']);
+    expect(index.read).toEqual(['Thick.pbix']);
+    expect(index.byFile['dimp e-1.xlsx']?.report).toBe('Thick.pbix');
+    expect(index.byFile['dimp e-1.xlsx']?.where).toBe('its name appears inside the report');
+  });
+
+  it('finds a name written UTF-16, which a UTF-8 search alone would miss', () => {
+    const name = 'Master Roster.xlsx';
+    const utf16 = new Uint8Array(name.length * 2);
+    for (let i = 0; i < name.length; i += 1) utf16[i * 2] = name.charCodeAt(i);
+    const pbix = zipStored([
+      { name: '[Content_Types].xml', text: '<?xml version="1.0"?><Types/>' },
+      { name: 'DataModel', bytes: utf16 },
+    ]);
+    expect(dependencyIndex([{ name: 'Wide.pbix', bytes: pbix }], [name]).byFile['master roster.xlsx']?.report).toBe('Wide.pbix');
+  });
+
+  /** The unlock: a name no report mentions anywhere is safe to change. */
+  it('clears a file no report mentions', () => {
+    const index = dependencyIndex(
+      [reading('Sales.pbix', ['S = Excel.Workbook(File.Contents("C:\\x\\Orders.xlsx")),'])],
+      ['Something Else.xlsx'],
+    );
+    expect(index.byFile).toEqual({});
+    expect(index.unreadable).toEqual([]);
+  });
+
+  it('keeps unreadable reports separate from ones that read nothing', () => {
+    const index = dependencyIndex(
+      [
+        { name: 'Broken.pbix', bytes: new Uint8Array([0, 1, 2]) },
+        reading('Empty.pbix', ['S = Sql.Database("a", "b"),']),
+      ],
+      ['Orders.xlsx'],
+    );
     expect(index.unreadable).toEqual(['Broken.pbix']);
     expect(index.read).toEqual(['Empty.pbix']);
     expect(Object.keys(index.byFile)).toEqual([]);
   });
 
   it('matches a file name whatever case the query wrote it in', () => {
-    const index = dependencyIndex([reading('R.pbix', ['S = File.Contents("C:\\x\\MASTER Roster.XLSX"),'])]);
+    const index = dependencyIndex(
+      [reading('R.pbix', ['S = File.Contents("C:\\x\\MASTER Roster.XLSX"),'])],
+      ['MASTER Roster.XLSX'],
+    );
     expect(index.byFile['master roster.xlsx']?.report).toBe('R.pbix');
+  });
+});
+
+/**
+ * "Unreadable" on its own is a dead end. A report that could not be read should
+ * say what it does contain, so the next question can be answered without
+ * another round trip to SharePoint.
+ */
+describe('saying what an unreadable report holds', () => {
+  it('lists the parts without decoding any of them', () => {
+    const pbix = zipStored([
+      { name: '[Content_Types].xml', text: '<?xml version="1.0"?><Types/>' },
+      { name: 'Report/Layout', text: '{}' },
+      { name: 'SecurityBindings', text: 'x' },
+    ]);
+    expect(entryNames(pbix)).toEqual(['[Content_Types].xml', 'Report/Layout', 'SecurityBindings']);
+  });
+
+  it('attaches the listing to a report it could not read', () => {
+    const pbix = zipStored([
+      { name: '[Content_Types].xml', text: '<?xml version="1.0"?><Types/>' },
+      { name: 'Report/Layout', text: '{"theme":"BaseThemes/CY24SU10.json"}' },
+    ]);
+    const found = dataSourcesIn(pbix);
+    expect(found.readable).toBe(false);
+    expect(found.entries).toContain('Report/Layout');
+  });
+
+  /**
+   * A package that opens is readable now, whatever parts it holds — the listing
+   * is only reached when the ZIP itself will not open.
+   */
+  it('carries the listing through the index when the package will not open', () => {
+    const index = dependencyIndex([{ name: 'Broken.pbix', bytes: new Uint8Array([9, 9, 9]) }], ['x.xlsx']);
+    expect(index.unreadable).toEqual(['Broken.pbix']);
+    expect(index.inside['Broken.pbix']).toEqual([]);
+  });
+
+  it('treats a package that opens as read, even with only a layout in it', () => {
+    const pbix = zipStored([{ name: 'Report/Layout', text: '{}' }]);
+    const index = dependencyIndex([{ name: 'Thin.pbix', bytes: pbix }], ['x.xlsx']);
+    expect(index.read).toEqual(['Thin.pbix']);
+    expect(index.byFile).toEqual({});
+  });
+
+  it('returns nothing for bytes that are not a package at all', () => {
+    expect(entryNames(new Uint8Array([1, 2, 3]))).toEqual([]);
   });
 });

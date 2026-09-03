@@ -120,15 +120,21 @@ for (const it of items) {
 const reports = reportsIn(files);
 // Always emit one item so the chain runs. A library with no reports has no
 // dependencies to discover, which is a finding rather than a reason to branch.
-if (reports.length === 0) return [{ json: { name: '', path: '', downloadUrl: '' } }];
+if (reports.length === 0) return [{ json: { name: '', path: '', candidates: [], downloadUrl: '' } }];
 
 const lit = function (p) { return String(p).replace(/'/g, "''").replace(/ /g, '%20'); };
 const base = String(cfg.host || '') + String(cfg.sitePath || '') + '/_api/web';
 
-return reports.map(function (r) {
+// Every non-report document in the library, so Read Reports can ask each
+// report whether it names any of them. Carried on the first item only; the
+// rest would be the same list repeated.
+const candidates = files.filter(function (f) { return !isReport(f.name); }).map(function (f) { return f.name; });
+
+return reports.map(function (r, i) {
   return { json: {
     name: r.name,
     path: r.path,
+    candidates: i === 0 ? candidates : [],
     downloadUrl: base + "/GetFileByServerRelativePath(decodedurl='" + lit(r.path) + "')/$value"
   }};
 });
@@ -161,8 +167,10 @@ for (let i = 0; i < meta.length; i++) {
   }
 }
 
-const dependencies = dependencyIndex(opened);
+const candidates = (meta[0] && meta[0].candidates) || [];
+const dependencies = dependencyIndex(opened, candidates);
 return [{ json: {
+  candidates: candidates.length,
   dependencies: dependencies,
   read: dependencies.read,
   unreadable: dependencies.unreadable,

@@ -38,6 +38,32 @@
  */
 import { readZip } from './unzip.js';
 
+/**
+ * The names of every part in a package, without decoding any of them.
+ *
+ * `readZip` decides what to inflate by asking `wanted`, so a predicate that
+ * records the name and then declines it walks the central directory for free.
+ * This exists because "unreadable" is not a useful answer on its own — a report
+ * that could not be read should be able to say what it does contain, so the
+ * next question is answerable without another round trip.
+ *
+ * @param {Uint8Array} bytes
+ * @returns {string[]}
+ */
+export function entryNames(bytes) {
+  /** @type {string[]} */
+  const names = [];
+  try {
+    readZip(bytes, (name) => {
+      names.push(name);
+      return false;
+    });
+  } catch {
+    return [];
+  }
+  return names;
+}
+
 /** Extensions a report could plausibly be reading from. */
 const DATA_FILE = /\.(xlsx|xlsm|xlsb|xls|csv|tsv|txt|json|xml|parquet|accdb|mdb)$/i;
 
@@ -99,7 +125,7 @@ export function mashupQueries(bytes) {
  * evidence of a dependency wherever it appears.
  *
  * @param {Uint8Array} bytes the whole .pbix
- * @returns {{ readable: boolean, parts: string[], sources: Array<{ name: string, where: string }> }}
+ * @returns {{ readable: boolean, parts: string[], entries: string[], sources: Array<{ name: string, where: string }> }}
  */
 export function dataSourcesIn(bytes) {
   /** @type {Record<string, Uint8Array>} */
@@ -110,7 +136,7 @@ export function dataSourcesIn(bytes) {
       (name) => name === 'DataMashup' || name === 'Connections' || name === 'DataModelSchema',
     );
   } catch {
-    return { readable: false, parts: [], sources: [] };
+    return { readable: false, parts: [], entries: [], sources: [] };
   }
 
   const parts = [];
@@ -134,7 +160,9 @@ export function dataSourcesIn(bytes) {
 
   // No queries and no connections is not "reads nothing" — it is "did not find
   // out". Saying otherwise would clear a rename on an answer nobody gave.
-  if (read.length === 0) return { readable: false, parts: [], sources: [] };
+  // Say what it does hold, so an unreadable report is a question with an
+  // answer attached rather than a dead end.
+  if (read.length === 0) return { readable: false, parts: [], entries: entryNames(bytes), sources: [] };
   const text = parts.join('\n');
 
   /** @type {Map<string, string>} */
@@ -153,11 +181,96 @@ export function dataSourcesIn(bytes) {
   return {
     readable: true,
     parts: read,
+    entries: [],
     sources: [...found.entries()].map(([, where]) => {
       const cut = Math.max(where.lastIndexOf('\\'), where.lastIndexOf('/'));
       return { name: cut === -1 ? where : where.slice(cut + 1), where };
     }),
   };
+}
+
+/**
+ * Does this package mention any of these names, anywhere inside it?
+ *
+ * Parsing M queries was the wrong primitive. Two of the four reports in this
+ * library have a `DataModel` and no `DataMashup` at all — the queries live
+ * inside the model blob, which is an Analysis Services backup rather than
+ * anything a ZIP reader can walk. Extracting sources from it is hard; the
+ * question that actually matters is not.
+ *
+ * A report that reads a workbook must contain that workbook's name somewhere:
+ * in a query, a connection string, or the model metadata. So the test is
+ * whether the name appears in the bytes at all. That is:
+ *
+ *   sound         a name that appears nowhere cannot be being referenced
+ *   conservative  an incidental mention refuses a rename, which is the safe way
+ *                 to be wrong
+ *   format-proof  it does not care how the report stores its queries
+ *
+ * Both UTF-8 and UTF-16LE are searched, because Power BI writes both and a
+ * UTF-16 name is invisible to a UTF-8 search.
+ *
+ * @param {Uint8Array} bytes the whole .pbix
+ * @param {string[]} names file names to look for
+ * @returns {{ readable: boolean, mentioned: string[] }}
+ */
+export function mentionsIn(bytes, names) {
+  const wanted = (Array.isArray(names) ? names : []).map(String).filter(Boolean);
+  /** @type {Record<string, Uint8Array>} */
+  let zip;
+  try {
+    zip = readZip(bytes, () => true);
+  } catch {
+    return { readable: false, mentioned: [] };
+  }
+  const parts = Object.values(zip);
+  if (parts.length === 0) return { readable: false, mentioned: [] };
+
+  const needles = wanted.map((name) => ({ name, utf8: utf8Bytes(name), utf16: utf16Bytes(name) }));
+  const mentioned = [];
+  for (const needle of needles) {
+    const hit = parts.some((part) => contains(part, needle.utf8) || contains(part, needle.utf16));
+    if (hit) mentioned.push(needle.name);
+  }
+  return { readable: true, mentioned };
+}
+
+/** @param {string} text @returns {Uint8Array} */
+function utf8Bytes(text) {
+  return new TextEncoder().encode(text);
+}
+
+/** @param {string} text @returns {Uint8Array} */
+function utf16Bytes(text) {
+  const out = new Uint8Array(text.length * 2);
+  for (let i = 0; i < text.length; i += 1) {
+    const code = text.charCodeAt(i);
+    out[i * 2] = code & 0xff;
+    out[i * 2 + 1] = code >> 8;
+  }
+  return out;
+}
+
+/**
+ * Naive byte search. The haystacks here are a few megabytes and the needles a
+ * few dozen bytes, which is well inside what a plain scan handles in the time a
+ * download takes.
+ *
+ * @param {Uint8Array} hay
+ * @param {Uint8Array} needle
+ * @returns {boolean}
+ */
+function contains(hay, needle) {
+  if (needle.length === 0 || hay.length < needle.length) return false;
+  const first = needle[0];
+  const last = hay.length - needle.length;
+  for (let i = 0; i <= last; i += 1) {
+    if (hay[i] !== first) continue;
+    let k = 1;
+    while (k < needle.length && hay[i + k] === needle[k]) k += 1;
+    if (k === needle.length) return true;
+  }
+  return false;
 }
 
 /**
@@ -168,29 +281,57 @@ export function dataSourcesIn(bytes) {
  * rename", the other means "we still cannot tell".
  *
  * @param {Array<{ name: string, path?: string, bytes?: Uint8Array, readable?: boolean, sources?: Array<{ name: string, where: string }> }>} reports
- * @returns {{ byFile: Record<string, { report: string, where: string }>, unreadable: string[], read: string[] }}
+ * @param {string[]} [candidates] names of the library files a report might read
+ * @returns {{ byFile: Record<string, { report: string, where: string }>, unreadable: string[], read: string[], inside: Record<string, string[]> }}
  */
-export function dependencyIndex(reports) {
+export function dependencyIndex(reports, candidates) {
   /** @type {Record<string, { report: string, where: string }>} */
   const byFile = {};
   const unreadable = [];
   const read = [];
+  /** @type {Record<string, string[]>} */
+  const inside = {};
+  const names = Array.isArray(candidates) ? candidates : [];
 
   for (const report of Array.isArray(reports) ? reports : []) {
     const name = String(report.name || '');
-    const found = report.bytes
-      ? dataSourcesIn(report.bytes)
-      : { readable: report.readable === true, parts: [], sources: report.sources || [] };
-    if (!found.readable) {
+    if (!report.bytes) {
+      if (report.readable === true) {
+        read.push(name);
+        for (const source of report.sources || []) {
+          const key = String(source.name).toLowerCase();
+          if (!byFile[key]) byFile[key] = { report: name, where: source.where };
+        }
+      } else {
+        unreadable.push(name);
+        inside[name] = [];
+      }
+      continue;
+    }
+
+    // Whether the report names the file is the decisive test, and it works
+    // whatever layout the report uses. The M queries, when they exist, only
+    // supply the path to quote in the reason.
+    const mentions = mentionsIn(report.bytes, names);
+    if (!mentions.readable) {
       unreadable.push(name);
+      inside[name] = entryNames(report.bytes);
       continue;
     }
     read.push(name);
-    for (const source of found.sources) {
-      const key = String(source.name).toLowerCase();
-      if (!byFile[key]) byFile[key] = { report: name, where: source.where };
+
+    const detail = dataSourcesIn(report.bytes);
+    /** @type {Record<string, string>} */
+    const where = {};
+    for (const source of detail.sources) where[String(source.name).toLowerCase()] = source.where;
+
+    for (const mentioned of mentions.mentioned) {
+      const key = mentioned.toLowerCase();
+      if (!byFile[key]) {
+        byFile[key] = { report: name, where: where[key] || 'its name appears inside the report' };
+      }
     }
   }
 
-  return { byFile, unreadable, read };
+  return { byFile, unreadable, read, inside };
 }

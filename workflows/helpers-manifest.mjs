@@ -35,7 +35,7 @@ export const HELPERS = {
 
   // The file organiser. Deciding what a document should be called is the whole
   // of the judgement, so it lives in src/filenames.js where it is tested.
-  'wf-f/Pick The Reports': { library: ['reportsIn'] },
+  'wf-f/Pick The Reports': { library: ['reportsIn', 'isReport'] },
   'wf-f/Read Reports': { powerbi: ['dependencyIndex'] },
   'wf-f/Review The Library': { filenames: ['planRenames'], library: ['categoriseAll', 'planPlacements', 'reportsIn'] },
   'wf-f/Pick What To Name': { naming: ['namingCandidates'], library: ['reportsIn'] },
