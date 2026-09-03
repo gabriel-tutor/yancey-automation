@@ -186,7 +186,7 @@
     </div>
     <ul class="asks">
       <li><b>Open two tabs</b> WF-F in n8n, and the Task Management library in SharePoint, sorted by Name. He needs to watch the second one change.</li>
-      <li><b>Check the Config node reads <code>applyRenames: false</code></b> That is the resting state, and Act 1 depends on it: the first run must change nothing.</li>
+      <li><b>Check the Config node reads <code>applyRenames: false</code>, and the same for <code>applyMoves</code>, <code>applyStructure</code> and <code>applyFolderRenames</code></b> Four switches, four separate promises &mdash; and all four off is the resting state Act 1 depends on: the first run must change nothing.</li>
       <li><b>Do not run it armed beforehand</b> The nine unrenamed files are the whole demo. Spending them in rehearsal leaves you with a run that says <em>0 to rename</em>, which shows nothing.</li>
       <li><b>Rehearse with the undo</b> If you want a dry run, do the full thing and then revert it &mdash; see <em>Rehearsing safely</em> at the bottom. It puts every name back.</li>
     </ul>
@@ -431,16 +431,30 @@
       },
       {
         n: '3',
-        title: 'He approves, and it happens',
-        clock: '~1 min',
-        do: 'Back in n8n: Config node, set <b>applyRenames</b> to <b>true</b>. Execute. Then switch to the SharePoint tab and refresh.',
-        say: '“What you just approved is exactly what gets applied — arming it does not re-ask the model, it carries out the list you read. Watch the library.”'
+        title: 'It came up with a folder structure',
+        clock: '~2 min',
+        do: 'On the review page, scroll to <b>The folder structure it came up with</b>. Read one new folder and the documents going into it. Then scroll to <b>What it suggested and did not get</b> and read one refusal aloud.',
+        say: '“This is the part you asked for on Wednesday — it works out the folders itself, there is no template. What stops it going silly is underneath: a new folder has to hold at least two documents, because a folder with one file in it is the same pile with an extra click in front. And it will not touch your numbered stage folders at all, because nothing about a document says how far the work has got.”'
       },
       {
         n: '4',
+        title: 'It shows you what it has not been allowed to do',
+        clock: '~1 min',
+        do: 'Scroll to <b>Waiting for you to approve</b>. Point out that these names were written on this run and none of them has been applied.',
+        say: '“Anything you drop into the library gets read and named on the next run — but it lands here, not in the library. Nothing is applied until you move it onto the approved list. That is the difference between a review and a demonstration.”'
+      },
+      {
+        n: '5',
+        title: 'He approves, and it happens',
+        clock: '~1 min',
+        do: 'Back in n8n: Config node, set <b>applyRenames</b> to <b>true</b>, and <b>applyStructure</b> and <b>applyMoves</b> if he wants the folder created too. Execute. Then switch to the SharePoint tab and refresh.',
+        say: '“What you just approved is exactly what gets applied — arming it does not re-ask the model, it carries out the list you read. It creates the folders first, then moves the files, so nothing ever moves somewhere that is not there yet. Watch the library.”'
+      },
+      {
+        n: '6',
         title: 'And it is reversible',
         clock: '~1 min',
-        do: 'Open the Summary again and show the <b>applied</b> list — every line carries the old name beside the new one. Then set <b>applyRenames</b> back to <b>false</b>.',
+        do: 'Open the Summary again and show the <b>applied</b> list — every line carries the old name beside the new one. Then set every switch back to <b>false</b>.',
         say: '“Every one of those keeps what it was called before. If any of it is wrong, it goes back in a couple of minutes. And it is switched off again now.”'
       }
     ];

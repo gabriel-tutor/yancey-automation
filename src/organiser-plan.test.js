@@ -182,7 +182,14 @@ describe('the review page renders', () => {
     expect(missing, 'the script asked for elements the page does not have').toEqual([]);
 
     const data = pageData();
-    expect(box('stats').children.length).toBe(5);
+    // Six figures, and the two that matter most are the ones the 3 September run
+    // could not tell apart: what is approved and what is only proposed.
+    expect(box('stats').children.length).toBe(6);
+    const statLabels = box('stats').children.map((/** @type {any} */ c) =>
+      c.children.map((/** @type {any} */ g) => g.textContent).join(' '),
+    );
+    expect(statLabels.join(' | ')).toContain('approved and still to rename');
+    expect(statLabels.join(' | ')).toContain('waiting for you');
     expect(box('tree').children.length).toBe(data.folders.length);
     expect(box('applied').children.length).toBe(data.applied.length);
     expect(box('unfiled').children.length).toBeGreaterThan(0);

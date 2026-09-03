@@ -59,16 +59,36 @@ export function namingCandidates(rows, reports, options) {
 const SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['proposals'],
+  required: ['proposals', 'folders'],
   properties: {
+    folders: {
+      type: 'array',
+      description:
+        'Existing folders whose names do not say what they hold. Leave empty if the folder names are already clear.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['from', 'to', 'why'],
+        properties: {
+          from: { type: 'string', description: 'the folder path, copied exactly from the list given' },
+          to: { type: 'string', description: 'the new folder name only, not a path' },
+          why: { type: 'string', description: 'one short sentence on what makes the new name better' },
+        },
+      },
+    },
     proposals: {
       type: 'array',
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['file', 'project', 'document', 'status', 'date', 'version', 'category', 'why'],
+        required: ['file', 'project', 'document', 'status', 'date', 'version', 'category', 'folder', 'why'],
         properties: {
           file: { type: 'string', description: 'the current file name, copied exactly' },
+          folder: {
+            type: 'string',
+            description:
+              'The name of the folder this document belongs in — an existing folder name reused exactly, or a new grouping in Title Case. Empty string to leave it where it is. Name only, never a path.',
+          },
           project: {
             type: 'string',
             description:
@@ -107,7 +127,7 @@ const SCHEMA = {
   },
 };
 
-const INSTRUCTIONS = [
+const INSTRUCTIONS = /* @__PURE__ */ [
   "You are naming documents in Yancey Dawson's SharePoint library at Upperform",
   'Partners, a management consultancy for regulated electric and gas utilities.',
   '',
@@ -153,6 +173,45 @@ const INSTRUCTIONS = [
   '  document name is what tells them apart, so make each one specific.',
   '',
   'Answer for every file listed, using the file name exactly as given.',
+  '',
+  '',
+  'THE FOLDER STRUCTURE',
+  '',
+  'You are also grouping these documents. This part is yours to decide: there is',
+  'no template to fill in and no list of approved folder names. Read what the',
+  'documents are and say where each one belongs.',
+  '',
+  'Give each document a FOLDER — the name of the folder it should sit in:',
+  '',
+  '- Reuse an existing folder name, copied exactly, when the document belongs in',
+  '  one that is already there. Filing beats inventing.',
+  '- Otherwise name a new grouping in Title Case, two or three words, saying what',
+  '  the folder HOLDS: Dashboards, Rate Case Filings, Training Materials.',
+  '- Empty string leaves the document where it is, and that is the right answer',
+  '  whenever nothing better is true.',
+  '',
+  'What makes this a structure rather than a pile:',
+  '',
+  '- Aim for FOUR OR FIVE folders across twenty documents, not twenty. If a',
+  '  folder would hold one document it will be refused, because a folder holding',
+  '  one file is the pile it came from with an extra click in front.',
+  '- Use the SAME name for documents that belong together. Two names for one idea',
+  '  ("Dashboards" and "Dashboard Files") splits the group and loses both.',
+  '- A new folder is created beside the documents that go in it, so group',
+  '  documents that sit in the same folder today. To file something into a folder',
+  '  that already exists somewhere else, give that folder name exactly.',
+  '- Never a numbered stage folder like "1. Assigned Tasks". Those record how far',
+  '  work has got, and nothing about a document says which stage it is in.',
+  '- No slashes, no punctuation beyond & and -, three to fifty characters.',
+  '',
+  'FOLDERS is a separate list, for existing folders whose names do not say what',
+  'they hold — copy the path exactly from the folder list and give a new name',
+  'only, not a path. Leave it empty if the names are already clear. Renaming a',
+  'folder moves everything inside it, so propose one only where the current name',
+  'is genuinely unhelpful.',
+  // @__PURE__ lets esbuild drop this from a node that never asks for
+  // buildNamingRequest. Without it the prompt travelled as 4.5KB of dead code
+  // inside the apply node, where nothing reads it.
 ].join('\n');
 
 /**
@@ -163,8 +222,12 @@ const INSTRUCTIONS = [
  * has no text to extract and looking at it is the only way to know what it
  * shows — which is exactly what the three same-day screenshots needed.
  *
+ * The folder list travels too, because the model cannot reuse a folder name it
+ * has never seen — and reusing one is almost always the better answer than
+ * inventing another.
+ *
  * @param {Array<{ name: string, path: string, folder?: string, category?: string, text?: string, dataUri?: string, isImage?: boolean, contentNote?: string }>} candidates
- * @param {{ model?: string, textPerFile?: number }} [options]
+ * @param {{ model?: string, textPerFile?: number, folders?: string[] }} [options]
  */
 export function buildNamingRequest(candidates, options) {
   const opts = options || {};
@@ -172,7 +235,16 @@ export function buildNamingRequest(candidates, options) {
   const perFile = opts.textPerFile === undefined ? 1200 : opts.textPerFile;
 
   const content = [];
-  const lines = ['Files to name:', ''];
+  const lines = [];
+
+  const folders = (opts.folders || []).map(String).filter(Boolean).sort();
+  if (folders.length > 0) {
+    lines.push('Folders that already exist, paths copied exactly:', '');
+    for (const f of folders) lines.push('  ' + f);
+    lines.push('');
+  }
+
+  lines.push('Files to name:', '');
 
   (Array.isArray(candidates) ? candidates : []).forEach((c, i) => {
     lines.push('--- FILE ' + (i + 1) + ' ---');
@@ -256,6 +328,13 @@ export function applyProposals(rows, proposals, options) {
     // not be renamed even if a proposal comes back for it anyway.
     if (!allowed.has(String(row.current))) continue;
 
+    // Where a document belongs and what it is called are separate judgements,
+    // so the folder is recorded before the name is checked. A file that is
+    // already named correctly can still be in the wrong place, and a name that
+    // fails the convention should not take a good filing decision with it.
+    // `planStructure` decides which of these suggestions become real folders.
+    row.folderSuggestion = String(p.folder || '').trim();
+
     const document = String(p.document || '').trim();
     if (!document) continue;
 
@@ -298,12 +377,19 @@ export function applyProposals(rows, proposals, options) {
       row.compliant = true;
       row.proposed = '';
       row.blocked = '';
+      row.approved = false;
       continue;
     }
 
     row.proposed = proposed;
     row.blocked = '';
     row.compliant = false;
+    // With no pinned plan, arming the switch IS the approval - the person who
+    // armed it is saying "apply what you propose". `applyApprovedPlan` demotes
+    // these again when a plan exists, so the flag always means the same thing:
+    // this name is cleared to be applied.
+    row.approved = true;
+    row.awaiting = '';
     row.assumptions = assumptions;
     row.namedBy = 'model';
     row.why = String(p.why || '');
@@ -344,6 +430,8 @@ function refuseCollisions(rows) {
         row.proposed +
         ', so they need names that tell them apart';
       row.proposed = '';
+      row.approved = false;
+      row.awaiting = '';
     }
   }
   return rows;
@@ -395,8 +483,18 @@ export function approvedNotFound(rows, approved) {
  * restored. It could not, since that name is the messy one — refusing it is the
  * reason it was being changed. Everything else still holds.
  *
+ * What a plan gates is what gets **applied**, and only that. It must not gate
+ * what may be **proposed**. An earlier version conflated the two, and on
+ * 3 September Yancey dropped eight new documents into the library, ran the
+ * organiser, and got eight refusals reading *"not on the approved list, so this
+ * run leaves it alone"* — the model had read and named every one, and the gate
+ * threw the names away before anybody could look at them. A file that arrives
+ * after a plan is signed could then never be reviewed at all: the loop that is
+ * supposed to close never closes. So an off-list proposal is kept and marked
+ * unapproved, and the run reports two lists rather than one.
+ *
  * @param {any[]} rows plan rows, already carrying this run's proposals
- * @param {Array<{ from: string, to: string }>} approved the signed-off plan
+ * @param {Array<{ from: string, to: string, into?: string }>} approved the signed-off plan
  * @param {{ reports?: any[], includeReports?: boolean, revert?: boolean, dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  */
 export function applyApprovedPlan(rows, approved, options) {
@@ -405,27 +503,41 @@ export function applyApprovedPlan(rows, approved, options) {
   const byFrom = new Map(
     (Array.isArray(approved) ? approved : [])
       .filter((a) => a && a.from && a.to)
-      .map((a) => [String(a.from), String(a.to)]),
+      .map((a) => [String(a.from), a]),
   );
 
   for (const row of rows) {
-    const to = byFrom.get(String(row.current));
+    const line = byFrom.get(String(row.current));
+    const to = line ? String(line.to) : '';
 
-    // Nothing outside the approved list is touched, whatever this run proposed.
+    // Nothing outside the approved list is APPLIED. It is still proposed.
     if (!to) {
       if (row.proposed) {
-        row.blocked = 'not on the approved list, so this run leaves it alone';
-        row.proposed = '';
+        row.approved = false;
         // A file whose approved name has already been applied comes back round
-        // as a fresh proposal, and dropping that proposal must not leave it
-        // reported as a problem. It satisfies the convention; say so.
-        row.compliant = diagnose(String(row.current)).length === 0;
-        if (row.compliant) row.blocked = '';
+        // as a fresh proposal for a *different* name. That is churn rather than
+        // a finding: the name it has already satisfies the convention, so say
+        // so and drop the second opinion.
+        if (diagnose(String(row.current)).length === 0) {
+          row.compliant = true;
+          row.proposed = '';
+          row.blocked = '';
+          row.awaiting = '';
+          continue;
+        }
+        row.blocked = '';
+        row.awaiting = 'proposed on this run — approve it and the next run applies it';
       }
       continue;
     }
 
     row.namedBy = 'approved';
+    row.approved = false;
+    row.awaiting = '';
+    // Where a plan says where a file goes, that is approved too. Where it does
+    // not, arming the move switch moves nothing: a plan silent on a destination
+    // has not approved one.
+    row.approvedInto = line && line.into ? String(line.into) : '';
 
     if (!allowed.has(String(row.current))) {
       row.blocked = row.blocked || 'approved, but it is guarded now and cannot be renamed in a sweep';
@@ -465,6 +577,7 @@ export function applyApprovedPlan(rows, approved, options) {
     row.proposed = to;
     row.blocked = '';
     row.compliant = false;
+    row.approved = true;
   }
 
   refuseCollisions(rows);

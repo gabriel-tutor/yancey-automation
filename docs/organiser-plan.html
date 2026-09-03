@@ -463,6 +463,31 @@
     <div class="rows" id="ready"></div>
   </section>
 
+  <section id="waiting-section" hidden>
+    <h2>Waiting for you to approve</h2>
+    <p class="lede">
+      These names were written on this run by reading the documents. Nothing here has been
+      applied and nothing here will be, until a name moves onto the approved list &mdash;
+      that list is what arming the switch carries out, and it is the reason a review binds
+      to what happens rather than merely describing it. Approving a line is copying it into
+      <code>config/approved-plan.json</code>.
+    </p>
+    <div class="rows" id="waiting"></div>
+  </section>
+
+  <section id="structure-section" hidden>
+    <h2>The folder structure it came up with</h2>
+    <p class="lede">
+      Not a template it filled in. It read the documents and said where each one belongs, and
+      the rules below decided which of those groupings were allowed to exist. A <strong>new</strong>
+      folder has to hold at least two documents &mdash; a folder holding one file is the pile it
+      came from with an extra click in front &mdash; and one run proposes at most six. Each is
+      created beside the documents that go in it, never as a reshuffle of the whole library.
+    </p>
+    <div class="rows" id="structure"></div>
+    <div id="structure-refused"></div>
+  </section>
+
   <section id="correct-section" hidden>
     <h2>Already correct before this ran</h2>
     <div class="rows" id="correct"></div>
@@ -575,6 +600,10 @@
   "namedByModel": 10,
   "readContents": true,
   "scanned": 21,
+  "pinned": false,
+  "newFolders": [],
+  "folderRenames": [],
+  "folderRefusals": [],
   "folders": [
     {
       "path": "Power BI Task Management",
@@ -817,10 +846,13 @@
       ],
       "namedBy": "model",
       "why": "The contents describe task-management channels, folder stages, and naming conventions.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Process guide",
       "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
-      "placementWhy": "filed under Resources and References"
+      "placementWhy": "filed under Resources and References",
+      "into": ""
     },
     {
       "current": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
@@ -832,10 +864,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "spreadsheet",
       "kindWhy": "from the .xlsx extension",
       "placement": "settled",
-      "placementWhy": "filed under Resources and References"
+      "placementWhy": "filed under Resources and References",
+      "into": ""
     },
     {
       "current": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
@@ -847,10 +882,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "spreadsheet",
       "kindWhy": "from the .xlsx extension",
       "placement": "settled",
-      "placementWhy": "filed under Resources and References"
+      "placementWhy": "filed under Resources and References",
+      "into": ""
     },
     {
       "current": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
@@ -862,10 +900,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "spreadsheet",
       "kindWhy": "from the .xlsx extension",
       "placement": "settled",
-      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
@@ -877,10 +918,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "image",
       "kindWhy": "from the .png extension",
       "placement": "settled",
-      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "TCO Pilot Program Oversight Dashboard Data.xlsx",
@@ -896,10 +940,13 @@
       ],
       "namedBy": "model",
       "why": "The filename identifies TCO and the workbook contains active-project and dropdown data for an oversight dashboard.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Dashboard data",
       "kindWhy": "from reading the document, not its extension",
       "placement": "move",
-      "placementWhy": "it sits above the filing with no folder of its own, and Resources and References is the only folder beside it that says in its own name what it holds"
+      "placementWhy": "it sits above the filing with no folder of its own, and Resources and References is the only folder beside it that says in its own name what it holds",
+      "into": "Power BI Task Management/Resources and References"
     },
     {
       "current": "TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix",
@@ -914,10 +961,13 @@
       ],
       "namedBy": "model",
       "why": "The filename identifies the TCO pilot oversight dashboard and explicitly marks it Review.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Power BI report",
       "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
-      "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would"
+      "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
+      "into": ""
     },
     {
       "current": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
@@ -929,10 +979,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "image",
       "kindWhy": "from the .png extension",
       "placement": "settled",
-      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
@@ -944,10 +997,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "spreadsheet",
       "kindWhy": "from the .xlsx extension",
       "placement": "settled",
-      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
@@ -959,10 +1015,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "image",
       "kindWhy": "from the .png extension",
       "placement": "settled",
-      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
@@ -974,10 +1033,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "image",
       "kindWhy": "from the .png extension",
       "placement": "settled",
-      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
@@ -989,10 +1051,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "image",
       "kindWhy": "from the .png extension",
       "placement": "settled",
-      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "NiSource Metric Dashboard.pbix",
@@ -1009,10 +1074,13 @@
       ],
       "namedBy": "model",
       "why": "The filename identifies a metric dashboard, but the folder and available evidence do not establish a project code.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Power BI report",
       "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
-      "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would"
+      "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
+      "into": ""
     },
     {
       "current": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
@@ -1024,10 +1092,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "spreadsheet",
       "kindWhy": "from the .xlsx extension",
       "placement": "settled",
-      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
@@ -1039,10 +1110,13 @@
       "assumptions": [],
       "namedBy": "",
       "why": "",
+      "approved": false,
+      "awaiting": "",
       "kind": "document",
       "kindWhy": "from the .pdf extension",
       "placement": "settled",
-      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "DIMP E-1.xlsx",
@@ -1058,10 +1132,13 @@
       ],
       "namedBy": "model",
       "why": "The filename identifies DIMP E-1 and the workbook contains raw and original performance-measure data.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Performance data",
       "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
-      "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "DIMP E-1 Performance Measures.pbix",
@@ -1077,10 +1154,13 @@
       ],
       "namedBy": "model",
       "why": "The filename identifies DIMP E-1 performance measures and the file is a Power BI report.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Power BI report",
       "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
-      "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would"
+      "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
+      "into": ""
     },
     {
       "current": "DIMP E-1 Proposed Data.xlsx",
@@ -1096,10 +1176,13 @@
       ],
       "namedBy": "model",
       "why": "The filename identifies DIMP E-1 and the workbook contains proposed performance-measure records and values.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Proposed data",
       "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
-      "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "NIPSCO_Master Roster_2025.xlsx",
@@ -1115,10 +1198,13 @@
       ],
       "namedBy": "model",
       "why": "The filename identifies NIPSCO and the workbook contains department, work-function, and responsibility lists.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Employee roster",
       "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
-      "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in"
+      "placementWhy": "it sits under 2. In Progress, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
+      "into": ""
     },
     {
       "current": "Performance Management System.xlsx",
@@ -1135,10 +1221,13 @@
       ],
       "namedBy": "model",
       "why": "The instructions describe an Excel performance-management system with initiative, action, sub-action, and metrics registers.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Management workbook",
       "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
-      "placementWhy": "filed under PD alignment Excel and Power BI - Karen"
+      "placementWhy": "filed under PD alignment Excel and Power BI - Karen",
+      "into": ""
     },
     {
       "current": "Performance Management System.pbix",
@@ -1155,10 +1244,13 @@
       ],
       "namedBy": "model",
       "why": "The filename and file type identify a Power BI report for the performance-management system.",
+      "approved": false,
+      "awaiting": "",
       "kind": "Power BI report",
       "kindWhy": "from reading the document, not its extension",
       "placement": "settled",
-      "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would"
+      "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
+      "into": ""
     }
   ]
 }
@@ -1247,7 +1339,13 @@
       return card;
     }
 
-    var ready = rows.filter(function (r) { return r.proposed; });
+    // A pinned plan governs what is APPLIED, never what may be proposed. Two
+    // lists, because "signed off and ready to run" and "the agent has just read
+    // this and would like you to look" are different facts, and the run that
+    // could not tell them apart reported eight freshly-named documents as
+    // refusals.
+    var ready = rows.filter(function (r) { return r.proposed && (!data.pinned || r.approved); });
+    var waiting = rows.filter(function (r) { return r.proposed && data.pinned && !r.approved; });
     var correct = rows.filter(function (r) { return r.compliant; });
     var refused = rows.filter(function (r) { return r.blocked; });
 
@@ -1256,8 +1354,9 @@
       { n: data.scanned, label: 'files reviewed', cls: '' },
       { n: applied.length, label: 'changed', cls: 'correct' },
       { n: refused.length, label: 'left alone, with a reason', cls: 'refused' },
-      { n: ready.length, label: 'still to rename, ' + data.namedByModel + ' named by reading them', cls: 'ready' },
-      { n: rows.filter(function (r) { return r.placement === 'unfiled'; }).length, label: 'needs a home', cls: 'refused' }
+      { n: ready.length, label: 'approved and still to rename', cls: 'ready' },
+      { n: waiting.length, label: 'named by reading them, waiting for you', cls: 'ready' },
+      { n: (data.newFolders || []).length, label: 'folder' + ((data.newFolders || []).length === 1 ? '' : 's') + ' it came up with', cls: 'ready' }
     ];
     var statBox = document.getElementById('stats');
     stats.forEach(function (s) {
@@ -1302,6 +1401,76 @@
         'Nothing outstanding. Every name that could be brought into line without guessing has been.'));
     }
     ready.forEach(function (r) { readyBox.appendChild(renameRow(r, 'ready')); });
+
+    if (waiting.length) {
+      document.getElementById('waiting-section').hidden = false;
+      var waitingBox = document.getElementById('waiting');
+      waiting.forEach(function (r) { waitingBox.appendChild(renameRow(r, 'ready')); });
+    }
+
+    // What it came up with when asked to organise rather than to rename.
+    var newFolders = data.newFolders || [];
+    var folderRenames = data.folderRenames || [];
+    var moves = rows.filter(function (r) { return r.placement === 'move' && r.into; });
+    if (newFolders.length || folderRenames.length || moves.length) {
+      document.getElementById('structure-section').hidden = false;
+      var structureBox = document.getElementById('structure');
+      newFolders.forEach(function (path) {
+        var inIt = moves.filter(function (r) { return r.into === path; });
+        var card = el('div', 'row ready');
+        var head = el('div', 'names');
+        head.appendChild(el('span', 'fname from', 'new folder'));
+        head.appendChild(el('span', 'arrow', '\u2192'));
+        head.appendChild(el('span', 'fname to', path));
+        card.appendChild(head);
+        card.appendChild(el('div', 'where',
+          inIt.length + ' document' + (inIt.length === 1 ? '' : 's') + ' go into it'));
+        if (inIt.length) card.appendChild(chips(inIt.map(function (r) { return r.current; })));
+        structureBox.appendChild(card);
+      });
+      folderRenames.forEach(function (f) {
+        var card = el('div', 'row ready');
+        var head = el('div', 'names');
+        head.appendChild(el('span', 'fname from', f.from));
+        head.appendChild(el('span', 'arrow', '\u2192'));
+        head.appendChild(el('span', 'fname to', f.to));
+        card.appendChild(head);
+        card.appendChild(el('div', 'where', 'folder renamed \u2014 everything inside it moves too'));
+        if (f.why) card.appendChild(el('div', 'why', f.why));
+        structureBox.appendChild(card);
+      });
+      // Documents filed into a folder that was already there. Filing is not
+      // restructuring, so these are listed apart from the folders it invented.
+      var intoExisting = moves.filter(function (r) { return newFolders.indexOf(r.into) === -1; });
+      intoExisting.forEach(function (r) {
+        var card = el('div', 'row ready');
+        var head = el('div', 'names');
+        head.appendChild(el('span', 'fname from', r.folder + '/' + r.current));
+        head.appendChild(el('span', 'arrow', '\u2192'));
+        head.appendChild(el('span', 'fname to', r.into + '/' + r.current));
+        card.appendChild(head);
+        if (r.placementWhy) card.appendChild(el('div', 'where', r.placementWhy));
+        structureBox.appendChild(card);
+      });
+
+      // The refusals are the interesting half: they are where "freedom, a
+      // little bit" is actually enforced.
+      var held = data.folderRefusals || [];
+      if (held.length) {
+        var heldBox = document.getElementById('structure-refused');
+        heldBox.appendChild(el('h3', '', 'What it suggested and did not get'));
+        var byReason = {};
+        held.forEach(function (h) {
+          (byReason[h.because] || (byReason[h.because] = [])).push(h.file || h.folder);
+        });
+        Object.keys(byReason).forEach(function (reason) {
+          var card = el('div', 'row refused');
+          card.appendChild(el('div', 'why', reason));
+          card.appendChild(chips(byReason[reason].filter(Boolean)));
+          heldBox.appendChild(card);
+        });
+      }
+    }
 
     // Where the only compliant files are the ones just renamed, saying so twice
     // is noise.

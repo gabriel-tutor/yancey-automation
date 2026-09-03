@@ -39,8 +39,9 @@ if (!existsSync(runPath)) {
 /**
  * @typedef {{
  *   current: string, path: string, compliant: boolean, proposed: string, blocked: string,
- *   assumptions: string[], namedBy?: string, why?: string,
- *   category?: string, categoryWhy?: string, placement?: string, placementWhy?: string
+ *   assumptions: string[], namedBy?: string, why?: string, approved?: boolean, awaiting?: string,
+ *   category?: string, categoryWhy?: string, placement?: string, placementWhy?: string,
+ *   destination?: string, folderSuggestion?: string
  * }} Row
  */
 /** @type {{ executionId: string, ranAt: string, summary: any, folders: string[], rows: Row[] }} */
@@ -158,6 +159,22 @@ const data = {
   namedByModel: Number(run.summary?.namedByModel || 0),
   readContents: run.summary?.readContents === true,
   scanned: rows.length,
+  // A pinned plan governs what is APPLIED, never what may be proposed. Without
+  // this the page cannot tell "approved and waiting to run" from "the agent has
+  // just read this and would like you to look" — and the run that could not
+  // tell them apart reported eight freshly-named documents as refusals.
+  pinned: run.summary?.pinned === true,
+  // What it came up with when asked to organise rather than to rename.
+  newFolders: (run.summary?.newFolders || []).map(asFolderLabel),
+  folderRenames: (run.summary?.folderRenames || []).map((/** @type {any} */ r) => ({
+    from: asFolderLabel(r.from),
+    to: asFolderLabel(r.to),
+    why: r.why || '',
+  })),
+  folderRefusals: [
+    ...(run.summary?.folderRefusals || []),
+    ...(run.summary?.folderRenameRefusals || []),
+  ].map((/** @type {any} */ r) => ({ file: r.file || '', folder: r.folder || '', because: r.because || '' })),
   folders: Object.values(folders).sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
   applied: applied.map((r) => ({
     kind: r.kind || 'rename',
@@ -183,10 +200,15 @@ const data = {
     // it, and blanking it here made the page disagree with its own count.
     namedBy: r.namedBy || '',
     why: r.why || '',
+    // Signed off, or still only proposed. Both are real states and the page has
+    // to show them apart.
+    approved: r.approved === true,
+    awaiting: r.awaiting || '',
     kind: r.category || '',
     kindWhy: r.categoryWhy || '',
     placement: r.placement || '',
     placementWhy: r.placementWhy || '',
+    into: r.destination ? asFolderLabel(folderOf(r.destination)) : '',
   })),
 };
 
@@ -202,10 +224,13 @@ const end = html.indexOf(CLOSE, start);
 const rebuilt = html.slice(0, start + OPEN.length) + '\n' + JSON.stringify(data, null, 2) + '\n' + html.slice(end);
 writeFileSync(htmlPath, rebuilt);
 
-const ready = data.rows.filter((r) => r.proposed).length;
+const ready = data.rows.filter((r) => r.proposed && (!data.pinned || r.approved)).length;
+const waiting = data.rows.filter((r) => r.proposed && data.pinned && !r.approved).length;
 const refused = data.rows.filter((r) => r.blocked).length;
 const correct = data.rows.filter((r) => r.compliant).length;
-const unfiled = data.rows.filter((r) => r.placement === 'unfiled').length;
+const moves = data.rows.filter((r) => r.placement === 'move' && r.into).length;
 console.log(
-  `scanned=${data.scanned} renamed=${data.applied.length} correct=${correct} outstanding=${ready} (${data.namedByModel} named by the model) refused=${refused} unfiled=${unfiled} folders=${data.folders.length} -> docs/organiser-plan.html`,
+  `scanned=${data.scanned} renamed=${data.applied.length} correct=${correct} approved=${ready} waiting=${waiting} ` +
+    `(${data.namedByModel} named by the model) refused=${refused} moves=${moves} newFolders=${data.newFolders.length} ` +
+    `folderRenames=${data.folderRenames.length} folders=${data.folders.length} -> docs/organiser-plan.html`,
 );

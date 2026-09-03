@@ -256,9 +256,42 @@ describe('the request sent to the model', () => {
     const req = buildNamingRequest([]);
     const props = req.text.format.schema.properties.proposals.items.properties;
     expect(Object.keys(props).sort()).toEqual(
-      ['category', 'date', 'document', 'file', 'project', 'status', 'version', 'why'].sort(),
+      ['category', 'date', 'document', 'file', 'folder', 'project', 'status', 'version', 'why'].sort(),
     );
     expect(req.text.format.schema.properties.proposals.items.properties.status.enum).toContain('Draft');
+  });
+
+  /**
+   * Yancey on 3 September, when offered a template instead: *"No, I wanted to
+   * give it freedom a little bit on the folder structure."* Freedom is the
+   * model's half; "a little bit" is enforced in src/structure.js. What the
+   * request has to do is make the job well-posed.
+   */
+  it('asks where each document belongs as well as what it is called', () => {
+    const req = buildNamingRequest([]);
+    const props = req.text.format.schema.properties.proposals.items.properties;
+    expect(props.folder.description).toContain('Name only, never a path');
+    expect(req.text.format.schema.required).toContain('folders');
+    expect(req.instructions).toContain('FOUR OR FIVE folders across twenty documents');
+    expect(req.instructions).toContain('a folder holding');
+    expect(req.instructions).toContain('Never a numbered stage folder');
+  });
+
+  /** It cannot reuse a folder name it has never seen. */
+  it('shows the folders that already exist, so reuse beats invention', () => {
+    const text = firstText(
+      buildNamingRequest([{ name: 'a.xlsx', path: '/x/a.xlsx' }], {
+        folders: ['/x/Resources and References', '/x/1. Assigned Tasks'],
+      }),
+    );
+    expect(text).toContain('/x/Resources and References');
+    expect(text).toContain('Folders that already exist, paths copied exactly');
+    expect(text.indexOf('/x/Resources')).toBeLessThan(text.indexOf('Files to name'));
+  });
+
+  it('says nothing about folders when the library has none', () => {
+    const text = firstText(buildNamingRequest([{ name: 'a.xlsx', path: '/x/a.xlsx' }]));
+    expect(text.startsWith('Files to name:')).toBe(true);
   });
 
   it('sends an image to be looked at and text to be read', () => {
@@ -299,6 +332,42 @@ describe('the request sent to the model', () => {
  * These hold the approved list to being the authority, and hold it to the same
  * guards a fresh proposal has to pass.
  */
+/** The prose block of a request, which is where everything but the files goes. */
+/** @param {any} req @returns {string} */
+const firstText = (req) => String(req.input[0].content[0].text || '');
+
+describe('what the model says about where a document belongs', () => {
+  /** @param {any} extra */
+  const named = (extra) => {
+    const rows = freshRows();
+    applyProposals(
+      rows,
+      [{ file: 'Metrics .xlsx', project: 'NIPSCO', document: 'Idling-Cost-Analysis', status: 'Review', date: '2026-03-02', version: 'v0.4', category: 'analysis', why: 'header', ...extra }],
+      { files: FILES, reports: REPORTS },
+    );
+    return rows.find((r) => r.current === 'Metrics .xlsx');
+  };
+
+  it('records the folder it suggested', () => {
+    expect(named({ folder: 'Dashboards' })?.folderSuggestion).toBe('Dashboards');
+  });
+
+  /**
+   * Where a document belongs and what it is called are separate judgements, so
+   * a name that fails the convention must not take a good filing decision down
+   * with it.
+   */
+  it('keeps the folder even when the name it proposed is refused', () => {
+    const row = named({ document: '', folder: 'Dashboards' });
+    expect(row?.proposed, 'no document name means the model did not name it').not.toContain('NIPSCO');
+    expect(row?.folderSuggestion).toBe('Dashboards');
+  });
+
+  it('records nothing when it made no suggestion', () => {
+    expect(named({ folder: '' })?.folderSuggestion).toBe('');
+  });
+});
+
 describe('applying a plan that was actually approved', () => {
   /** @param {any[]} rows */
   const withModelNames = (rows) =>
@@ -319,12 +388,49 @@ describe('applying a plan that was actually approved', () => {
     expect(row?.namedBy).toBe('approved');
   });
 
-  it('leaves alone anything the run proposed but nobody approved', () => {
+  /**
+   * The 3 September failure, in one test. Yancey dropped eight documents into
+   * the library, ran the organiser, and got eight refusals reading "not on the
+   * approved list, so this run leaves it alone" — the model had read and named
+   * every one, and the gate discarded the names before he could look at them.
+   * A plan governs what is APPLIED. It must not govern what may be PROPOSED,
+   * or a file that arrives after the plan is signed can never be reviewed.
+   */
+  it('keeps a name nobody approved yet as a proposal rather than throwing it away', () => {
     const rows = withModelNames(freshRows());
     applyApprovedPlan(rows, [{ from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx' }], { reports: REPORTS });
     const other = rows.find((r) => r.current.indexOf('6.34.18') !== -1);
-    expect(other?.proposed).toBe('');
-    expect(other?.blocked).toContain('not on the approved list');
+    expect(other?.proposed).toBe('Also-Not-Approved_2026-01-01_Draft_v0.1.png');
+    expect(other?.approved).toBe(false);
+    expect(other?.blocked).toBe('');
+    expect(other?.awaiting).toContain('approve it');
+  });
+
+  it('clears the approved one to be applied and leaves the rest waiting', () => {
+    const rows = withModelNames(freshRows());
+    applyApprovedPlan(rows, [{ from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx' }], { reports: REPORTS });
+    expect(rows.find((r) => r.current === 'Metrics .xlsx')?.approved).toBe(true);
+    expect(rows.filter((r) => r.proposed && r.approved === true).length).toBe(1);
+    expect(rows.filter((r) => r.proposed && r.approved === false).length).toBeGreaterThan(0);
+  });
+
+  /**
+   * A plan that says nothing about where a file goes has not approved a
+   * destination, so arming the move switch must move nothing. Saying so is what
+   * `into` is for.
+   */
+  it('approves a destination only where the plan names one', () => {
+    const rows = withModelNames(freshRows());
+    applyApprovedPlan(rows, [{ from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx' }], { reports: REPORTS });
+    expect(rows.find((r) => r.current === 'Metrics .xlsx')?.approvedInto).toBe('');
+
+    const withInto = withModelNames(freshRows());
+    applyApprovedPlan(
+      withInto,
+      [{ from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx', into: ROOT + '/Task 2' }],
+      { reports: REPORTS },
+    );
+    expect(withInto.find((r) => r.current === 'Metrics .xlsx')?.approvedInto).toBe(ROOT + '/Task 2');
   });
 
   /**

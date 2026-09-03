@@ -13,7 +13,14 @@ import { DEPLOY, E, ROOT, S, SDK_IMPORT, TARGET } from './shared.mjs';
 function approvedPlan() {
   try {
     const file = JSON.parse(readFileSync(join(ROOT, 'config/approved-plan.json'), 'utf8'));
-    return (file.plan || []).map((line) => ({ from: String(line.from), to: String(line.to) }));
+    return (file.plan || []).map((/** @type {any} */ line) => ({
+      from: String(line.from),
+      to: String(line.to),
+      // Where a line says where the file goes, that destination is approved
+      // too. Where it is silent, arming the move switch moves nothing: a plan
+      // that did not name a destination has not approved one.
+      into: line.into ? String(line.into) : '',
+    }));
   } catch {
     return [];
   }
@@ -45,7 +52,7 @@ function approvedPlan() {
  * does not satisfy the convention is dropped. The worst a bad answer can do is
  * leave a file alone.
  */
-const CONFIG = {
+export const CONFIG = {
   host: TARGET.sharepointHost || 'https://upperformpartners.sharepoint.com',
   sitePath: TARGET.sharepointSite || '/sites/TaskManagement',
   libraryTitle: 'Documents',
@@ -57,6 +64,22 @@ const CONFIG = {
   // because they are separate promises.
   applyRenames: false,
   applyMoves: false,
+
+  // The folder structure the model invents. Creating a folder is the least
+  // destructive thing here - nothing that exists changes - but moving documents
+  // into it is not, so applyStructure gates the creating and applyMoves gates
+  // the filing. Renaming an existing folder moves everything inside it, which
+  // is why it is a third switch rather than part of the second.
+  applyStructure: false,
+  applyFolderRenames: false,
+
+  // Freedom, a little bit. Yancey asked for a structure the agent invents
+  // rather than one he specifies - "I wanted to give it freedom a little bit on
+  // the folder structure" - and these are what stop that becoming twenty
+  // folders of one document. A new folder must hold at least minPerFolder
+  // documents, and one run proposes at most maxNewFolders of them.
+  maxNewFolders: 6,
+  minPerFolder: 2,
 
   // Even switched on, one run touches at most this many files, renames and
   // moves together. A first live run should be small enough to check by eye
@@ -367,8 +390,9 @@ for (let i = 0; i < picks.length; i++) {
 return out;
 `;
 
-const COMPOSE = `
+export const COMPOSE = `
 const cfg = $('Config').first().json;
+const review = $('Review The Library').first().json || {};
 const candidates = $input.all()
   .map(function (i) { return i.json || {}; })
   .filter(function (c) { return c && c.nothing !== true && c.name; });
@@ -377,13 +401,22 @@ return [{ json: {
   toName: candidates.length,
   modelRequest: buildNamingRequest(candidates, {
     model: String(cfg.modelNaming || 'gpt-5.6-luna'),
-    textPerFile: Number(cfg.textPerFile) || 1200
+    textPerFile: Number(cfg.textPerFile) || 1200,
+    // It cannot reuse a folder name it has never seen, and reusing one is
+    // almost always the better answer than inventing another.
+    folders: review.folders || []
   })
 }}];
 `;
 
-/** The model's words, held to the convention, then turned into work to do. */
-const APPLY = `
+/**
+ * The model's words, held to the convention, then turned into work to do.
+ *
+ * Exported because this is the node that failed in front of the client on
+ * 3 September, in three separate ways, and a string is not something a test can
+ * run. src/nodes.test.js runs it.
+ */
+export const APPLY = `
 const cfg = $('Config').first().json;
 const review = $('Review The Library').first().json || {};
 const rows = review.rows || [];
@@ -394,6 +427,7 @@ const files = review.files || [];
 // rules could work out, so the naming degrades rather than the run breaking.
 const incoming = $input.first().json || {};
 let proposals = [];
+let modelFolders = [];
 let modelNote = 'the model was not called, so nothing was renamed beyond what the rules could read';
 
 if (incoming.error) {
@@ -406,10 +440,13 @@ if (incoming.error) {
     }
   }
   try {
-    proposals = JSON.parse(text).proposals || [];
+    const answer = JSON.parse(text);
+    proposals = answer.proposals || [];
+    modelFolders = answer.folders || [];
     modelNote = 'the model read and named ' + proposals.length + ' documents';
   } catch (err) {
     proposals = [];
+    modelFolders = [];
     modelNote = 'the model answer could not be read, so the rules named what they could';
   }
 }
@@ -427,10 +464,17 @@ applyProposals(rows, proposals, {
 // What a person signed off beats what this run happens to say. Every guard
 // still runs over it: the file must still exist, still be un-guarded, keep its
 // extension, satisfy the convention and not collide.
+//
+// What a plan gates is what gets APPLIED. It must not gate what gets PROPOSED:
+// on 3 September eight new documents came back "not on the approved list, so
+// this run leaves it alone" after the model had read and named every one, and
+// the review loop had nothing new to review. Off-list proposals are kept and
+// marked unapproved instead.
 const approved = Array.isArray(cfg.approvedPlan) ? cfg.approvedPlan : [];
-let planNote = 'this run proposed these names';
+const pinned = approved.length > 0;
+let planNote = 'this run proposed these names, and arming the switch applies them';
 let approvedMissing = [];
-if (approved.length > 0) {
+if (pinned) {
   applyApprovedPlan(rows, approved, {
     reports: reports,
     dependencies: dependencies,
@@ -440,13 +484,32 @@ if (approved.length > 0) {
   // A line whose file is not there any more is skipped, which is right - but
   // silently skipping it is how a plan half-applies without anyone noticing.
   approvedMissing = approvedNotFound(rows, approved);
-  planNote = (cfg.revert === true ? 'REVERTING the approved plan of ' : 'applying the approved plan of ') + approved.length + ', not this run';
+  planNote = (cfg.revert === true ? 'REVERTING the approved plan of ' : 'applying the approved plan of ') + approved.length + ' - everything else is proposed and waiting';
   if (approvedMissing.length > 0) {
     planNote += ' - ' + approvedMissing.length + ' approved file(s) are no longer in the library under that name';
   }
 }
 
-const toRename = rows.filter(function (r) { return r.proposed; });
+// The structure the model invented, held to a small one. This always runs, so
+// the review page shows what it came up with; the switches below decide whether
+// any of it happens. Yancey asked for exactly this on 3 September: "Can it
+// think and come up with its own folder structure?" - and then bounded it
+// himself: "I wanted to give it freedom a little bit."
+const structure = planStructure(rows, {
+  folders: review.folders || [],
+  files: files,
+  maxNewFolders: Number(cfg.maxNewFolders) || 6,
+  minPerFolder: Number(cfg.minPerFolder) || 2,
+  includeReports: cfg.renameReports === true
+});
+const folderPlan = planFolderRenames(modelFolders, {
+  folders: review.folders || [],
+  files: files,
+  includeReports: cfg.renameReports === true
+});
+
+const toRename = rows.filter(function (r) { return r.proposed && (!pinned || r.approved === true); });
+const awaiting = rows.filter(function (r) { return r.proposed && pinned && r.approved !== true; });
 const movable = rows.filter(function (r) { return r.placement === 'move' && r.destination; });
 
 const summary = {
@@ -455,6 +518,7 @@ const summary = {
   scanned: rows.length,
   compliant: rows.filter(function (r) { return r.compliant; }).length,
   proposed: toRename.length,
+  awaiting: awaiting.length,
   blocked: rows.filter(function (r) { return !r.compliant && !r.proposed; }).length,
   unfiled: rows.filter(function (r) { return r.placement === 'unfiled'; }).length,
   movesProposed: movable.length,
@@ -463,42 +527,88 @@ const summary = {
   reportsUnreadable: dependencies.unreadable || [],
   approvedCount: approved.length,
   approvedMissing: approvedMissing,
+  pinned: pinned,
   planNote: planNote,
   modelNote: modelNote,
+  newFolders: structure.create,
+  folderRefusals: structure.refused,
+  folderRenames: folderPlan.renames,
+  folderRenameRefusals: folderPlan.refused,
   readContents: cfg.readContents === true,
   applyRenames: cfg.applyRenames === true,
   applyMoves: cfg.applyMoves === true,
+  applyStructure: cfg.applyStructure === true,
+  applyFolderRenames: cfg.applyFolderRenames === true,
   cap: Number(cfg.maxChangesPerRun) || 5,
   rows: rows
 };
 
 // Renaming and moving are the same operation to SharePoint - both change a
 // path - but they are different promises, so they are gated separately. A run
-// with both switches off reviews and changes nothing, which is the resting
+// with every switch off reviews and changes nothing, which is the resting
 // state.
-const actions = [];
-if (cfg.applyRenames === true) {
-  for (const r of toRename) {
-    const folder = r.path.slice(0, r.path.lastIndexOf('/'));
-    actions.push({
-      kind: 'rename',
-      oldName: r.current,
-      newName: r.proposed,
-      oldPath: r.path,
-      newPath: folder + '/' + r.proposed,
-      why: r.assumptions || []
-    });
-  }
+//
+// A file gets ONE call, to its new folder under its new name. An earlier
+// version built renames and moves as separate lists, so a document wanting both
+// produced two calls that each started from the path it had before: the first
+// worked and the second could not find the file.
+const base = String(cfg.host || '') + String(cfg.sitePath || '') + '/_api/web';
+const creating = cfg.applyStructure === true;
+const newFolders = creating ? structure.create : [];
+
+// A move into a folder that does not exist yet cannot happen unless that folder
+// is being created on this run. Filing into a folder that is already there is
+// gated by applyMoves alone.
+const blockedByStructure = {};
+if (!creating) {
+  for (const f of structure.create) blockedByStructure[f] = true;
 }
-if (cfg.applyMoves === true) {
-  for (const r of movable) {
+
+const fileChanges = plannedChanges(rows, {
+  applyRenames: cfg.applyRenames === true,
+  applyMoves: cfg.applyMoves === true,
+  requireApproval: pinned
+}).filter(function (c) {
+  return !blockedByStructure[folderOf(c.newPath)];
+});
+
+// Order is the whole of the safety here. Folders are created before anything
+// moves into them, and folders are renamed LAST - everything inside a folder
+// moves with it, so a file change computed against the old path has to happen
+// while that path is still real.
+const actions = [];
+for (const path of newFolders) {
+  actions.push({
+    kind: 'create folder',
+    oldName: '',
+    newName: path.slice(path.lastIndexOf('/') + 1),
+    oldPath: '',
+    newPath: path,
+    why: ['grouping documents the model read and put together'],
+    changeUrl: folderCreateUrl(base, path)
+  });
+}
+for (const c of fileChanges) {
+  actions.push({
+    kind: c.kind,
+    oldName: c.oldName,
+    newName: c.newName,
+    oldPath: c.oldPath,
+    newPath: c.newPath,
+    why: c.why,
+    changeUrl: fileChangeUrl(base, c.oldPath, c.newPath)
+  });
+}
+if (cfg.applyFolderRenames === true) {
+  for (const r of folderPlan.renames) {
     actions.push({
-      kind: 'move',
-      oldName: r.current,
-      newName: r.current,
-      oldPath: r.path,
-      newPath: r.destination,
-      why: [r.placementWhy]
+      kind: 'rename folder',
+      oldName: r.from.slice(r.from.lastIndexOf('/') + 1),
+      newName: r.to.slice(r.to.lastIndexOf('/') + 1),
+      oldPath: r.from,
+      newPath: r.to,
+      why: [r.why],
+      changeUrl: folderChangeUrl(base, r.from, r.to)
     });
   }
 }
@@ -509,13 +619,6 @@ if (actions.length === 0) {
   return [{ json: Object.assign({ nothingToDo: true }, summary) }];
 }
 
-// SharePoint takes the path inside an OData string literal. Single quotes are
-// escaped by doubling; spaces have to be percent-encoded or the request line
-// breaks. The URL is built here rather than in an expression so the escaping is
-// in one readable place.
-const lit = function (p) { return String(p).replace(/'/g, "''").replace(/ /g, '%20'); };
-const base = String(cfg.host || '') + String(cfg.sitePath || '') + '/_api/web';
-
 return actions.slice(0, Number(cfg.maxChangesPerRun) || 5).map(function (a) {
   return { json: {
     nothingToDo: false,
@@ -525,9 +628,7 @@ return actions.slice(0, Number(cfg.maxChangesPerRun) || 5).map(function (a) {
     oldPath: a.oldPath,
     newPath: a.newPath,
     assumptions: a.why,
-    // flags=0 means never overwrite. If anything already sits on the new path
-    // the call fails rather than destroying it.
-    changeUrl: base + "/GetFileByServerRelativePath(decodedurl='" + lit(a.oldPath) + "')/moveto(newurl='" + lit(a.newPath) + "',flags=0)",
+    changeUrl: a.changeUrl,
     summary: summary
   }};
 });
@@ -561,7 +662,7 @@ return [{ json: Object.assign({}, summary, { applied: done, failedChanges: faile
  * was wrong for everyone else: a workflow that signals success by failing shows
  * red on the canvas and reads as broken to whoever is watching it.
  */
-const SUMMARY = `
+export const SUMMARY = `
 const r = $input.first().json || {};
 const applied = r.applied || [];
 const failed = r.failedChanges || [];
@@ -569,22 +670,33 @@ const failed = r.failedChanges || [];
 const headline = applied.length || failed.length
   ? applied.length + ' applied, ' + failed.length + ' failed'
   : r.proposed + ' to rename, ' + r.movesProposed + ' to move, ' +
+    (r.newFolders || []).length + ' new folder(s), ' +
+    r.awaiting + ' waiting to be approved, ' +
     r.blocked + ' left alone, ' + r.compliant + ' already correct';
 
 // The reasons are the part worth reading, so they come out as their own lists
 // rather than buried inside every row.
+//
+// Two lists, not one. A pinned plan governs what is applied; everything else
+// the model proposed is still a proposal, and putting it in front of a person
+// is the only way the review loop ever closes. The run that showed one list
+// reported eight documents as refused when what had actually happened was that
+// eight documents were waiting to be read.
 const toRename = [];
+const awaiting = [];
 const refused = [];
 const toMove = [];
 for (const row of (r.rows || [])) {
   if (row.proposed) {
-    toRename.push({
+    const line = {
       file: row.current,
       becomes: row.proposed,
       namedBy: row.namedBy || 'rules',
       why: row.why || '',
       assuming: row.assumptions || []
-    });
+    };
+    if (r.pinned && row.approved !== true) awaiting.push(line);
+    else toRename.push(line);
   } else if (!row.compliant && row.blocked) {
     refused.push({ file: row.current, because: row.blocked });
   }
@@ -608,10 +720,21 @@ return [{ json: {
   approvedMissing: r.approvedMissing || [],
   readContents: r.readContents,
   toRename: toRename,
+  awaitingApproval: awaiting,
   toMove: toMove,
   refused: refused,
+  // What the agent came up with when asked to organise rather than to rename.
+  newFolders: r.newFolders || [],
+  folderRenames: r.folderRenames || [],
+  folderRefusals: (r.folderRefusals || []).concat(r.folderRenameRefusals || []),
   unfiled: r.unfiled,
-  switches: { applyRenames: r.applyRenames === true, applyMoves: r.applyMoves === true, cap: r.cap },
+  switches: {
+    applyRenames: r.applyRenames === true,
+    applyMoves: r.applyMoves === true,
+    applyStructure: r.applyStructure === true,
+    applyFolderRenames: r.applyFolderRenames === true,
+    cap: r.cap
+  },
   applied: applied,
   failed: failed
 }}];
@@ -674,7 +797,26 @@ const READING_NOTE = [
   '**If the model call fails, the run carries on with what the rules could work out.** The naming degrades; it does not break.',
 ].join('\n');
 
-const SAFETY_NOTE = [
+export const STRUCTURE_NOTE = [
+  '### It comes up with the folder structure',
+  '',
+  'From the 3 September call: *"Can it come up with its own folder structure and rename the files and put it in its own folder? **Can it think and come up with its own folder structure?**"* — and, when offered a template to fill in instead: *"No, **I wanted to give it freedom a little bit** on the folder structure."*',
+  '',
+  'So the model is given the documents and the folders that already exist, and it answers with a folder for each document and a rename for any folder whose name does not say what it holds. **Freedom is its half.** *A little bit* is the part a machine has to supply, because a model told to group twenty documents will happily return twenty folders of one — which is not a structure, it is the same pile with more clicks in it.',
+  '',
+  '| The rule | Why |',
+  '|---|---|',
+  '| a **new** folder must hold at least `minPerFolder` (2) | a folder holding one file is the pile it came from with an extra click in front |',
+  '| at most `maxNewFolders` (6) in one run | freedom, a little bit |',
+  '| created **beside** the documents that go in it | a bounded change, never a global reshuffle |',
+  '| an existing folder is exempt from the minimum | filing one document into a folder somebody already made is filing, not restructuring |',
+  '| a name that is already used twice is refused | two folders of one name is a choice, and choosing belongs to a person |',
+  '| never a numbered stage folder, in or out | those record how far work has got, and nothing about a document says which stage it is in |',
+  '',
+  'Everything it proposes appears on the review whether the switches are armed or not. `applyStructure` creates the folders, `applyMoves` files the documents into them, and `applyFolderRenames` renames an existing one — three switches because they are three different promises, and renaming a folder moves everything inside it.',
+].join('\n');
+
+export const SAFETY_NOTE = [
   '### What stops this going wrong',
   '',
   '**Off by default.** `applyRenames` and `applyMoves` are both false, and they are separate switches because they are separate promises. Either one breaks every saved link, Teams tab and Power BI data source pointing at the old path, so a person reads the review first.',
@@ -687,9 +829,15 @@ const SAFETY_NOTE = [
   '',
   '**Never touches Power BI.** A `.pbix` keeps the paths of the files it reads inside itself, where nothing outside can see them. Reports are never renamed, and neither is a workbook that shares a report’s folder or opens with a report’s words. The refusal names the report.',
   '',
-  '**Moves one thing, and only on evidence.** A move changes a path exactly as a rename changes a name. It will never move a report, a workbook a report reads, or anything inside a numbered stage folder — that last would assert how far work has got, which no file records. The single case it offers is a document sitting above the filing with no folder of its own, and only where exactly one folder beside it says in its own name what it holds. Two candidates is a choice, and choosing belongs to a person.',
+  '**Moves on evidence.** A move changes a path exactly as a rename changes a name. It will never move a report, a workbook a report reads, or anything into or out of a numbered stage folder — that last would assert how far work has got, which no file records.',
   '',
-  '**Never renames a folder.** Anything without a file extension is refused.',
+  '**Never applies what nobody approved.** When `approvedPlan` is filled in, only those lines are sent. Everything else the model proposed stays a **proposal** on the review, under `awaitingApproval`. An earlier version discarded them, and the run reported eight freshly-named documents as refused when what had really happened was that eight documents were waiting to be read.',
+  '',
+  '**One call per file.** A document wanting a new name *and* a new folder gets a single call, to the new folder under the new name. Two calls both starting from the old path meant whichever ran second could not find the file.',
+  '',
+  '**A short URL.** Both paths travel in the query string behind OData parameter aliases. `moveto` carries the path twice, and ASP.NET caps the URL *path* at 260 characters — a folder with a long name was enough to break it.',
+  '',
+  '**Folders in order.** New folders are created first, files change next, and folders are renamed last — everything inside a folder moves with it, so a file change has to happen while its path is still real.',
   '',
   '**Never invents.** The model is told an invented project code is worse than none, and an empty answer falls back to a disclosed assumption. Status defaults to the weakest claim, Draft, and says so. An eight-digit run like `04042025` is resolved only if the document states the date unambiguously; otherwise the date comes from the file timestamp and the proposal says so.',
 ].join('\n');
@@ -1072,10 +1220,16 @@ const noteReading = sticky(
   { color: 4, width: 1560, height: 340 },
 );
 
+const noteStructure = sticky(
+  ${S(STRUCTURE_NOTE)},
+  [namedOrNot, applyProposals],
+  { color: 3, width: 700, height: 520 },
+);
+
 const noteSafety = sticky(
   ${S(SAFETY_NOTE)},
-  [namedOrNot, applyProposals, shouldApply, applyChange, confirm, both, summary],
-  { color: 5, width: 1540, height: 480 },
+  [shouldApply, applyChange, confirm, both, summary],
+  { color: 5, width: 1300, height: 600 },
 );
 
 export default workflow('upperform-wf-f-organizer', ${S(NAME)})
@@ -1106,6 +1260,7 @@ export default workflow('upperform-wf-f-organizer', ${S(NAME)})
   .to(summary)
   .add(noteHeader)
   .add(noteReading)
+  .add(noteStructure)
   .add(noteSafety);
 `;
 }

@@ -3,6 +3,7 @@ import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from '../workflows/helpers-manifest.mjs';
 import { VOICE_GUARD } from '../workflows/wf-b-draft.mjs';
 import { APPLY_CLASSIFICATION } from '../workflows/wf-a-classify.mjs';
+import { APPLY as ORGANISER_APPLY } from '../workflows/wf-f-organizer.mjs';
 
 /**
  * The Code node *bodies* — not just the helper library they import.
@@ -298,5 +299,304 @@ describe("WF-A Apply Classification under Yancey's rules", () => {
     });
     expect(out.json.label).toBe('opportunity');
     expect(out.json.requiresDraft).toBe(true);
+  });
+});
+
+/**
+ * The WF-F apply node, run rather than read.
+ *
+ * On 3 September Yancey created a folder, moved two documents into it, dropped
+ * eight more into the library and pressed Execute. Three things went wrong in
+ * this one node, and every test below is one of them:
+ *
+ *   the URL ran past the 260-character ceiling ASP.NET enforces on a path
+ *   a file wanting a new name AND a new folder produced two conflicting calls
+ *   eight documents the model had just named came back "not on the approved
+ *     list, so this run leaves it alone"
+ */
+const organiserApplyCode = await codeNode(HELPERS['wf-f/Apply Proposals'], ORGANISER_APPLY);
+
+describe('WF-F Apply Proposals node body', () => {
+  const HOST = 'https://upperformpartners.sharepoint.com';
+  const SITE = '/sites/TaskManagement';
+  const LIB = SITE + '/Shared Documents/Power BI Task Management';
+  const KAREN = LIB + '/PD alignment Excel and Power BI - Karen';
+  const REFS = LIB + '/Resources and References';
+
+  /** @param {Partial<any>} over @returns {any} */
+  const config = (over) => ({
+    host: HOST,
+    sitePath: SITE,
+    libraryTitle: 'Documents',
+    applyRenames: true,
+    applyMoves: false,
+    applyStructure: false,
+    applyFolderRenames: false,
+    maxChangesPerRun: 20,
+    maxNewFolders: 6,
+    minPerFolder: 2,
+    renameReports: true,
+    approvedPlan: [],
+    assumeStatus: 'Draft',
+    revert: false,
+    ...over,
+  });
+
+  /** The two documents Yancey moved into the folder he had just made. */
+  const KAREN_FILES = [
+    { name: 'Performance Management System.xlsx', path: KAREN + '/Performance Management System.xlsx', modified: '2026-07-09T10:00:00Z' },
+    { name: 'CAIDI deliverables .docx', path: KAREN + '/CAIDI deliverables .docx', modified: '2026-07-09T10:00:00Z' },
+  ];
+
+  /**
+   * @param {{ cfg?: any, files?: any[], folders?: string[], rows?: any[], proposals?: any[], folderProposals?: any[] }} setup
+   * @returns {any[]}
+   */
+  const apply = (setup) => {
+    const files = setup.files || KAREN_FILES;
+    const rows =
+      setup.rows ||
+      files.map((f) => ({
+        current: f.name,
+        path: f.path,
+        proposed: '',
+        blocked: '',
+        compliant: false,
+        assumptions: [],
+        placement: 'settled',
+        placementWhy: '',
+        destination: '',
+      }));
+    const answer = JSON.stringify({
+      proposals: setup.proposals || [],
+      folders: setup.folderProposals || [],
+    });
+    return run(organiserApplyCode, {
+      $: nodeRef({
+        Config: setup.cfg || config({}),
+        'Review The Library': {
+          library: 'Documents',
+          site: SITE,
+          files,
+          folders: setup.folders || [LIB, KAREN, REFS],
+          rows,
+          dependencies: { byFile: {}, unreadable: [], read: [] },
+        },
+      }),
+      $input: { first: () => ({ json: { output: [{ content: [{ text: answer }] }] } }) },
+      Buffer,
+    }).map((/** @type {any} */ i) => i.json);
+  };
+
+  /** @param {any[]} out @param {string} name @returns {any} */
+  const call = (out, name) => out.find((/** @type {any} */ o) => o.oldName === name);
+
+  /**
+   * The literal failure. "The length of the URL for this request exceeds the
+   * configured maxUrlLength" — moveto carries the path twice, and the folder
+   * Yancey named pushed it to about 385 characters.
+   */
+  it('keeps the request path under the ceiling that failed in the meeting', () => {
+    const out = apply({
+      proposals: [
+        { file: 'Performance Management System.xlsx', project: '', document: 'Performance-Management-System-Workbook', status: '', date: '2026-07-09', version: '', category: 'workbook', folder: '', why: 'x' },
+      ],
+    });
+    const url = String(call(out, 'Performance Management System.xlsx').changeUrl);
+    expect(url.slice(0, url.indexOf('?')).length).toBeLessThan(260);
+    expect(url).toContain("@old='");
+    expect(url).toContain('flags=0');
+  });
+
+  /** Two calls from one path: the first worked, the second could not find the file. */
+  it('renames and moves a document in a single call', () => {
+    const out = apply({
+      cfg: config({ applyMoves: true }),
+      rows: [
+        {
+          current: 'CAIDI deliverables .docx',
+          path: LIB + '/CAIDI deliverables .docx',
+          proposed: '',
+          blocked: '',
+          compliant: false,
+          assumptions: [],
+          placement: 'move',
+          placementWhy: 'it belongs with the references',
+          destination: REFS + '/CAIDI deliverables .docx',
+        },
+      ],
+      files: [{ name: 'CAIDI deliverables .docx', path: LIB + '/CAIDI deliverables .docx', modified: '2026-07-09T10:00:00Z' }],
+      proposals: [
+        { file: 'CAIDI deliverables .docx', project: 'NIPSCO', document: 'CAIDI-Deliverables', status: '', date: '2026-07-09', version: '', category: 'deliverables', folder: '', why: 'x' },
+      ],
+    });
+    expect(out.length).toBe(1);
+    expect(out[0].kind).toBe('rename and move');
+    expect(out[0].newPath).toBe(REFS + '/NIPSCO_CAIDI-Deliverables_2026-07-09_Draft_v0.1.docx');
+  });
+
+  /**
+   * Yancey dropped eight documents in, the model named every one, and all eight
+   * came back refused. A plan gates what is applied, never what is proposed.
+   */
+  it('proposes a name for a new document a pinned plan has never seen', () => {
+    const out = apply({
+      cfg: config({
+        applyRenames: true,
+        approvedPlan: [{ from: 'Performance Management System.xlsx', to: 'NIPSCO_Performance-Management-System_2026-07-09_Draft_v0.1.xlsx' }],
+      }),
+      proposals: [
+        { file: 'Performance Management System.xlsx', project: 'NIPSCO', document: 'Performance-Management-System', status: '', date: '2026-07-09', version: '', category: 'workbook', folder: '', why: 'x' },
+        { file: 'CAIDI deliverables .docx', project: 'NIPSCO', document: 'CAIDI-Deliverables', status: '', date: '2026-07-09', version: '', category: 'deliverables', folder: '', why: 'x' },
+      ],
+    });
+    const summary = out[0].summary;
+    const fresh = summary.rows.find((/** @type {any} */ r) => r.current === 'CAIDI deliverables .docx');
+    expect(fresh.proposed, 'the model named it, so the name must survive').toBeTruthy();
+    expect(fresh.approved).toBe(false);
+    expect(fresh.blocked).toBe('');
+    expect(summary.awaiting).toBe(1);
+    // ...and only the approved one is actually sent.
+    expect(out.length).toBe(1);
+    expect(out[0].oldName).toBe('Performance Management System.xlsx');
+  });
+
+  it('applies nothing at all with every switch off', () => {
+    const out = apply({
+      cfg: config({ applyRenames: false }),
+      proposals: [
+        { file: 'CAIDI deliverables .docx', project: 'NIPSCO', document: 'CAIDI-Deliverables', status: '', date: '2026-07-09', version: '', category: 'x', folder: '', why: 'x' },
+      ],
+    });
+    expect(out.length).toBe(1);
+    expect(out[0].nothingToDo).toBe(true);
+    expect(out[0].proposed).toBe(1);
+  });
+});
+
+/**
+ * The folder structure the agent invents. Yancey asked for it in as many words
+ * — *"Can it think and come up with its own folder structure?"* — and then
+ * bounded it: *"I wanted to give it freedom a little bit."*
+ */
+describe('WF-F structure, through the node that applies it', () => {
+  const HOST = 'https://upperformpartners.sharepoint.com';
+  const SITE = '/sites/TaskManagement';
+  const LIB = SITE + '/Shared Documents/Power BI Task Management';
+  const REFS = LIB + '/Resources and References';
+
+  const FILES = ['a.xlsx', 'b.xlsx', 'c.docx'].map((n) => ({
+    name: n,
+    path: REFS + '/' + n,
+    modified: '2026-07-09T10:00:00Z',
+  }));
+
+  /** @param {Partial<any>} over @returns {any[]} */
+  const apply = (over) =>
+    run(organiserApplyCode, {
+      $: nodeRef({
+        Config: {
+          host: HOST,
+          sitePath: SITE,
+          applyRenames: false,
+          applyMoves: true,
+          applyStructure: true,
+          applyFolderRenames: false,
+          maxChangesPerRun: 20,
+          maxNewFolders: 6,
+          minPerFolder: 2,
+          renameReports: true,
+          approvedPlan: [],
+          assumeStatus: 'Draft',
+          ...over,
+        },
+        'Review The Library': {
+          library: 'Documents',
+          site: SITE,
+          files: FILES,
+          folders: [LIB, REFS],
+          rows: FILES.map((f) => ({
+            current: f.name,
+            path: f.path,
+            proposed: '',
+            blocked: '',
+            compliant: true,
+            assumptions: [],
+            placement: 'settled',
+            placementWhy: '',
+            destination: '',
+          })),
+          dependencies: { byFile: {}, unreadable: [], read: [] },
+        },
+      }),
+      $input: {
+        first: () => ({
+          json: {
+            output: [
+              {
+                content: [
+                  {
+                    text: JSON.stringify({
+                      folders: [{ from: REFS, to: 'Reference Library', why: 'says what it holds' }],
+                      proposals: FILES.map((f) => ({
+                        file: f.name,
+                        project: '',
+                        document: '',
+                        status: '',
+                        date: '',
+                        version: '',
+                        category: '',
+                        folder: f.name === 'c.docx' ? 'Guides' : 'Dashboards',
+                        why: 'x',
+                      })),
+                    }),
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      },
+      Buffer,
+    }).map((/** @type {any} */ i) => i.json);
+
+  it('creates the folder before anything moves into it', () => {
+    const out = apply({});
+    expect(out[0].kind).toBe('create folder');
+    expect(out[0].newPath).toBe(REFS + '/Dashboards');
+    expect(out.slice(1).every((/** @type {any} */ o) => o.kind === 'move')).toBe(true);
+    expect(out.slice(1).map((/** @type {any} */ o) => o.newPath)).toEqual([
+      REFS + '/Dashboards/a.xlsx',
+      REFS + '/Dashboards/b.xlsx',
+    ]);
+  });
+
+  /** A folder holding one file is the pile it came from with an extra click. */
+  it('refuses the folder only one document was put in', () => {
+    const out = apply({});
+    const refusals = out[0].summary.folderRefusals;
+    expect(refusals.map((/** @type {any} */ r) => r.folder)).toContain('Guides');
+    expect(refusals[0].because).toContain('the pile it came from');
+  });
+
+  /** Everything inside a folder moves with it, so this is a third promise. */
+  it('renames a folder last, and only when that switch is armed', () => {
+    expect(apply({}).some((/** @type {any} */ o) => o.kind === 'rename folder')).toBe(false);
+    const armed = apply({ applyFolderRenames: true });
+    expect(armed[armed.length - 1].kind).toBe('rename folder');
+    expect(armed[armed.length - 1].newPath).toBe(LIB + '/Reference Library');
+  });
+
+  /**
+   * Moving into a folder nobody is creating would 404. The structure is still
+   * PROPOSED — that is what the review page is for — but nothing is sent.
+   */
+  it('does not file into a new folder when creating them is switched off', () => {
+    const out = apply({ applyStructure: false });
+    expect(out.length).toBe(1);
+    expect(out[0].nothingToDo).toBe(true);
+    expect(out[0].newFolders, 'still proposed, just not applied').toEqual([
+      REFS + '/Dashboards',
+    ]);
   });
 });

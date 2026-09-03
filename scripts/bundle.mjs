@@ -6,7 +6,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 
 /**
- * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[], filenames?: string[], library?: string[], naming?: string[], powerbi?: string[] }} HelperNeeds
+ * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[], filenames?: string[], library?: string[], naming?: string[], powerbi?: string[], structure?: string[], changes?: string[] }} HelperNeeds
  */
 
 /** @type {Record<string, string>} */
@@ -28,10 +28,15 @@ const SOURCES = {
 
   // Reading what a Power BI report depends on, so the guard stops guessing.
   powerbi: './src/powerbi.js',
+
+  // The folder structure the model invents, held to a small one.
+  structure: './src/structure.js',
+  // Turning a reviewed plan into calls SharePoint will accept.
+  changes: './src/changes.js',
 };
 
-/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments' | 'filenames' | 'library' | 'naming' | 'powerbi'>} */
-const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments', 'filenames', 'library', 'naming', 'powerbi'];
+/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments' | 'filenames' | 'library' | 'naming' | 'powerbi' | 'structure' | 'changes'>} */
+const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments', 'filenames', 'library', 'naming', 'powerbi', 'structure', 'changes'];
 
 
 /**

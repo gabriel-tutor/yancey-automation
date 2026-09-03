@@ -41,10 +41,26 @@ describe('tree-shaken Code node helpers', () => {
     const needs = manifest[nodeKey] ?? {};
     expect(source.length).toBeGreaterThan(0);
     expect(/^\s*(import|export)\s/m.test(source)).toBe(false);
-    for (const name of [...(needs.lib ?? []), ...(needs.prompts ?? [])]) {
-      const kind = evalIn(source, 'typeof ' + name);
-      expect(kind, nodeKey + ' -> ' + name).not.toBe('undefined');
+    // Every name the manifest asks for, from every module it can ask from. An
+    // earlier version checked two of them, so a helper that failed to survive
+    // tree-shaking from any other module was only found by running the workflow.
+    for (const asked of Object.values(needs)) {
+      for (const name of asked ?? []) {
+        const kind = evalIn(source, 'typeof ' + name);
+        expect(kind, nodeKey + ' -> ' + name).not.toBe('undefined');
+      }
     }
+  });
+
+  /**
+   * The naming prompt is 4.5KB and only `buildNamingRequest` reads it. It rode
+   * into the apply node as dead code until it was marked pure, which is the
+   * kind of thing nobody notices: the node worked, it was just carrying a
+   * prompt nowhere near it.
+   */
+  it('leaves the naming prompt out of the node that never builds a request', () => {
+    expect(helpersFor('wf-f/Apply Proposals')).not.toContain('You return the PARTS');
+    expect(helpersFor('wf-f/Compose Request')).toContain('You return the PARTS');
   });
 
   it('drops helpers a node does not use', () => {

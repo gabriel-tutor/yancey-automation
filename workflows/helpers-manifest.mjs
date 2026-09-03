@@ -41,5 +41,12 @@ export const HELPERS = {
   'wf-f/Pick What To Name': { naming: ['namingCandidates'], library: ['reportsIn'] },
   'wf-f/Read Contents': { unzip: ['officeText'] },
   'wf-f/Compose Request': { naming: ['buildNamingRequest'] },
-  'wf-f/Apply Proposals': { naming: ['applyProposals', 'applyApprovedPlan', 'approvedNotFound'], library: ['reportsIn'] },
+  // The whole of the apply side: what the model proposed, what a person
+  // approved, the structure it invented, and the calls all of that turns into.
+  'wf-f/Apply Proposals': {
+    naming: ['applyProposals', 'applyApprovedPlan', 'approvedNotFound'],
+    structure: ['planStructure', 'planFolderRenames'],
+    changes: ['plannedChanges', 'fileChangeUrl', 'folderCreateUrl', 'folderChangeUrl'],
+    library: ['reportsIn', 'folderOf'],
+  },
 };
