@@ -616,6 +616,7 @@
   "beyondModel": 0,
   "heldBack": [],
   "unreachableFolders": [],
+  "impossibleSwaps": [],
   "newFolders": [],
   "folderRenames": [],
   "folderRefusals": [
@@ -1754,9 +1755,14 @@
       gaps.push({
         what: h.folder + ' was held back',
         why: 'It needs ' + h.actions + ' changes together — the folder and every document that ' +
-          'goes into it — and the per-run cap left no room for all of them. A folder created ' +
-          'without its documents is a state nobody chose, so none of it was sent.'
+          'goes into it — and ' + (h.neverFits
+            ? 'that is more than the per-run cap allows at all, so no run will ever get to it until the cap is raised.'
+            : 'the cap left no room for all of them this time. The next run will take it.') +
+          ' A folder created without its documents is a state nobody chose, so none of it was sent.'
       });
+    });
+    (data.impossibleSwaps || []).forEach(function (x) {
+      gaps.push({ what: x.file + ' could not be moved', why: x.because });
     });
     (data.unreachableFolders || []).forEach(function (f) {
       gaps.push({

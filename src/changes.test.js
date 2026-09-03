@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   fileChangeUrl,
   fittingActions,
+  orderChanges,
   folderChangeUrl,
   folderCreateUrl,
   foldersNeeded,
@@ -333,6 +334,47 @@ describe('a change that cannot land', () => {
     expect(rows[0]?.placement).toBe('settled');
   });
 
+  /**
+   * The folder being occupied is a reason to leave the document where it is,
+   * not a reason to keep calling it something wrong. Cancelling both threw away
+   * a good name and, worse, took the proposal off the waiting list — the same
+   * shape as the bug where a pinned plan discarded what it had not approved.
+   */
+  it('cancels only the move when only the folder is the problem', () => {
+    const rows = [
+      row({
+        current: 'Messy.xlsx',
+        path: LIB + '/One/Messy.xlsx',
+        proposed: 'SCE_Plan_2026-01-01_Draft_v0.1.xlsx',
+        placement: 'move',
+        destination: DASH + '/Messy.xlsx',
+      }),
+    ];
+    refuse(rows, [{ name: 'x', path: DASH + '/SCE_Plan_2026-01-01_Draft_v0.1.xlsx' }]);
+    expect(rows[0]?.proposed, 'the name was never the problem').toBe('SCE_Plan_2026-01-01_Draft_v0.1.xlsx');
+    expect(rows[0]?.placement).toBe('settled');
+    expect(rows[0]?.moveRefused).toContain('already sits');
+    expect(rows[0]?.blocked, 'a rename that will happen is not a blocked document').toBeFalsy();
+  });
+
+  it('cancels the name too when it collides where the document already is', () => {
+    const rows = [
+      row({
+        current: 'Messy.xlsx',
+        path: LIB + '/One/Messy.xlsx',
+        proposed: 'SCE_Plan_2026-01-01_Draft_v0.1.xlsx',
+        placement: 'move',
+        destination: DASH + '/Messy.xlsx',
+      }),
+    ];
+    refuse(rows, [
+      { name: 'x', path: DASH + '/SCE_Plan_2026-01-01_Draft_v0.1.xlsx' },
+      { name: 'y', path: LIB + '/One/SCE_Plan_2026-01-01_Draft_v0.1.xlsx' },
+    ]);
+    expect(rows[0]?.proposed).toBe('');
+    expect(rows[0]?.blocked).toContain('already sits');
+  });
+
   it('leaves a change that lands somewhere free entirely alone', () => {
     const rows = [
       row({
@@ -390,7 +432,7 @@ describe('what fits in one run', () => {
     ];
     const { send, held } = fittingActions(actions, 2);
     expect(send.map((a) => a.newName)).toEqual(['c.xlsx']);
-    expect(held).toEqual([{ group: 'f:Dashboards', actions: 3 }]);
+    expect(held).toEqual([{ group: 'f:Dashboards', actions: 3, neverFits: true }]);
   });
 
   it('sends whole groups in order while they fit', () => {
@@ -418,6 +460,21 @@ describe('what fits in one run', () => {
 
   it('sends nothing when there is no room at all', () => {
     expect(fittingActions([action('a', 'x')], 0).send).toEqual([]);
+  });
+
+  /**
+   * A group larger than the whole cap is held on every run for ever, and "no
+   * room left this run" reads as though the next run will get to it. It will
+   * not, and only a person raising the cap changes that.
+   */
+  it('says when a group can never fit rather than only that it did not', () => {
+    const big = [action('f:Big', '1'), action('f:Big', '2'), action('f:Big', '3')];
+    expect(fittingActions(big, 2).held).toEqual([{ group: 'f:Big', actions: 3, neverFits: true }]);
+  });
+
+  it('says only that there was no room when there would have been on its own', () => {
+    const actions = [action('one:a', '1'), action('one:b', '2'), action('one:c', '3')];
+    expect(fittingActions(actions, 2).held).toEqual([{ group: 'one:c', actions: 1, neverFits: false }]);
   });
 });
 
@@ -472,6 +529,25 @@ describe('the folders the documents need', () => {
     expect(foldersNeeded(rows, [LIB, REFS]).create).toEqual([REFS + '/Dashboards']);
   });
 
+  /**
+   * Reporting a destination as unreachable and then sending the move anyway is
+   * the worst of both: the page says it cannot be done and the call goes out to
+   * fail. `foldersNeeded` names them; cancelling them is the other half.
+   */
+  it('cancels a move to a destination it said it could not reach', () => {
+    const rows = [heading('/sites/Elsewhere/Shared Documents/Somewhere')];
+    foldersNeeded(rows, [LIB, REFS], { cancelUnreachable: true });
+    expect(rows[0]?.placement).toBe('settled');
+    expect(rows[0]?.destination).toBe('');
+    expect(rows[0]?.moveRefused).toContain('is a folder this run knows exists');
+  });
+
+  it('leaves the rows alone unless it is asked to cancel', () => {
+    const rows = [heading('/sites/Elsewhere/Shared Documents/Somewhere')];
+    foldersNeeded(rows, [LIB, REFS]);
+    expect(rows[0]?.placement).toBe('move');
+  });
+
   it('says nothing about a document that is staying where it is', () => {
     expect(foldersNeeded([row({})], [LIB]).create).toEqual([]);
   });
@@ -493,5 +569,51 @@ describe('a file name that is not plain ASCII', () => {
 
   it('still escapes what would break the request around them', () => {
     expect(odataQueryValue("/a/Café & Bar's 50%.docx")).toBe("/a/Café%20%26%20Bar''s%2050%25.docx");
+  });
+});
+
+/**
+ * A document can move onto a path another document is vacating. That is legal
+ * and useful — but only in that order, and `flags=0` means getting it wrong is
+ * a failed call rather than a lost file.
+ */
+describe('changes that depend on each other', () => {
+  const A = LIB + '/a.xlsx';
+  const B = LIB + '/b.xlsx';
+  const C = LIB + '/c.xlsx';
+  /** @param {string} from @param {string} to */
+  const change = (from, to) => ({ kind: 'rename', oldName: '', newName: '', oldPath: from, newPath: to, why: [] });
+
+  it('sends the document that is leaving before the one taking its place', () => {
+    const { ordered } = orderChanges([change(A, B), change(B, C)]);
+    expect(ordered.map((c) => c.oldPath)).toEqual([B, A]);
+  });
+
+  it('follows a chain of any length', () => {
+    const D = LIB + '/d.xlsx';
+    const { ordered } = orderChanges([change(A, B), change(B, C), change(C, D)]);
+    expect(ordered.map((c) => c.oldPath)).toEqual([C, B, A]);
+  });
+
+  it('keeps a chain together, so a cap cannot cut it in half', () => {
+    const { ordered } = orderChanges([change(A, B), change(B, C)]);
+    expect(ordered[0]?.chain).toBe(ordered[1]?.chain);
+  });
+
+  it('gives independent changes chains of their own', () => {
+    const { ordered } = orderChanges([change(A, LIB + '/free1.xlsx'), change(B, LIB + '/free2.xlsx')]);
+    expect(ordered[0]?.chain).not.toBe(ordered[1]?.chain);
+  });
+
+  /** Two documents trading places needs a third name, and nothing here has one. */
+  it('refuses a swap, which cannot be done without somewhere to put one first', () => {
+    const { ordered, impossible } = orderChanges([change(A, B), change(B, A)]);
+    expect(ordered).toEqual([]);
+    expect(impossible.map((c) => c.oldPath).sort()).toEqual([A, B]);
+  });
+
+  it('is not confused by case', () => {
+    const { ordered } = orderChanges([change(A, LIB + '/B.XLSX'), change(B, C)]);
+    expect(ordered.map((c) => c.oldPath)).toEqual([B, A]);
   });
 });

@@ -20,7 +20,14 @@
  * the worst a bad answer can do is leave a file alone.
  */
 import { STATUSES, diagnose, proposeFileName } from './filenames.js';
-import { folderOf, isReport, reportReading, splitExtension } from './library.js';
+import { folderOf, isReport, pathKey, reportReading, splitExtension } from './library.js';
+
+/**
+ * A line of the approved plan. It approves a name, a destination, or both — and
+ * `from` is matched the way SharePoint matches, without case.
+ *
+ * @typedef {{ from: string, to?: string, into?: string }} ApprovedLine
+ */
 
 /** Yancey's guide: v0.x is a working draft, v1.0 is the first approved one. */
 const FIRST_APPROVED = { major: 1, minor: 0 };
@@ -468,12 +475,18 @@ function refuseCollisions(rows) {
  * line with neither its file nor its result is genuinely adrift, and that is
  * the one worth a person's attention.
  *
+ * A line approving both a name and a destination can be half carried out: the
+ * rename lands and the move does not. That line is neither done nor adrift, and
+ * calling it done was how an approved move stopped happening on every later run.
+ *
  * @param {any[]} rows
- * @param {Array<{ from: string, to?: string, into?: string }>} approved
+ * @param {ApprovedLine[]} approved
  * @returns {{ done: string[], missing: string[] }}
  */
 export function approvedProgress(rows, approved) {
-  const present = new Set((Array.isArray(rows) ? rows : []).map((r) => String(r.current)));
+  const byName = new Map(
+    (Array.isArray(rows) ? rows : []).map((r) => [pathKey(r.current), r]),
+  );
   /** @type {string[]} */
   const done = [];
   /** @type {string[]} */
@@ -482,24 +495,20 @@ export function approvedProgress(rows, approved) {
   for (const line of Array.isArray(approved) ? approved : []) {
     if (!line || !line.from) continue;
     // Still in the library under its old name: this run will deal with it.
-    if (present.has(String(line.from))) continue;
-    if (line.to && present.has(String(line.to))) done.push(String(line.to));
-    else missing.push(String(line.from));
+    if (byName.has(pathKey(line.from))) continue;
+
+    const renamed = line.to ? byName.get(pathKey(line.to)) : undefined;
+    if (!renamed) {
+      missing.push(String(line.from));
+      continue;
+    }
+    // The name landed. The destination, if the line named one, may not have —
+    // and this run is about to see to that, so it is neither done nor adrift.
+    if (line.into && pathKey(folderOf(String(renamed.path || ''))) !== pathKey(line.into)) continue;
+    done.push(String(line.to));
   }
 
   return { done, missing };
-}
-
-/**
- * Approved lines that are genuinely adrift — neither the file nor the result is
- * in the library. See {@link approvedProgress} for why the distinction matters.
- *
- * @param {any[]} rows
- * @param {Array<{ from: string, to?: string, into?: string }>} approved
- * @returns {string[]}
- */
-export function approvedNotFound(rows, approved) {
-  return approvedProgress(rows, approved).missing;
 }
 
 /**
@@ -544,20 +553,24 @@ export function approvedNotFound(rows, approved) {
  * exactly as pinning the name did.
  *
  * @param {any[]} rows plan rows, already carrying this run's proposals
- * @param {Array<{ from: string, to?: string, into?: string }>} approved the signed-off plan
+ * @param {ApprovedLine[]} approved the signed-off plan
  * @param {{ reports?: any[], includeReports?: boolean, revert?: boolean, dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  */
 export function applyApprovedPlan(rows, approved, options) {
   const opts = options || {};
   const allowed = new Set(namingCandidates(rows, opts.reports || [], opts).map((r) => String(r.current)));
-  const byFrom = new Map(
-    (Array.isArray(approved) ? approved : [])
-      .filter((a) => a && a.from && (a.to || a.into))
-      .map((a) => [String(a.from), a]),
-  );
+  const byFrom = new Map();
+  for (const line of Array.isArray(approved) ? approved : []) {
+    if (!line || !line.from || !(line.to || line.into)) continue;
+    byFrom.set(pathKey(line.from), line);
+    // A line is also reachable under the name it asked for, so one whose rename
+    // has already landed can still carry out the destination it approved. Keyed
+    // second, so a line still waiting on its rename wins the name it starts from.
+    if (line.to && !byFrom.has(pathKey(line.to))) byFrom.set(pathKey(line.to), line);
+  }
 
   for (const row of rows) {
-    const line = byFrom.get(String(row.current));
+    const line = byFrom.get(pathKey(row.current));
     const to = line ? String(line.to || '') : '';
 
     // A destination is approved on its own terms. A line may carry one without

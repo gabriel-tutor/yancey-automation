@@ -373,14 +373,21 @@ describe('WF-F Apply Proposals node body', () => {
       proposals: setup.proposals || [],
       folders: setup.folderProposals || [],
     });
+    const folders = setup.folders || [LIB, KAREN, REFS];
     return run(organiserApplyCode, {
       $: nodeRef({
         Config: setup.cfg || config({}),
+        'List The Library': {
+          value: [
+            ...files.map((/** @type {any} */ f) => ({ FileLeafRef: f.name, FileRef: f.path })),
+            ...folders.map((/** @type {any} */ p) => ({ FileLeafRef: p, FileRef: p, FSObjType: '1' })),
+          ],
+        },
         'Review The Library': {
           library: 'Documents',
           site: SITE,
           files,
-          folders: setup.folders || [LIB, KAREN, REFS],
+          folders,
           rows,
           dependencies: { byFile: {}, unreadable: [], read: [] },
         },
@@ -560,6 +567,12 @@ describe('WF-F structure, through the node that applies it', () => {
           maxNamed: 30,
           ...over,
         },
+        'List The Library': {
+          value: [
+            ...FILES.map((f) => ({ FileLeafRef: f.name, FileRef: f.path })),
+            ...[LIB, REFS].map((p) => ({ FileLeafRef: p, FileRef: p, FSObjType: '1' })),
+          ],
+        },
         'Review The Library': {
           library: 'Documents',
           site: SITE,
@@ -687,6 +700,12 @@ describe('WF-F Apply Proposals on a library it has not seen before', () => {
           maxNamed: 30,
           ...(setup.cfg || {}),
         },
+        'List The Library': {
+          value: [
+            ...(setup.files || []).map((/** @type {any} */ f) => ({ FileLeafRef: f.name, FileRef: f.path })),
+            ...(setup.folders || [LIB, REFS]).map((/** @type {any} */ p) => ({ FileLeafRef: p, FileRef: p, FSObjType: '1' })),
+          ],
+        },
         'Review The Library': {
           library: 'Documents',
           site: SITE,
@@ -751,7 +770,7 @@ describe('WF-F Apply Proposals on a library it has not seen before', () => {
     const out = apply({ rows, files, cfg: { maxChangesPerRun: 2 } });
     expect(out.length).toBe(1);
     expect(out[0].nothingToDo).toBe(true);
-    expect(out[0].heldBack).toEqual([{ group: 'folder:' + DASH, actions: 4 }]);
+    expect(out[0].heldBack).toEqual([{ group: 'folder:' + DASH, actions: 4, neverFits: true }]);
   });
 
   it('sends the folder and every document in it when they fit', () => {
@@ -796,6 +815,40 @@ describe('WF-F Apply Proposals on a library it has not seen before', () => {
   });
 
   /**
+   * A folder two levels deeper than anything that exists needs both levels, and
+   * they belong to the same decision as the document that goes in them. Grouped
+   * separately, the cap could create the outer folder and move the document
+   * while skipping the inner one — a move into a folder that is not there.
+   */
+  it('keeps a whole chain of new folders together with what goes in them', () => {
+    const deep = REFS + '/Dashboards/Weekly';
+    const rows = ['a.xlsx', 'b.xlsx'].map((n) =>
+      doc(n, REFS, { placement: 'move', destination: deep + '/' + n }),
+    );
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = apply({ rows, files, cfg: { maxChangesPerRun: 12 } });
+    expect(out.map((/** @type {any} */ o) => o.newPath)).toEqual([
+      REFS + '/Dashboards',
+      deep,
+      deep + '/a.xlsx',
+      deep + '/b.xlsx',
+    ]);
+    expect(new Set(out.map((/** @type {any} */ o) => o.summary && 1)).size).toBe(1);
+  });
+
+  it('holds the whole chain back rather than part of it', () => {
+    const deep = REFS + '/Dashboards/Weekly';
+    const rows = ['a.xlsx', 'b.xlsx'].map((n) =>
+      doc(n, REFS, { placement: 'move', destination: deep + '/' + n }),
+    );
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = apply({ rows, files, cfg: { maxChangesPerRun: 3 } });
+    expect(out.length).toBe(1);
+    expect(out[0].nothingToDo).toBe(true);
+    expect(out[0].heldBack).toEqual([{ group: 'folder:' + REFS + '/Dashboards', actions: 4, neverFits: true }]);
+  });
+
+  /**
    * A run can propose creating "Dashboards" and renaming another folder to
    * "Dashboards" in the same breath. Whichever ran second would fail, and the
    * rename check only knew about folders that existed before the run started.
@@ -811,7 +864,13 @@ describe('WF-F Apply Proposals on a library it has not seen before', () => {
           host: HOST, sitePath: SITE, applyRenames: false, applyMoves: true,
           applyStructure: true, applyFolderRenames: true, maxChangesPerRun: 12,
           maxNewFolders: 6, minPerFolder: 2, renameReports: true, approvedPlan: [],
-          assumeStatus: 'Draft', maxNamed: 30,
+          assumeStatus: 'Draft', maxNamed: 30, maxItems: 5000,
+        },
+        'List The Library': {
+          value: [
+            ...files.map((/** @type {any} */ f) => ({ FileLeafRef: f.name, FileRef: f.path })),
+            ...[LIB, REFS, REFS + '/Old'].map((p) => ({ FileLeafRef: p, FileRef: p, FSObjType: '1' })),
+          ],
         },
         'Review The Library': {
           library: 'Documents', site: SITE, files, folders: [LIB, REFS, REFS + '/Old'],
@@ -852,6 +911,47 @@ describe('WF-F Apply Proposals on a library it has not seen before', () => {
     const rows = ['a.xlsx', 'b.xlsx'].map((n) => doc(n, REFS));
     const files = rows.map((r) => ({ name: r.current, path: r.path }));
     expect(apply({ rows, files, cfg: { maxNamed: 30 } })[0].beyondModel).toBe(0);
+  });
+
+  /**
+   * Two documents each taking the other's place cannot be done at all without
+   * somewhere to put one of them first, and there is no such place here.
+   */
+  it('refuses a swap rather than sending half of it', () => {
+    const rows = [
+      doc('a.xlsx', LIB, { placement: 'move', destination: REFS + '/a.xlsx' }),
+      doc('a.xlsx', REFS, { placement: 'move', destination: LIB + '/a.xlsx' }),
+    ];
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = apply({ rows, files, cfg: { applyRenames: false } });
+    expect(out.length).toBe(1);
+    expect(out[0].nothingToDo).toBe(true);
+    expect(out[0].impossibleSwaps.length).toBe(2);
+    expect(out[0].impossibleSwaps[0].because).toContain('trade places');
+  });
+
+  /** But a document taking a place another is vacating is fine, in that order. */
+  it('sends the document that is leaving before the one taking its place', () => {
+    const rows = [
+      doc('a.xlsx', LIB, { placement: 'move', destination: REFS + '/a.xlsx' }),
+      doc('a.xlsx', REFS, { placement: 'move', destination: LIB + '/Task 2/a.xlsx' }),
+    ];
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = apply({ rows, files, folders: [LIB, REFS, LIB + '/Task 2'], cfg: { applyRenames: false } });
+    expect(out.map((/** @type {any} */ o) => o.oldPath)).toEqual([REFS + '/a.xlsx', LIB + '/a.xlsx']);
+  });
+
+  /**
+   * Naming a destination as unreachable and then sending the move anyway is the
+   * worst of both: the page says it cannot be done and the call goes out to fail.
+   */
+  it('cancels a move to a destination it cannot reach', () => {
+    const rows = [doc('a.xlsx', REFS, { placement: 'move', destination: '/sites/Elsewhere/Somewhere/a.xlsx' })];
+    const out = apply({ rows, files: [{ name: 'a.xlsx', path: REFS + '/a.xlsx' }] });
+    expect(out.length).toBe(1);
+    expect(out[0].nothingToDo).toBe(true);
+    expect(out[0].unreachableFolders).toEqual(['/sites/Elsewhere/Somewhere']);
+    expect(out[0].rows[0].placement).toBe('settled');
   });
 
   it('refuses a move onto a document already sitting there', () => {

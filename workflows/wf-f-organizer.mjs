@@ -466,11 +466,14 @@ if (incoming.error) {
 
 // A library bigger than one page of list items is a library this run has only
 // partly seen, and a name checked for collisions against half a library is not
-// checked at all. Every list item became either a file or a folder, so the two
-// counted together are exactly what the listing returned - and if that reached
-// the ceiling it was asked for, there may be more behind it. Nothing is applied
-// while this is true.
-const listed = files.length + (review.folders || []).length;
+// checked at all. Nothing is applied while this is true.
+//
+// The count comes from the listing itself rather than from the files and
+// folders it was sorted into: an item with no name is dropped on the way, and
+// counting after that could report a full page as a short one and apply changes
+// against a library it had not finished reading.
+const listing = $('List The Library').first().json || {};
+const listed = Array.isArray(listing.value) ? listing.value.length : files.length + (review.folders || []).length;
 const truncated = listed >= (Number(cfg.maxItems) || 200);
 
 const reports = reportsIn(files);
@@ -550,9 +553,11 @@ refuseImpossible(rows, files);
 // A folder holding a document certainly exists whether or not the listing named
 // it, so the parents of every file count as known.
 const knownFolders = (review.folders || []).concat(files.map(function (f) {
-  return String(f.path || '').slice(0, String(f.path || '').lastIndexOf('/'));
+  return folderOf(String(f.path || ''));
 }));
-const needed = foldersNeeded(rows, knownFolders);
+// cancelUnreachable is the other half of naming an unreachable destination:
+// reporting it and then sending the move anyway would be the worst of both.
+const needed = foldersNeeded(rows, knownFolders, { cancelUnreachable: true });
 const wantedFolders = needed.create;
 
 // The folders about to be created count as existing for the rename check, or a
@@ -602,6 +607,7 @@ const summary = {
   beyondModel: beyondModel,
   newFolders: wantedFolders,
   unreachableFolders: needed.unreachable,
+  impossibleSwaps: [],
   folderRefusals: structure.refused,
   folderRenames: folderPlan.renames,
   folderRenameRefusals: folderPlan.refused,
@@ -636,12 +642,22 @@ const wouldLandNowhere = function (folder) {
   return notBeingCreated.some(function (f) { return folder === f || folder.indexOf(f + '/') === 0; });
 };
 
-const fileChanges = plannedChanges(rows, {
+// A document may move onto a path another is vacating - legal, and useful when
+// two documents swap folders - but only in that order, and flags=0 means the
+// wrong order is a failed call. orderChanges sequences them and refuses a ring,
+// which is two documents trading places and cannot be done without somewhere to
+// put one of them first.
+const wanted = plannedChanges(rows, {
   applyRenames: cfg.applyRenames === true,
   applyMoves: cfg.applyMoves === true,
   requireApproval: pinned
 }).filter(function (c) {
-  return !wouldLandNowhere(c.newPath.slice(0, c.newPath.lastIndexOf('/')));
+  return !wouldLandNowhere(folderOf(c.newPath));
+});
+const sequenced = orderChanges(wanted);
+const fileChanges = sequenced.ordered;
+summary.impossibleSwaps = sequenced.impossible.map(function (c) {
+  return { file: c.oldName, because: 'it would trade places with another document, and neither can move until one of them has somewhere else to be' };
 });
 
 // Order is the whole of the safety here. Folders are created before anything
@@ -652,10 +668,21 @@ const fileChanges = plannedChanges(rows, {
 // Every action carries the group it belongs to, because a folder and the
 // documents that go into it have to be applied together or not at all: a cap
 // that fell between them would create a folder and leave its documents outside.
+//
+// A whole chain counts as one group. Creating "Dashboards" and "Dashboards/
+// Weekly" and moving a document into the second is three actions and one
+// decision - grouped separately, the cap could take the outer folder and the
+// move and skip the inner one, which is a move into a folder that is not there.
+// newFolders is shallowest-first, so the first that owns a path is its root.
+const groupFor = function (folder) {
+  const owning = newFolders.filter(function (f) { return folder === f || folder.indexOf(f + '/') === 0; });
+  return owning.length > 0 ? 'folder:' + owning[0] : '';
+};
+
 const actions = [];
 for (const path of newFolders) {
   actions.push({
-    group: 'folder:' + path,
+    group: groupFor(path),
     kind: 'create folder',
     oldName: '',
     newName: path.slice(path.lastIndexOf('/') + 1),
@@ -666,10 +693,10 @@ for (const path of newFolders) {
   });
 }
 for (const c of fileChanges) {
-  const folder = c.newPath.slice(0, c.newPath.lastIndexOf('/'));
-  const into = newFolders.filter(function (f) { return folder === f || folder.indexOf(f + '/') === 0; });
+  // A chain of documents each taking the last one's place is one decision, so a
+  // cap cannot send the second half of it and none of the first.
   actions.push({
-    group: into.length > 0 ? 'folder:' + into[0] : 'file:' + c.oldPath,
+    group: groupFor(folderOf(c.newPath)) || 'chain:' + c.chain,
     kind: c.kind,
     oldName: c.oldName,
     newName: c.newName,
@@ -818,6 +845,7 @@ return [{ json: {
   beyondModel: r.beyondModel || 0,
   heldBack: r.heldBack || [],
   unreachableFolders: r.unreachableFolders || [],
+  impossibleSwaps: r.impossibleSwaps || [],
   readContents: r.readContents,
   toRename: toRename,
   awaitingApproval: awaiting,

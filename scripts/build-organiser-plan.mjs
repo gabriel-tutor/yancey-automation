@@ -204,11 +204,24 @@ const data = {
   truncated: run.summary?.truncated === true,
   listed: Number(run.summary?.listed || 0),
   beyondModel: Number(run.summary?.beyondModel || 0),
-  heldBack: (run.summary?.heldBack || []).map((/** @type {any} */ h) => ({
-    folder: asFolderLabel(String(h.group || '').replace(/^folder:/, '')),
-    actions: Number(h.actions || 0),
-  })),
+  // A group is a folder and everything that goes into it, a folder rename, or a
+  // single document — the key says which, and the page should say it in the
+  // words a person uses rather than the ones the run used.
+  heldBack: (run.summary?.heldBack || []).map((/** @type {any} */ h) => {
+    const key = String(h.group || '');
+    const at = key.indexOf(':');
+    const kind = at === -1 ? '' : key.slice(0, at);
+    const path = at === -1 ? key : key.slice(at + 1);
+    return {
+      folder: kind === 'file' ? path.slice(path.lastIndexOf('/') + 1) : asFolderLabel(path),
+      actions: Number(h.actions || 0),
+    };
+  }),
   unreachableFolders: (run.summary?.unreachableFolders || []).map(asFolderLabel),
+  impossibleSwaps: (run.summary?.impossibleSwaps || []).map((/** @type {any} */ x) => ({
+    file: String(x.file || ''),
+    because: String(x.because || ''),
+  })),
   // What it came up with when asked to organise rather than to rename.
   newFolders: (run.summary?.newFolders || []).map(asFolderLabel),
   folderRenames: (run.summary?.folderRenames || []).map((/** @type {any} */ r) => ({

@@ -33,7 +33,7 @@
  * choice, and choosing belongs to a person — the same standard the placing
  * rules already hold themselves to.
  */
-import { folderOf, isReport } from './library.js';
+import { folderOf, isReport, pathKey } from './library.js';
 
 /** A numbered stage folder records how far work has got. Nothing here touches one. */
 const STAGE_FOLDER = /^\d+[.)]?\s+\S/;
@@ -71,20 +71,21 @@ export function safeFolderName(name) {
  * The folders that are there, looked up without case and answered with the
  * spelling SharePoint actually holds.
  *
- * SharePoint compares paths without regard to case, so `Dashboards` and
- * `dashboards` are one folder. Treating them as two proposes a folder that
- * already exists and fails the create on a collision it could have seen. And
- * once matched, the answer has to be the path that exists rather than the one
- * suggested, or everything downstream carries a path the library does not have.
+ * Answers with the folder's own spelling, or an empty string when there is no
+ * such folder — matched the way SharePoint matches, which is without case.
+ * Treating `Dashboards` and `dashboards` as two folders proposes one that
+ * already exists; and once matched, the answer has to be the path the library
+ * holds rather than the one suggested, or everything downstream carries a path
+ * that is not there.
  *
  * @param {string[] | undefined} folders
  * @returns {(path: string) => string}
  */
-function folderLookup(folders) {
+function existingFolder(folders) {
   /** @type {Map<string, string>} */
-  const byLower = new Map();
-  for (const folder of folders || []) byLower.set(String(folder).toLowerCase(), String(folder));
-  return (path) => byLower.get(String(path).toLowerCase()) || '';
+  const byKey = new Map();
+  for (const folder of folders || []) byKey.set(pathKey(folder), String(folder));
+  return (path) => byKey.get(pathKey(path)) || '';
 }
 
 /** @param {string} path @returns {string} */
@@ -128,14 +129,14 @@ function isOrInStageFolder(folderPath) {
  */
 export function planStructure(rows, options) {
   const opts = options || {};
-  const asItIs = folderLookup(opts.folders);
+  const asItIs = existingFolder(opts.folders);
   const maxNew = opts.maxNewFolders === undefined ? 6 : Number(opts.maxNewFolders);
   const minPer = opts.minPerFolder === undefined ? 2 : Number(opts.minPerFolder);
 
   // A folder cannot take the name of a file already sitting beside it, and
   // SharePoint does not care which case that file's name is in.
   const takenByAFile = new Set(
-    (opts.files || []).map((f) => (folderOf(String(f.path)) + '/' + String(f.name)).toLowerCase()),
+    (opts.files || []).map((f) => pathKey(folderOf(String(f.path)) + '/' + String(f.name))),
   );
 
   /** @type {Array<{ file: string, folder: string, because: string }>} */
@@ -146,6 +147,13 @@ export function planStructure(rows, options) {
   for (const row of Array.isArray(rows) ? rows : []) {
     const suggestion = String(row.folderSuggestion || '').trim();
     if (!suggestion) continue;
+
+    // A pinned destination is a person's decision and the model does not get to
+    // overrule it. This runs after the approved plan is read, so without the
+    // check the suggestion would land on top of it — and `destination` would
+    // then disagree with where the call actually goes, which is a review page
+    // describing a move that is not the move being made.
+    if (row.approvedInto) continue;
 
     const path = String(row.path || '');
     const parent = folderOf(path);
@@ -183,7 +191,7 @@ export function planStructure(rows, options) {
     const here = asItIs(beside);
     const elsewhere = (opts.folders || [])
       .map(String)
-      .filter((f) => f.toLowerCase() !== beside.toLowerCase() && lastSegment(f).toLowerCase() === suggestion.toLowerCase());
+      .filter((f) => pathKey(f) !== pathKey(beside) && pathKey(lastSegment(f)) === pathKey(suggestion));
     let target = here || beside;
     if (!here) {
       if (elsewhere.length === 1) {
@@ -207,7 +215,7 @@ export function planStructure(rows, options) {
       });
       continue;
     }
-    if (takenByAFile.has(target.toLowerCase())) {
+    if (takenByAFile.has(pathKey(target))) {
       refused.push({
         file: row.current,
         folder: suggestion,
@@ -286,7 +294,7 @@ export function planStructure(rows, options) {
  */
 export function planFolderRenames(proposals, options) {
   const opts = options || {};
-  const asItIs = folderLookup(opts.folders);
+  const asItIs = existingFolder(opts.folders);
   const files = opts.files || [];
   /** @type {Array<{ from: string, to: string, why: string }>} */
   const renames = [];
@@ -307,7 +315,7 @@ export function planFolderRenames(proposals, options) {
     }
 
     const current = lastSegment(from);
-    if (current.toLowerCase() === to.toLowerCase()) continue;
+    if (pathKey(current) === pathKey(to)) continue;
     if (STAGE_FOLDER.test(current)) {
       refused.push({
         folder: current,

@@ -187,6 +187,35 @@ describe('inventing a folder structure', () => {
     expect(plan.refused[0]?.because).toContain('asserts how far the work has got');
   });
 
+  /**
+   * A pinned destination is a person's decision, and the model does not get to
+   * overrule it. The order matters: the approved plan is read first and the
+   * structure second, so without this the model's suggestion would land on top
+   * of the plan's — and `row.destination` would then disagree with where the
+   * call actually goes, which is a review page describing a move that is not
+   * the move being made.
+   */
+  it('leaves alone a document whose destination a person already approved', () => {
+    const rows = [
+      { ...at('a.xlsx', REFS, 'Dashboards'), approvedInto: LIB + '/Task 2', placement: 'move', destination: LIB + '/Task 2/a.xlsx' },
+      at('b.xlsx', REFS, 'Dashboards'),
+      at('c.xlsx', REFS, 'Dashboards'),
+    ];
+    const plan = planStructure(rows, { folders: [LIB, REFS, LIB + '/Task 2'] });
+    expect(rows[0]?.destination, 'still the approved one').toBe(LIB + '/Task 2/a.xlsx');
+    expect(plan.create).toEqual([REFS + '/Dashboards']);
+    expect(rows[1]?.destination).toBe(REFS + '/Dashboards/b.xlsx');
+  });
+
+  it('does not count an approved document towards a folder it is not going in', () => {
+    const rows = [
+      { ...at('a.xlsx', REFS, 'Dashboards'), approvedInto: LIB + '/Task 2', placement: 'move', destination: LIB + '/Task 2/a.xlsx' },
+      at('b.xlsx', REFS, 'Dashboards'),
+    ];
+    const plan = planStructure(rows, { folders: [LIB, REFS, LIB + '/Task 2'] });
+    expect(plan.create, 'only b wanted Dashboards, and one document is not a folder').toEqual([]);
+  });
+
   it('ignores a document the model made no suggestion for', () => {
     const rows = [at('a.xlsx', REFS)];
     const plan = planStructure(rows, { folders: [REFS] });

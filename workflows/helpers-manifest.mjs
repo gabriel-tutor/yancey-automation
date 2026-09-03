@@ -48,6 +48,7 @@ export const HELPERS = {
     structure: ['planStructure', 'planFolderRenames'],
     changes: [
       'plannedChanges',
+      'orderChanges',
       'refuseImpossible',
       'fittingActions',
       'foldersNeeded',

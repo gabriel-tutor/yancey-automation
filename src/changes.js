@@ -18,7 +18,7 @@
  * configured maxUrlLength"* at about 385 characters. The paths now travel in
  * the query string behind OData parameter aliases, where the ceiling is 2048.
  */
-import { folderOf } from './library.js';
+import { folderOf, pathKey } from './library.js';
 
 /** Characters that would end the value early, or mean something else, inside a query string. */
 /** @type {Array<[string, string]>} */
@@ -141,6 +141,50 @@ export function landingPath(row) {
 const MAX_PATH = 400;
 
 /**
+ * Why a row's landing cannot happen, or an empty string when it can.
+ *
+ * @param {any} row
+ * @param {any[]} rows every row, because two of them can want one path
+ * @param {Array<{ name: string, path: string }>} files what the library holds
+ * @param {number} limit
+ * @returns {string}
+ */
+function whyItCannotLand(row, rows, files, limit) {
+  /** @param {any} r */
+  const changing = (r) => landingPath(r) !== String(r.path || '');
+  if (!changing(row)) return '';
+
+  const landing = landingPath(row);
+  const key = pathKey(landing);
+
+  const together = rows.filter((r) => r && r.path && changing(r) && pathKey(landingPath(r)) === key);
+  if (together.length > 1) {
+    return (
+      together.length +
+      ' documents would land on the same path — ' +
+      landing +
+      ', so they need names or folders that tell them apart'
+    );
+  }
+
+  // A document that is itself moving away frees the path it is on.
+  const leaving = new Set(rows.filter((r) => r && r.path && changing(r)).map((r) => pathKey(r.path)));
+  const occupied = (Array.isArray(files) ? files : []).some(
+    (f) => pathKey((f && f.path) || '') === key && !leaving.has(key),
+  );
+  if (occupied && key !== pathKey(row.path)) {
+    return 'something already sits at ' + landing + ', and nothing here overwrites what is there';
+  }
+
+  if (landing.length > limit) {
+    return (
+      'that path is ' + landing.length + ' characters, longer than the ' + limit + ' characters SharePoint accepts'
+    );
+  }
+  return '';
+}
+
+/**
  * Hold back a change that cannot land, before it is ever sent.
  *
  * `flags=0` means SharePoint refuses rather than overwrites, so a collision
@@ -154,11 +198,16 @@ const MAX_PATH = 400;
  *   something is already sitting there     unless that something is moving away
  *   the path is longer than 400 characters SharePoint's own ceiling
  *
+ * It gives up the folder before it gives up the name. A document whose
+ * *destination* is taken is a document that stays where it is — it is not a
+ * document that should keep being called something wrong, and cancelling both
+ * also took the proposal off the waiting list, which is how a good name
+ * disappears without anybody deciding to drop it. Only when the name still
+ * collides where the document already sits does the name go too.
+ *
  * This reads the proposal as proposed, not as gated by the switches, because
  * the review page is what a person signs off and a plan with a collision inside
- * it is a plan to fix rather than one to half-apply. A refusal cancels the whole
- * change — name and folder together — because the safe state for a document
- * nobody can place is the one it is already in.
+ * it is a plan to fix rather than one to half-apply.
  *
  * @param {any[]} rows plan rows
  * @param {Array<{ name: string, path: string }>} files what the library holds
@@ -170,73 +219,121 @@ export function refuseImpossible(rows, files, options) {
   const limit = Number(opts.maxPathLength) > 0 ? Number(opts.maxPathLength) : MAX_PATH;
   const list = Array.isArray(rows) ? rows : [];
 
-  /** @param {any} row @returns {boolean} */
-  const changing = (row) => landingPath(row) !== String(row.path || '');
+  // First give up the folder. Every reason is worked out against the state as
+  // it stands before any of them is acted on, because two documents wanting one
+  // path is a symmetric problem: cancelling the first would leave the second
+  // looking fine, and letting it through would be this picking a winner between
+  // two documents, which is exactly the choice that belongs to a person.
+  const folderTrouble = list
+    .filter((row) => row && row.path && row.placement === 'move' && row.destination)
+    .map((row) => ({ row, why: whyItCannotLand(row, list, files, limit) }))
+    .filter((found) => found.why);
 
-  // Where each moving document would land, keyed without case because
-  // SharePoint compares paths without case.
-  /** @type {Map<string, any[]>} */
-  const claims = new Map();
-  for (const row of list) {
-    if (!row || !row.path || !changing(row)) continue;
-    const key = landingPath(row).toLowerCase();
-    const group = claims.get(key) || [];
-    group.push(row);
-    claims.set(key, group);
+  for (const { row, why } of folderTrouble) {
+    row.placement = 'settled';
+    row.destination = '';
+    row.moveRefused = why;
+    row.placementWhy = 'stays where it is — ' + why;
+    // A surviving name is not a blocked document; it is a rename that will
+    // happen and a move that will not, and saying otherwise takes a good
+    // proposal off the waiting list.
+    if (!row.proposed) row.blocked = 'stays where it is — ' + why;
   }
 
-  // A document that is itself moving away frees the path it is on.
-  const leaving = new Set(
-    list.filter((row) => row && row.path && changing(row)).map((row) => String(row.path).toLowerCase()),
-  );
-  const occupied = new Set(
-    (Array.isArray(files) ? files : [])
-      .map((f) => String((f && f.path) || '').toLowerCase())
-      .filter((path) => path && !leaving.has(path)),
-  );
+  // Then the name, if it still cannot land where the document already is.
+  const nameTrouble = list
+    .filter((row) => row && row.path)
+    .map((row) => ({ row, why: whyItCannotLand(row, list, files, limit) }))
+    .filter((found) => found.why);
 
-  /** @param {any} row @returns {(because: string) => void} */
-  const hold = (row) => (/** @type {string} */ because) => {
+  for (const { row, why } of nameTrouble) {
     row.proposed = '';
     row.approved = false;
     row.awaiting = '';
     row.placement = 'settled';
     row.destination = '';
-    row.blocked = because;
-  };
-
-  for (const row of list) {
-    if (!row || !row.path || !changing(row)) continue;
-    const landing = landingPath(row);
-    const key = landing.toLowerCase();
-    const refuse = hold(row);
-
-    const together = claims.get(key) || [];
-    if (together.length > 1) {
-      refuse(
-        together.length +
-          ' documents would land on the same path — ' +
-          landing +
-          ', so they need names or folders that tell them apart',
-      );
-      continue;
-    }
-    if (occupied.has(key) && key !== String(row.path).toLowerCase()) {
-      refuse('something already sits at ' + landing + ', and nothing here overwrites what is there');
-      continue;
-    }
-    if (landing.length > limit) {
-      refuse(
-        'that path is ' +
-          landing.length +
-          ' characters, longer than the ' +
-          limit +
-          ' characters SharePoint accepts',
-      );
-    }
+    row.blocked = why;
   }
 
   return list;
+}
+
+/**
+ * Changes in an order SharePoint can actually carry out, and the ones it cannot.
+ *
+ * A document may move onto a path another document is vacating — that is legal
+ * and useful, and `refuseImpossible` allows it — but only in that order, and
+ * `flags=0` means getting the order wrong is a failed call. Each change can be
+ * waiting on at most one other, because at most one document can be leaving any
+ * given path, so the dependencies form chains and rings rather than a tangle.
+ *
+ * A ring is two documents trading places, which cannot be done at all without
+ * somewhere to put one of them first. There is no such place here, so both are
+ * refused rather than half-attempted.
+ *
+ * Every change in a chain carries the same `chain`, because a cap that fell
+ * between them would send the second half of a swap and none of the first.
+ *
+ * @param {any[]} changes
+ * @returns {{ ordered: any[], impossible: any[] }}
+ */
+export function orderChanges(changes) {
+  const list = Array.isArray(changes) ? changes : [];
+  /** @type {Map<string, any>} the change vacating each path */
+  const vacating = new Map();
+  for (const change of list) vacating.set(pathKey(change.oldPath), change);
+
+  /** @param {any} change @returns {any} the change that has to run first */
+  const waitingOn = (change) => {
+    const before = vacating.get(pathKey(change.newPath));
+    return before && before !== change ? before : null;
+  };
+
+  /** @type {any[]} */
+  const ordered = [];
+  /** @type {any[]} */
+  const impossible = [];
+  const placed = new Set();
+  let chain = 0;
+
+  for (const change of list) {
+    if (placed.has(change)) continue;
+
+    // Walk the chain from here to whatever it ends on, or back to itself.
+    /** @type {any[]} */
+    const run = [];
+    const seen = new Set();
+    let at = change;
+    let ring = false;
+    while (at && !placed.has(at)) {
+      if (seen.has(at)) {
+        ring = true;
+        break;
+      }
+      seen.add(at);
+      run.push(at);
+      at = waitingOn(at);
+    }
+
+    if (ring) {
+      for (const member of run) {
+        placed.add(member);
+        impossible.push(member);
+      }
+      continue;
+    }
+
+    // `run` reads from the change that must go last to the one that goes first.
+    chain += 1;
+    for (let i = run.length - 1; i >= 0; i -= 1) {
+      const member = run[i];
+      placed.add(member);
+      member.chain = chain;
+      ordered.push(member);
+    }
+  }
+
+  return { ordered, impossible };
 }
 
 /**
@@ -249,9 +346,14 @@ export function refuseImpossible(rows, files, options) {
  * low still makes progress on everything else, and what was held back is
  * reported rather than silently dropped.
  *
+ * A group larger than the whole cap is held on every run for ever, and "no room
+ * left this run" reads as though the next run will get to it. It will not, and
+ * only a person raising the cap changes that — so `neverFits` says which kind
+ * of held-back this is.
+ *
  * @param {Array<{ group?: string }>} actions each carrying the group it belongs to
  * @param {number} cap
- * @returns {{ send: any[], held: Array<{ group: string, actions: number }> }}
+ * @returns {{ send: any[], held: Array<{ group: string, actions: number, neverFits: boolean }> }}
  */
 export function fittingActions(actions, cap) {
   const limit = Number(cap) > 0 ? Number(cap) : 0;
@@ -271,7 +373,7 @@ export function fittingActions(actions, cap) {
 
   /** @type {any[]} */
   const send = [];
-  /** @type {Array<{ group: string, actions: number }>} */
+  /** @type {Array<{ group: string, actions: number, neverFits: boolean }>} */
   const held = [];
   let used = 0;
 
@@ -281,7 +383,7 @@ export function fittingActions(actions, cap) {
       for (const action of group) send.push(action);
       used += group.length;
     } else {
-      held.push({ group: key, actions: group.length });
+      held.push({ group: key, actions: group.length, neverFits: group.length > limit });
     }
   }
 
@@ -372,16 +474,19 @@ export function plannedChanges(rows, options) {
  * Pass the parent folder of every file alongside the folder list, because a
  * folder holding a document certainly exists whether or not it was listed.
  *
+ * A destination it cannot reach is a move that cannot happen, so
+ * `cancelUnreachable` cancels it here rather than leaving the page to say it is
+ * impossible while the call goes out anyway.
+ *
  * @param {any[]} rows plan rows
  * @param {string[]} existing folders known to be there
+ * @param {{ cancelUnreachable?: boolean }} [options]
  * @returns {{ create: string[], unreachable: string[] }}
  */
-export function foldersNeeded(rows, existing) {
+export function foldersNeeded(rows, existing, options) {
   // SharePoint compares paths without case, so a folder that differs only in
   // case is the same folder, and creating it again would fail.
-  const there = new Set(
-    (Array.isArray(existing) ? existing : []).map((f) => String(f).toLowerCase()),
-  );
+  const there = new Set((Array.isArray(existing) ? existing : []).map(pathKey));
   /** @type {string[]} */
   const create = [];
   /** @type {string[]} */
@@ -391,25 +496,36 @@ export function foldersNeeded(rows, existing) {
   for (const row of Array.isArray(rows) ? rows : []) {
     if (!row || row.placement !== 'move' || !row.destination) continue;
     const into = landingFolder(row);
-    if (!into || there.has(into.toLowerCase()) || planned.has(into.toLowerCase())) continue;
+    if (!into || there.has(pathKey(into)) || planned.has(pathKey(into))) continue;
 
     // Walk up to the first level that is already there, collecting what is not.
     /** @type {string[]} */
     const missing = [];
     let at = into;
-    while (at && at.indexOf('/') !== -1 && !there.has(at.toLowerCase()) && !planned.has(at.toLowerCase())) {
+    while (at && at.indexOf('/') !== -1 && !there.has(pathKey(at)) && !planned.has(pathKey(at))) {
       missing.unshift(at);
       at = folderOf(at);
     }
 
-    if (!at || (!there.has(at.toLowerCase()) && !planned.has(at.toLowerCase()))) {
+    if (!at || (!there.has(pathKey(at)) && !planned.has(pathKey(at)))) {
       unreachable.push(into);
+      if (options && options.cancelUnreachable) {
+        const why =
+          'nothing above ' +
+          into +
+          ' is a folder this run knows exists, and walking further up would leave the library altogether';
+        row.placement = 'settled';
+        row.destination = '';
+        row.moveRefused = why;
+        row.placementWhy = 'stays where it is — ' + why;
+        if (!row.proposed) row.blocked = 'stays where it is — ' + why;
+      }
       continue;
     }
 
     for (const path of missing) {
       create.push(path);
-      planned.add(path.toLowerCase());
+      planned.add(pathKey(path));
     }
   }
 

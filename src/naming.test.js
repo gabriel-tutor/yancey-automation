@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyApprovedPlan, applyProposals, approvedNotFound, approvedProgress, buildNamingRequest, namingCandidates } from './naming.js';
+import { applyApprovedPlan, applyProposals, approvedProgress, buildNamingRequest, namingCandidates } from './naming.js';
 import { planRenames } from './filenames.js';
 import { reportsIn } from './library.js';
 
@@ -511,6 +511,52 @@ describe('applying a plan that was actually approved', () => {
     expect(rows[0]?.blocked).toBe('');
   });
 
+  it('applies a line whose capitalisation differs from the library', () => {
+    const rows = freshRows();
+    applyApprovedPlan(rows, [{ from: 'metrics .XLSX', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx' }], { reports: REPORTS });
+    const row = rows.find((r) => r.current === 'Metrics .xlsx');
+    expect(row?.proposed).toBe('NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx');
+  });
+
+  /**
+   * A line approving both a name and a destination can be half carried out: the
+   * rename lands, the move does not. Matching only on `from` then found nothing
+   * — the file is under its new name — so the approved move could never happen
+   * on any later run, and the line reported itself as already done.
+   */
+  it('finishes a line whose rename landed but whose move did not', () => {
+    const here = ROOT + '/Task 2';
+    const done = [{ name: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', path: here + '/SCE_Plan_2026-04-15_Draft_v0.1.docx', modified: '2026-04-15T10:00:00Z' }];
+    /** @type {any[]} */
+    const rows = planRenames(done, {});
+    applyApprovedPlan(
+      rows,
+      [{ from: 'Plan FINAL v2 copy.docx', to: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', into: ROOT + '/Filed' }],
+      { reports: [] },
+    );
+    expect(rows[0]?.approvedInto, 'the destination is still owed').toBe(ROOT + '/Filed');
+    expect(rows[0]?.placement).toBe('move');
+    expect(rows[0]?.destination).toBe(ROOT + '/Filed/SCE_Plan_2026-04-15_Draft_v0.1.docx');
+  });
+
+  it('calls that line unfinished rather than already carried out', () => {
+    const here = ROOT + '/Task 2';
+    const rows = [{ current: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', path: here + '/SCE_Plan_2026-04-15_Draft_v0.1.docx' }];
+    const { done, missing } = approvedProgress(rows, [
+      { from: 'Plan FINAL v2 copy.docx', to: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', into: ROOT + '/Filed' },
+    ]);
+    expect(done, 'the move has not happened').toEqual([]);
+    expect(missing, 'and it is not adrift either — the file is right there').toEqual([]);
+  });
+
+  it('calls it done once the document is in the folder too', () => {
+    const rows = [{ current: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', path: ROOT + '/Filed/SCE_Plan_2026-04-15_Draft_v0.1.docx' }];
+    const { done } = approvedProgress(rows, [
+      { from: 'Plan FINAL v2 copy.docx', to: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', into: ROOT + '/Filed' },
+    ]);
+    expect(done).toEqual(['SCE_Plan_2026-04-15_Draft_v0.1.docx']);
+  });
+
   it('still refuses a guarded file, even when it is on the list', () => {
     const rows = freshRows();
     applyApprovedPlan(rows, [{ from: 'NiSource Metric Dashboard.pbix', to: 'NIPSCO_Metric-Dashboard_2026-01-01_Final_v1.0.pbix' }], { reports: REPORTS });
@@ -613,10 +659,10 @@ describe('putting a name back', () => {
 describe('an approved line whose file is not there', () => {
   it('is reported rather than silently skipped', () => {
     const rows = freshRows();
-    const missing = approvedNotFound(rows, [
+    const missing = approvedProgress(rows, [
       { from: 'Metrics .xlsx', to: 'NIPSCO_Idling-Cost_2026-03-02_Review_v0.4.xlsx' },
       { from: 'Gone.xlsx', to: 'NIPSCO_Gone_2026-03-02_Review_v0.4.xlsx' },
-    ]);
+    ]).missing;
     expect(missing).toEqual(['Gone.xlsx']);
   });
 
@@ -630,12 +676,12 @@ describe('an approved line whose file is not there', () => {
     const rows = planRenames([{ name: real, path: ROOT + '/Task 2/' + real, modified: '2026-04-15T10:00:00Z' }], {});
     const retyped = 'Screenshot 2025-04-06 at 6.34.18 PM.png';
     expect(retyped).not.toBe(real);
-    expect(approvedNotFound(rows, [{ from: retyped, to: 'NIPSCO_Chart_2026-01-01_Draft_v0.1.png' }])).toEqual([retyped]);
-    expect(approvedNotFound(rows, [{ from: real, to: 'NIPSCO_Chart_2026-01-01_Draft_v0.1.png' }])).toEqual([]);
+    expect(approvedProgress(rows, [{ from: retyped, to: 'NIPSCO_Chart_2026-01-01_Draft_v0.1.png' }]).missing).toEqual([retyped]);
+    expect(approvedProgress(rows, [{ from: real, to: 'NIPSCO_Chart_2026-01-01_Draft_v0.1.png' }]).missing).toEqual([]);
   });
 
   it('says nothing when every approved line is present', () => {
-    expect(approvedNotFound(freshRows(), [{ from: 'Metrics .xlsx', to: 'x' }])).toEqual([]);
+    expect(approvedProgress(freshRows(), [{ from: 'Metrics .xlsx', to: 'x' }]).missing).toEqual([]);
   });
 });
 
@@ -681,12 +727,24 @@ describe('where an approved line has got to', () => {
     ]);
   });
 
-  it('is what approvedNotFound reports', () => {
+  /**
+   * SharePoint matches names without case, so a plan line typed with different
+   * capitalisation names the same document. Matching it case-sensitively made
+   * the line silently do nothing and then report the file as adrift.
+   */
+  it('matches a line whose capitalisation differs from the library', () => {
+    expect(approvedProgress(inLibrary, [{ from: 'STILL MESSY.XLSX', to: 'x.xlsx' }])).toEqual({
+      done: [],
+      missing: [],
+    });
+  });
+
+  it('reports only the adrift line out of a mixed plan', () => {
     expect(
-      approvedNotFound(inLibrary, [
+      approvedProgress(inLibrary, [
         { from: 'Plan FINAL v2 copy.docx', to: 'SCE_Plan_2026-04-15_Draft_v0.1.docx' },
         { from: 'Vanished.xlsx', to: 'SCE_Gone_2026-04-15_Draft_v0.1.xlsx' },
-      ]),
+      ]).missing,
     ).toEqual(['Vanished.xlsx']);
   });
 });

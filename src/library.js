@@ -438,3 +438,19 @@ export function libraryRootOf(paths) {
 
   return shared.join('/');
 }
+
+/**
+ * A path or name reduced to what SharePoint actually compares.
+ *
+ * SharePoint matches paths and file names without regard to case, so
+ * `Dashboards/Report.xlsx` and `dashboards/report.xlsx` are one document. Every
+ * comparison of one path against another has to go through here, or the next
+ * one written case-sensitively becomes a folder created twice, a collision
+ * missed, or an approved line that silently matches nothing.
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+export function pathKey(path) {
+  return String(path || '').toLowerCase();
+}

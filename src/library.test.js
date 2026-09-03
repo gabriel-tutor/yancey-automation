@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categorise, categoriseAll, folderOf, isReport, libraryRootOf, planPlacements, reportReading, reportsIn, splitExtension, stageFolderOf } from './library.js';
+import { categorise, categoriseAll, folderOf, isReport, libraryRootOf, pathKey, planPlacements, reportReading, reportsIn, splitExtension, stageFolderOf } from './library.js';
 
 /**
  * The Task Management library in miniature, keeping the shapes that matter:
@@ -364,5 +364,26 @@ describe('where a library starts', () => {
   it('answers nothing for nothing', () => {
     expect(libraryRootOf([])).toBe('');
     expect(libraryRootOf(['', ''])).toBe('');
+  });
+});
+
+/**
+ * SharePoint matches paths and names without regard to case. Every comparison
+ * of one against another goes through here so the next one written
+ * case-sensitively is a change to one function rather than a bug in five.
+ */
+describe('what SharePoint actually compares', () => {
+  it('treats a path that differs only in case as the same path', () => {
+    expect(pathKey('/a/Dashboards/Report.xlsx')).toBe(pathKey('/A/dashboards/REPORT.XLSX'));
+  });
+
+  it('still tells different paths apart', () => {
+    expect(pathKey('/a/one.xlsx')).not.toBe(pathKey('/a/two.xlsx'));
+  });
+
+  it('takes nothing without complaining', () => {
+    expect(pathKey('')).toBe('');
+    // @ts-expect-error - a node body can and does hand it an absent value
+    expect(pathKey(undefined)).toBe('');
   });
 });
