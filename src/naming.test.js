@@ -399,6 +399,53 @@ describe('applying a plan that was actually approved', () => {
 /**
  * The check that would have caught a half-applied plan the first time.
  */
+/**
+ * Undo. The record of what changed is only an undo list if it can actually be
+ * run, and it cannot be run through the ordinary path: every name it restores
+ * is one the convention rejects, which is why it was changed in the first
+ * place.
+ */
+describe('putting a name back', () => {
+  const CURRENT = [{ name: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', path: ROOT + '/Task 2/SCE_Plan_2026-04-15_Draft_v0.1.docx', modified: '2026-04-15T10:00:00Z' }];
+
+  it('refuses to restore a messy name through the ordinary path', () => {
+    const rows = planRenames(CURRENT, {});
+    applyApprovedPlan(rows, [{ from: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', to: 'Plan FINAL v2 copy.docx' }], { reports: [] });
+    expect(rows[0]?.proposed).toBe('');
+    expect(rows[0]?.blocked).toContain('does not satisfy the convention');
+  });
+
+  it('restores it when the caller says this is a revert', () => {
+    const rows = planRenames(CURRENT, {});
+    applyApprovedPlan(rows, [{ from: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', to: 'Plan FINAL v2 copy.docx' }], { reports: [], revert: true });
+    expect(rows[0]?.proposed).toBe('Plan FINAL v2 copy.docx');
+  });
+
+  it('still refuses to change the extension, revert or not', () => {
+    const rows = planRenames(CURRENT, {});
+    applyApprovedPlan(rows, [{ from: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', to: 'Plan FINAL v2 copy.pdf' }], { reports: [], revert: true });
+    expect(rows[0]?.proposed).toBe('');
+    expect(rows[0]?.blocked).toContain('file extension');
+  });
+
+  it('still refuses two files landing on one name, revert or not', () => {
+    const two = [
+      { name: 'A_2026-04-15_Draft_v0.1.png', path: ROOT + '/T/A_2026-04-15_Draft_v0.1.png', modified: '2026-04-15T10:00:00Z' },
+      { name: 'B_2026-04-15_Draft_v0.1.png', path: ROOT + '/T/B_2026-04-15_Draft_v0.1.png', modified: '2026-04-15T10:00:00Z' },
+    ];
+    const rows = planRenames(two, {});
+    applyApprovedPlan(
+      rows,
+      [
+        { from: 'A_2026-04-15_Draft_v0.1.png', to: 'Screenshot.png' },
+        { from: 'B_2026-04-15_Draft_v0.1.png', to: 'Screenshot.png' },
+      ],
+      { reports: [], revert: true },
+    );
+    for (const row of rows) expect(row.proposed).toBe('');
+  });
+});
+
 describe('an approved line whose file is not there', () => {
   it('is reported rather than silently skipped', () => {
     const rows = freshRows();

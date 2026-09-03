@@ -63,6 +63,13 @@ const CONFIG = {
   // and undo by hand.
   maxChangesPerRun: 5,
 
+  // Undo. With this on, approvedPlan is read as "put these names back": the
+  // convention is not applied to the name being restored, because that name is
+  // the messy one and refusing it is the reason it was changed. Every other
+  // guard still holds. It is how a rehearsal is undone, and how a change is
+  // reversed without touching SharePoint by hand.
+  revert: false,
+
   // Whether the Power BI reports themselves are renamed.
   //
   // The reports in this library read nothing from it - that is established by
@@ -427,12 +434,13 @@ if (approved.length > 0) {
   applyApprovedPlan(rows, approved, {
     reports: reports,
     dependencies: dependencies,
-    includeReports: cfg.renameReports === true
+    includeReports: cfg.renameReports === true,
+    revert: cfg.revert === true
   });
   // A line whose file is not there any more is skipped, which is right - but
   // silently skipping it is how a plan half-applies without anyone noticing.
   approvedMissing = approvedNotFound(rows, approved);
-  planNote = 'applying the approved plan of ' + approved.length + ', not this run';
+  planNote = (cfg.revert === true ? 'REVERTING the approved plan of ' : 'applying the approved plan of ') + approved.length + ', not this run';
   if (approvedMissing.length > 0) {
     planNote += ' - ' + approvedMissing.length + ' approved file(s) are no longer in the library under that name';
   }

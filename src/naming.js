@@ -390,9 +390,14 @@ export function approvedNotFound(rows, approved) {
  * the file must still exist, still be un-guarded, keep its extension, satisfy
  * the convention, and not collide.
  *
+ * `revert` is the one exception, and it is narrow: putting a name *back* is not
+ * a naming decision, so the convention does not apply to the name being
+ * restored. It could not, since that name is the messy one — refusing it is the
+ * reason it was being changed. Everything else still holds.
+ *
  * @param {any[]} rows plan rows, already carrying this run's proposals
  * @param {Array<{ from: string, to: string }>} approved the signed-off plan
- * @param {{ reports?: any[], includeReports?: boolean, dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
+ * @param {{ reports?: any[], includeReports?: boolean, revert?: boolean, dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  */
 export function applyApprovedPlan(rows, approved, options) {
   const opts = options || {};
@@ -436,11 +441,18 @@ export function applyApprovedPlan(rows, approved, options) {
       continue;
     }
 
-    const problems = diagnose(to);
-    if (problems.length > 0) {
-      row.blocked = 'the approved name does not satisfy the convention — ' + problems[0];
-      row.proposed = '';
-      continue;
+    // Putting a name back is not a naming decision, so the convention does not
+    // apply to it. Without this an undo cannot run at all: the name being
+    // restored is the messy one, and refusing it is the whole reason it was
+    // being changed. Every other guard still holds — the file must be there,
+    // keep its extension, and not collide.
+    if (!opts.revert) {
+      const problems = diagnose(to);
+      if (problems.length > 0) {
+        row.blocked = 'the approved name does not satisfy the convention — ' + problems[0];
+        row.proposed = '';
+        continue;
+      }
     }
 
     if (to === row.current) {

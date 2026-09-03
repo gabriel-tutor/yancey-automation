@@ -1898,6 +1898,29 @@ failed on it. `scripts/build-organiser-plan.mjs` now collapses chains and shows
 each file's *original* name beside its current one, which is what an undo list is
 for.
 
+### The demo, and why the nine are still unapplied — 2026-09-03
+
+A finished library demonstrates nothing: run WF-F against it and it reports
+`0 to rename`, which is the correct answer and a terrible thing to show
+somebody. So the nine names cleared by reading the Power BI reports are pinned
+in `config/approved-plan.json` and left **unapplied on purpose**. They are the
+live demo — real client files, renamed in front of him, after he has read the
+plan.
+
+`docs/demo-runbook.html` is the script for it, in four acts: review and change
+nothing, explain itself, he approves and it happens, and it is reversible. It is
+generated from the pinned plan by `scripts/build-demo-runbook.mjs`, because a
+runbook that quotes a rename the workflow is not about to perform is worse than
+no runbook — it gets read aloud.
+
+**Undo became executable.** A record of what changed is only an undo list if it
+can be run, and it could not be: every name it restores is one the convention
+rejects, which is exactly why it was changed. `revert` reads `approvedPlan` as
+*put these names back* and lifts the convention check on the restored name
+only. The file must still be there, keep its extension, and not collide. That is
+what makes a full rehearsal safe, and what covers the four Power BI reports if
+renaming them turns out to have broken a published refresh.
+
 **The page is no longer re-derived.** `scripts/build-organiser-plan.mjs` used to
 rerun `planRenames` locally to fill `docs/organiser-plan.html`, which was honest
 while the names came from rules. It is not any more, so the page is built from
