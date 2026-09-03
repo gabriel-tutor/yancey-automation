@@ -88,7 +88,13 @@ describe('the review page agrees with the run', () => {
     const plan = JSON.parse(
       readFileSync(new URL('../config/approved-plan.json', import.meta.url), 'utf8'),
     );
+    // Carried out means the library holds the approved name — not merely that
+    // this repository's record happens to mention it. Earlier runs applied
+    // names without every one reaching renames-applied.json, and a check that
+    // could only see the record would call those lines adrift when the file is
+    // sitting there under exactly the name that was approved.
     const landed = new Set([
+      ...run.rows.map((/** @type {any} */ r) => r.current),
       ...data.applied.map((/** @type {any} */ a) => a.to),
       ...data.rows.map((/** @type {any} */ r) => r.proposed).filter(Boolean),
     ]);
@@ -106,8 +112,11 @@ describe('the review page agrees with the run', () => {
   // no record: it is the undo list.
   it('only claims changes whose result is really in the library', () => {
     const present = new Set(run.rows.map((/** @type {any} */ r) => r.current));
+    // A folder is not a document, and the page now records folders it made.
+    const folders = new Set(data.folders.map((/** @type {any} */ f) => f.path));
     for (const applied of data.applied) {
-      expect(present.has(applied.to), applied.to + ' is claimed as changed but is not there').toBe(true);
+      const where = String(applied.kind).indexOf('folder') === -1 ? present : folders;
+      expect(where.has(applied.to), applied.to + ' is claimed as changed but is not there').toBe(true);
     }
   });
 

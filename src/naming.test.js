@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyApprovedPlan, applyProposals, approvedNotFound, buildNamingRequest, namingCandidates } from './naming.js';
+import { applyApprovedPlan, applyProposals, approvedNotFound, approvedProgress, buildNamingRequest, namingCandidates } from './naming.js';
 import { planRenames } from './filenames.js';
 import { reportsIn } from './library.js';
 
@@ -596,5 +596,57 @@ describe('an approved line whose file is not there', () => {
 
   it('says nothing when every approved line is present', () => {
     expect(approvedNotFound(freshRows(), [{ from: 'Metrics .xlsx', to: 'x' }])).toEqual([]);
+  });
+});
+
+/**
+ * Reporting "the file is not there" for a line that was carried out made every
+ * run after a successful one look like a failure. Run 10302 said nine approved
+ * files were "no longer in the library under that name" when all nine were
+ * sitting there under exactly the name that had been approved.
+ */
+describe('where an approved line has got to', () => {
+  const inLibrary = [
+    { current: 'SCE_Plan_2026-04-15_Draft_v0.1.docx' },
+    { current: 'Still Messy.xlsx' },
+  ];
+
+  it('calls a line whose result is in the library done, not missing', () => {
+    const { done, missing } = approvedProgress(inLibrary, [
+      { from: 'Plan FINAL v2 copy.docx', to: 'SCE_Plan_2026-04-15_Draft_v0.1.docx' },
+    ]);
+    expect(done).toEqual(['SCE_Plan_2026-04-15_Draft_v0.1.docx']);
+    expect(missing).toEqual([]);
+  });
+
+  it('calls a line with neither its file nor its result adrift', () => {
+    const { done, missing } = approvedProgress(inLibrary, [
+      { from: 'Vanished.xlsx', to: 'SCE_Gone_2026-04-15_Draft_v0.1.xlsx' },
+    ]);
+    expect(done).toEqual([]);
+    expect(missing).toEqual(['Vanished.xlsx']);
+  });
+
+  it('says nothing about a line this run is about to carry out', () => {
+    expect(approvedProgress(inLibrary, [{ from: 'Still Messy.xlsx', to: 'x.xlsx' }])).toEqual({
+      done: [],
+      missing: [],
+    });
+  });
+
+  /** A filing line has no result name to look for, so absence is absence. */
+  it('treats a filing line with no name as adrift when its file is gone', () => {
+    expect(approvedProgress(inLibrary, [{ from: 'Vanished.xlsx', into: '/a/b' }]).missing).toEqual([
+      'Vanished.xlsx',
+    ]);
+  });
+
+  it('is what approvedNotFound reports', () => {
+    expect(
+      approvedNotFound(inLibrary, [
+        { from: 'Plan FINAL v2 copy.docx', to: 'SCE_Plan_2026-04-15_Draft_v0.1.docx' },
+        { from: 'Vanished.xlsx', to: 'SCE_Gone_2026-04-15_Draft_v0.1.xlsx' },
+      ]),
+    ).toEqual(['Vanished.xlsx']);
   });
 });

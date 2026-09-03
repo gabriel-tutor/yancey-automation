@@ -123,29 +123,48 @@ const byName = new Map(rows.map((r) => [r.current, r]));
  * So chains are collapsed to what a person actually needs: what a file in the
  * library today was originally called, and when it last changed.
  */
+// Only a rename can be superseded. A move keeps the document's name, so its
+// `from` and `to` are the same string, and treating that as a chain would have
+// each move superseding itself and vanishing off the page. A created folder is
+// not a name change at all.
+const renames = history.filter((r) => (r.kind || 'rename') === 'rename');
 const supersededBy = new Map();
-for (const r of history) supersededBy.set(r.from, r);
+for (const r of renames) supersededBy.set(r.from, r);
 
 /** @param {{ from: string, to: string }} record @returns {string} */
 function originOf(record) {
   let from = record.from;
   const seen = new Set([from]);
   for (;;) {
-    const earlier = history.find((h) => h.to === from);
+    const earlier = renames.find((h) => h.to === from && h.from !== from);
     if (!earlier || seen.has(earlier.from)) return from;
     from = earlier.from;
     seen.add(from);
   }
 }
 
-// Only the last hop of each chain is shown, carrying the original name.
-const applied = history
-  .filter((r) => !supersededBy.has(r.to))
-  .map((r) => ({ ...r, from: originOf(r) }));
+/** @param {{ kind?: string }} r */
+const isFolder = (r) => String(r.kind || '').indexOf('folder') !== -1;
 
+// Only the last hop of each rename chain is shown, carrying the original name.
+// A move is not part of that chain even though it sits in one: it changed a
+// folder, not a name, and reporting it as "X became Y, in a new folder" would
+// claim a rename that this entry did not do. It keeps its own name on both
+// sides, which is what makes the page able to say what actually changed.
+const applied = history
+  .filter((r) => isFolder(r) || !supersededBy.has(r.to))
+  .map((r) => ({ ...r, from: (r.kind || 'rename') === 'rename' ? originOf(r) : r.from }));
+
+// A record claiming something the library does not hold would be worse than no
+// record: this is the undo list. Folders are checked against the folder tree and
+// documents against the documents, because they are different things.
+const folderPaths = new Set((run.folders || []).map(String));
 for (const r of applied) {
-  if (!byName.has(r.to)) {
-    console.error('the record claims a rename to ' + r.to + ', which is not in the library.');
+  const there = isFolder(r) ? folderPaths.has(String(r.to)) : byName.has(r.to);
+  if (!there) {
+    console.error(
+      'the record claims a ' + (r.kind || 'rename') + ' to ' + r.to + ', which is not in the library.',
+    );
     process.exit(2);
   }
 }
@@ -179,11 +198,13 @@ const data = {
   applied: applied.map((r) => ({
     kind: r.kind || 'rename',
     from: r.from,
-    to: r.to,
-    fromFolder: r.fromFolder || '',
+    to: isFolder(r) ? asFolderLabel(String(r.to)) : r.to,
+    fromFolder: r.fromFolder ? asFolderLabel(String(r.fromFolder)) : '',
     applied: r.applied,
     assumptions: r.assumptions,
-    folder: folderLabel(String((byName.get(r.to) || { path: '' }).path)),
+    folder: isFolder(r)
+      ? asFolderLabel(String(r.to))
+      : folderLabel(String((byName.get(r.to) || { path: '' }).path)),
   })),
   rows: rows.map((r) => ({
     current: r.current,

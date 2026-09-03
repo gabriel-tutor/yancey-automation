@@ -438,7 +438,7 @@ function refuseCollisions(rows) {
 }
 
 /**
- * Approved lines whose file is not in the library any more.
+ * Where each approved line has got to.
  *
  * This exists because a hand-typed plan silently half-applied. Three macOS
  * screenshots carry U+202F, a narrow no-break space, before "PM" — and a plan
@@ -446,19 +446,46 @@ function refuseCollisions(rows) {
  * the other three. Leaving a file alone is the right thing to do with a line
  * that does not match; doing it without saying so is not.
  *
- * A line can also go missing for an ordinary reason: it was applied already, or
- * somebody renamed the file by hand. Either way it is worth reporting.
+ * But "the file is not there" has two very different causes, and reporting them
+ * as one made every run after a successful one look like a failure: nine lines
+ * came back as *"no longer in the library under that name"* when all nine had
+ * simply been carried out, and the file was sitting there under exactly the
+ * name that was approved. A line whose RESULT is in the library is done. Only a
+ * line with neither its file nor its result is genuinely adrift, and that is
+ * the one worth a person's attention.
  *
  * @param {any[]} rows
- * @param {Array<{ from: string, to: string }>} approved
+ * @param {Array<{ from: string, to?: string, into?: string }>} approved
+ * @returns {{ done: string[], missing: string[] }}
+ */
+export function approvedProgress(rows, approved) {
+  const present = new Set((Array.isArray(rows) ? rows : []).map((r) => String(r.current)));
+  /** @type {string[]} */
+  const done = [];
+  /** @type {string[]} */
+  const missing = [];
+
+  for (const line of Array.isArray(approved) ? approved : []) {
+    if (!line || !line.from) continue;
+    // Still in the library under its old name: this run will deal with it.
+    if (present.has(String(line.from))) continue;
+    if (line.to && present.has(String(line.to))) done.push(String(line.to));
+    else missing.push(String(line.from));
+  }
+
+  return { done, missing };
+}
+
+/**
+ * Approved lines that are genuinely adrift — neither the file nor the result is
+ * in the library. See {@link approvedProgress} for why the distinction matters.
+ *
+ * @param {any[]} rows
+ * @param {Array<{ from: string, to?: string, into?: string }>} approved
  * @returns {string[]}
  */
 export function approvedNotFound(rows, approved) {
-  const present = new Set((Array.isArray(rows) ? rows : []).map((r) => String(r.current)));
-  return (Array.isArray(approved) ? approved : [])
-    .filter((a) => a && a.from)
-    .map((a) => String(a.from))
-    .filter((from) => !present.has(from));
+  return approvedProgress(rows, approved).missing;
 }
 
 /**

@@ -44,7 +44,7 @@ export const HELPERS = {
   // The whole of the apply side: what the model proposed, what a person
   // approved, the structure it invented, and the calls all of that turns into.
   'wf-f/Apply Proposals': {
-    naming: ['applyProposals', 'applyApprovedPlan', 'approvedNotFound'],
+    naming: ['applyProposals', 'applyApprovedPlan', 'approvedProgress'],
     structure: ['planStructure', 'planFolderRenames'],
     changes: ['plannedChanges', 'foldersNeeded', 'fileChangeUrl', 'folderCreateUrl', 'folderChangeUrl'],
     library: ['reportsIn', 'folderOf'],

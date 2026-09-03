@@ -81,10 +81,13 @@ export const CONFIG = {
   maxNewFolders: 6,
   minPerFolder: 2,
 
-  // Even switched on, one run touches at most this many files, renames and
-  // moves together. A first live run should be small enough to check by eye
-  // and undo by hand.
-  maxChangesPerRun: 5,
+  // Even switched on, one run touches at most this many things - folders
+  // created, files renamed and files moved, all counted together. It was five
+  // while this only renamed; a grouping is now one folder plus every document
+  // that goes in it, and a cap that cuts a folder off halfway leaves the
+  // library in a state nobody chose. Still small enough to check by eye and
+  // undo by hand.
+  maxChangesPerRun: 12,
 
   // Undo. With this on, approvedPlan is read as "put these names back": the
   // convention is not applied to the name being restored, because that name is
@@ -474,6 +477,7 @@ const approved = Array.isArray(cfg.approvedPlan) ? cfg.approvedPlan : [];
 const pinned = approved.length > 0;
 let planNote = 'this run proposed these names, and arming the switch applies them';
 let approvedMissing = [];
+let approvedDone = [];
 if (pinned) {
   applyApprovedPlan(rows, approved, {
     reports: reports,
@@ -483,8 +487,18 @@ if (pinned) {
   });
   // A line whose file is not there any more is skipped, which is right - but
   // silently skipping it is how a plan half-applies without anyone noticing.
-  approvedMissing = approvedNotFound(rows, approved);
+  //
+  // "Not there" has two causes and they are opposite conclusions. A line whose
+  // RESULT is in the library was carried out. Only a line with neither its file
+  // nor its result is adrift, and reporting the two as one made every run after
+  // a successful one read as a failure.
+  const progress = approvedProgress(rows, approved);
+  approvedMissing = progress.missing;
+  approvedDone = progress.done;
   planNote = (cfg.revert === true ? 'REVERTING the approved plan of ' : 'applying the approved plan of ') + approved.length + ' - everything else is proposed and waiting';
+  if (approvedDone.length > 0) {
+    planNote += ' - ' + approvedDone.length + ' already carried out on an earlier run';
+  }
   if (approvedMissing.length > 0) {
     planNote += ' - ' + approvedMissing.length + ' approved file(s) are no longer in the library under that name';
   }
@@ -507,7 +521,6 @@ const folderPlan = planFolderRenames(modelFolders, {
   files: files,
   includeReports: cfg.renameReports === true
 });
-
 
 // A folder the approved plan files something into, that is not there yet. A
 // person who approved the destination approved the folder with it - and without
@@ -542,6 +555,7 @@ const summary = {
   reportsUnreadable: dependencies.unreadable || [],
   approvedCount: approved.length,
   approvedMissing: approvedMissing,
+  approvedDone: approvedDone,
   pinned: pinned,
   planNote: planNote,
   modelNote: modelNote,
@@ -733,6 +747,7 @@ return [{ json: {
   reportsUnreadable: r.reportsUnreadable || [],
   approvedCount: r.approvedCount,
   approvedMissing: r.approvedMissing || [],
+  approvedDone: r.approvedDone || [],
   readContents: r.readContents,
   toRename: toRename,
   awaitingApproval: awaiting,
