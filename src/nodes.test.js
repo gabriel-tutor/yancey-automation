@@ -3,7 +3,8 @@ import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from '../workflows/helpers-manifest.mjs';
 import { VOICE_GUARD } from '../workflows/wf-b-draft.mjs';
 import { APPLY_CLASSIFICATION } from '../workflows/wf-a-classify.mjs';
-import { APPLY as ORGANISER_APPLY, REVIEW as ORGANISER_REVIEW } from '../workflows/wf-f-organizer.mjs';
+import { APPLY as ORGANISER_APPLY, CONFIG_MERGE, REVIEW as ORGANISER_REVIEW } from '../workflows/wf-f-organizer.mjs';
+import { ANSWER, DECIDE } from '../workflows/wf-g-selfserve.mjs';
 
 /**
  * The Code node *bodies* — not just the helper library they import.
@@ -1058,5 +1059,237 @@ describe('WF-F Review The Library node body', () => {
     const out = review([{ value: [file('a.xlsx')] }, {}]);
     expect(out.listed).toBe(1);
     expect(out.moreToRead).toBe(false);
+  });
+});
+
+/**
+ * The Config node, which is where a run stops being what it was built to be and
+ * becomes what it was asked to be.
+ *
+ * Everything downstream reads $('Config'), so this node is the single place a
+ * form submission can reach - and the single place a sandbox refuses one. Both
+ * halves are worth executing rather than assuming.
+ */
+const configMergeCode = await codeNode(HELPERS['wf-f/Config'], CONFIG_MERGE);
+
+describe('WF-F Config node body', () => {
+  const defaults = {
+    host: 'https://upperformpartners.sharepoint.com',
+    libraryTitle: 'Documents',
+    maxChangesPerRun: 12,
+    applyRenames: false,
+    applyMoves: false,
+    applyStructure: false,
+    applyFolderRenames: false,
+    applyProposed: false,
+    approvedPlan: [{ from: 'baked.xlsx', to: 'Baked.xlsx' }],
+    canArm: true,
+  };
+
+  /** @param {Record<string, any> | null} called @param {any} [base] */
+  const merged = (called, base) => {
+    const settings = base || defaults;
+    const globals = {
+      $: called === null
+        ? nodeRef({})
+        : nodeRef({ 'Called With': called }),
+      $input: { first: () => ({ json: settings }), all: () => [{ json: settings }] },
+    };
+    return run(configMergeCode, globals)[0].json;
+  };
+
+  it('leaves a manual run exactly as it was built', () => {
+    // No Called With node in the execution, which is what $() throwing means.
+    const cfg = merged(null);
+    expect(cfg.applyRenames).toBe(false);
+    expect(cfg.host).toBe(defaults.host);
+    expect(cfg.approvedPlan).toEqual(defaults.approvedPlan);
+    expect(cfg.overrideRefusals).toEqual([]);
+  });
+
+  it('treats a call with no overrides as a manual run', () => {
+    const cfg = merged({ overrides: '{}' });
+    expect(cfg.applyRenames).toBe(false);
+    expect(cfg.overrideRefusals).toEqual([]);
+  });
+
+  it('arms what the caller asked for when the deployment allows it', () => {
+    const cfg = merged({ overrides: JSON.stringify({ applyRenames: true, approvedPlan: [{ from: 'a.xlsx', to: 'B.xlsx' }] }) });
+    expect(cfg.applyRenames).toBe(true);
+    expect(cfg.approvedPlan).toEqual([{ from: 'a.xlsx', to: 'B.xlsx' }]);
+  });
+
+  it('refuses to arm on a copy that may not write, and reports why', () => {
+    const cfg = merged(
+      { overrides: JSON.stringify({ applyRenames: true, applyMoves: true }) },
+      Object.assign({}, defaults, { canArm: false })
+    );
+    expect(cfg.applyRenames).toBe(false);
+    expect(cfg.applyMoves).toBe(false);
+    expect(cfg.overrideRefusals).toHaveLength(2);
+    expect(cfg.overrideRefusals[0]).toContain('not allowed to change the library');
+  });
+
+  it('will not let a caller move the run to a different library', () => {
+    const cfg = merged({ overrides: JSON.stringify({ host: 'https://evil.example.com', libraryTitle: 'Other' }) });
+    expect(cfg.host).toBe(defaults.host);
+    expect(cfg.libraryTitle).toBe('Documents');
+    expect(cfg.overrideRefusals).toHaveLength(2);
+  });
+
+  it('survives overrides that are not JSON at all', () => {
+    const cfg = merged({ overrides: '{not json' });
+    expect(cfg.applyRenames).toBe(false);
+    expect(cfg.overrideRefusals[0]).toContain('not readable');
+  });
+});
+
+/**
+ * WF-G's two Code nodes — the whole of the web endpoint's logic.
+ *
+ * These matter more than most node bodies because what reaches them comes from
+ * a browser. The decisions are in src/selfserve.js and tested there; what is
+ * tested here is that a hostile or malformed request cannot talk this node into
+ * asking WF-F for something it should not.
+ */
+const decideCode = await codeNode(HELPERS['wf-g/Decide'], DECIDE);
+const answerCode = await codeNode(HELPERS['wf-g/Answer'], ANSWER);
+
+describe('WF-G web endpoint node bodies', () => {
+  const LIB = '/sites/TaskManagement/Shared Documents/Power BI Task Management';
+
+  /** @param {any} body */
+  const decide = (body) =>
+    run(decideCode, {
+      $input: { first: () => ({ json: { body } }), all: () => [{ json: { body } }] },
+    })[0].json;
+
+  it('treats an empty body as a look that changes nothing', () => {
+    const asked = decide({});
+    expect(asked.applying).toBe(false);
+    expect(JSON.parse(asked.overrides)).toEqual({
+      applyRenames: false,
+      applyMoves: false,
+      applyStructure: false,
+      applyFolderRenames: false,
+      applyProposed: false,
+      approvedPlan: [],
+    });
+  });
+
+  it('turns chosen changes into a plan that binds', () => {
+    const asked = decide({
+      chosen: [
+        { index: 1, label: '1. Rename', kind: 'rename', from: LIB + '/a.xlsx', to: 'B_2026-01-01_Draft_v0.1.xlsx' },
+      ],
+    });
+    expect(asked.applying).toBe(true);
+    const sent = JSON.parse(asked.overrides);
+    expect(sent.applyRenames).toBe(true);
+    expect(sent.applyProposed).toBe(false);
+    expect(sent.approvedPlan).toEqual([{ from: LIB + '/a.xlsx', to: 'B_2026-01-01_Draft_v0.1.xlsx' }]);
+  });
+
+  it('agrees to create a folder only when a chosen filing needs one', () => {
+    const needs = decide({ chosen: [{ index: 1, label: '1. File', kind: 'move', from: LIB + '/a.pdf', into: LIB + '/New', createsFolder: true }] });
+    expect(JSON.parse(needs.overrides).applyStructure).toBe(true);
+    const settled = decide({ chosen: [{ index: 1, label: '1. File', kind: 'move', from: LIB + '/a.pdf', into: LIB + '/Old', createsFolder: false }] });
+    expect(JSON.parse(settled.overrides).applyStructure).toBe(false);
+  });
+
+  it('cannot be talked into a setting that is not a change', () => {
+    // A caller sending switches directly gets none of them: only `chosen` is
+    // read, and the switches are derived from what it holds.
+    const asked = decide({ applyRenames: true, applyProposed: true, host: 'https://evil.example.com', chosen: [] });
+    const sent = JSON.parse(asked.overrides);
+    expect(sent.applyRenames).toBe(false);
+    expect(sent.applyProposed).toBe(false);
+    expect(sent.host).toBeUndefined();
+  });
+
+  it('counts entries it could not use rather than dropping them silently', () => {
+    const asked = decide({ chosen: [{ label: 'nonsense' }, { nothing: true }] });
+    expect(asked.chosenCount).toBe(0);
+    expect(asked.unusable).toBeGreaterThan(0);
+  });
+
+  it('survives a body that is not an object at all', () => {
+    expect(decide(null).applying).toBe(false);
+    expect(decide([]).applying).toBe(false);
+    expect(decide('nope').applying).toBe(false);
+  });
+
+  const review = {
+    library: 'Documents',
+    scanned: 27,
+    compliant: 25,
+    readContents: true,
+    truncated: false,
+    pages: 1,
+    canArm: true,
+    newFolders: [LIB + '/Reliability Reviews'],
+    toRename: [{ file: LIB + '/DIMP_Dashboard.xlsx', becomes: '2026-08-14_DIMP_Upperform_v0.1_Draft.xlsx' }],
+    toMove: [{ file: LIB + '/Loose.pdf', into: LIB + '/Reliability Reviews' }],
+    folderRefusals: [
+      { name: 'Dashboards', because: 'it sits inside a numbered stage folder' },
+      { name: 'Task 1', because: 'it sits inside a numbered stage folder' },
+      { name: 'Lonely', because: 'only one document was put in it' },
+    ],
+    applied: [],
+    failed: [],
+  };
+
+  /** @param {any} summary @param {any} [asked] */
+  const answer = (summary, asked) =>
+    run(answerCode, {
+      $: nodeRef({ Decide: asked || { applying: false, unusable: 0 } }),
+      $input: { first: () => ({ json: summary }), all: () => [{ json: summary }] },
+    })[0].json;
+
+  it('gives the page every change it could make', () => {
+    const said = answer(review);
+    expect(said.ok).toBe(true);
+    expect(said.offered).toHaveLength(3);
+    expect(said.offered.map((/** @type {any} */ o) => o.kind)).toEqual(['folder', 'rename', 'move']);
+  });
+
+  it('says one refusal once and names what it applies to', () => {
+    const said = answer(review);
+    expect(said.folderRefusals).toHaveLength(2);
+    expect(said.folderRefusals[0].names).toEqual(['Dashboards', 'Task 1']);
+    expect(said.folderRefusals[1].names).toEqual(['Lonely']);
+  });
+
+  it('passes on what the run could not see', () => {
+    const said = answer(Object.assign({}, review, { truncated: true, pages: 12, beyondModel: 8 }));
+    expect(said.truncated).toBe(true);
+    expect(said.pages).toBe(12);
+    expect(said.beyondModel).toBe(8);
+  });
+
+  it('passes on why a deployment did less than it was asked to', () => {
+    const said = answer(Object.assign({}, review, {
+      canArm: false,
+      overrideRefusals: ['applyRenames was asked for, but this copy is not allowed to change the library'],
+    }));
+    expect(said.canArm).toBe(false);
+    expect(said.overrideRefusals[0]).toContain('not allowed to change the library');
+  });
+
+  it('reports what an applying run actually did', () => {
+    const said = answer(
+      Object.assign({}, review, { applied: [{ what: 'renamed a.xlsx' }], failed: [{ what: 'b.xlsx', because: 'locked' }] }),
+      { applying: true, unusable: 0 }
+    );
+    expect(said.applying).toBe(true);
+    expect(said.applied).toHaveLength(1);
+    expect(said.failed).toHaveLength(1);
+  });
+
+  it('answers at all when the organiser returned nothing useful', () => {
+    const said = answer({});
+    expect(said.ok).toBe(true);
+    expect(said.scanned).toBe(0);
+    expect(said.offered).toEqual([]);
   });
 });

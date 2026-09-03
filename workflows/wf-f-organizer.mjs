@@ -102,6 +102,19 @@ export const CONFIG = {
   // rather than a default, and the plan note says out loud when it is armed.
   applyProposed: false,
 
+  // Whether this copy of the workflow is allowed to change the library at all.
+  //
+  // The switches above are what a run does; this is what a *deployment* may be
+  // talked into. It matters because the self-serve form arms the switches from
+  // a form submission, and because the dev sandbox reads the same library
+  // through the same credential as production - duplicating the workflow
+  // isolated the deployment and not the writes. Without this, a form pointed at
+  // the sandbox would be a form that changes the client's documents.
+  //
+  // Off everywhere but prod, and a run that was asked to apply while it is off
+  // says so rather than quietly reviewing.
+  canArm: TARGET.name === 'prod',
+
   // Freedom, a little bit. Yancey asked for a structure the agent invents
   // rather than one he specifies - "I wanted to give it freedom a little bit on
   // the folder structure" - and these are what stop that becoming twenty
@@ -833,6 +846,7 @@ return [{ json: Object.assign({}, summary, { applied: done, failedChanges: faile
  */
 export const SUMMARY = `
 const r = $input.first().json || {};
+const settings = $('Config').first().json || {};
 const applied = r.applied || [];
 const failed = r.failedChanges || [];
 
@@ -898,6 +912,11 @@ return [{ json: {
   unreachableFolders: r.unreachableFolders || [],
   impossibleSwaps: r.impossibleSwaps || [],
   readContents: r.readContents,
+  // Read from Config rather than carried through the apply node, because that
+  // is where the merge happens. A refusal nothing reports is a form that did
+  // less than it was asked to and never said why.
+  overrideRefusals: settings.overrideRefusals || [],
+  canArm: settings.canArm === true,
   toRename: toRename,
   awaitingApproval: awaiting,
   toMove: toMove,
@@ -917,6 +936,43 @@ return [{ json: {
   applied: applied,
   failed: failed
 }}];
+`;
+
+/**
+ * What this run was asked to do, which is not always what it was built to do.
+ *
+ * It sits here rather than inside Apply Proposals for a reason that is half
+ * design and half operations. The design half: the merge belongs next to the
+ * settings it merges, not buried three thousand lines into the node that
+ * carries them out. The operations half: deploying this workflow means
+ * reproducing whole node bodies by hand, and putting the merge in Apply meant
+ * retyping forty-nine kilobytes every time it changed. Here it is three, and
+ * Apply is left exactly as it was.
+ *
+ * Everything downstream already reads $('Config'), so nothing else moves. The
+ * Set node holding the built-in settings is now called Defaults, and this is
+ * what Config means.
+ */
+export const CONFIG_MERGE = `
+const defaults = $input.first().json || {};
+
+// A manual run has no 'Called With' node in its execution, and $() throws for a
+// node that did not run - which is exactly what a manual run looks like from
+// here, and exactly what "no overrides" means.
+let asked = {};
+try {
+  const called = $('Called With').first().json || {};
+  asked = called.overrides === undefined ? {} : called.overrides;
+} catch (err) {
+  asked = {};
+}
+
+// mergeOverrides is where the decisions are, and it is tested: only settings
+// that belong at the point of use, never the host or the library, the cap only
+// downwards, and no arming at all unless canArm says this copy may write.
+const merged = mergeOverrides(defaults, asked, {});
+
+return [{ json: Object.assign({}, merged.config, { overrideRefusals: merged.refused }) }];
 `;
 
 export const NAME = 'WF-F · Organise Documents' + SUFFIX;
@@ -1062,6 +1118,7 @@ export async function build() {
   const readCode = await codeNode(HELPERS['wf-f/Read Contents'], READ_CONTENTS);
   const composeCode = await codeNode(HELPERS['wf-f/Compose Request'], COMPOSE);
   const applyCode = await codeNode(HELPERS['wf-f/Apply Proposals'], APPLY);
+  const configCode = await codeNode(HELPERS['wf-f/Config'], CONFIG_MERGE);
 
   const sp = TARGET.sharepointCredential;
   const openai = (DEPLOY.credentials && DEPLOY.credentials.openai && DEPLOY.credentials.openai.name) || 'OpenAI account';
@@ -1071,19 +1128,52 @@ export async function build() {
 const run = trigger({
   type: 'n8n-nodes-base.manualTrigger',
   version: 1,
-  config: { name: 'Run', parameters: {}, position: [0, 0] },
+  config: { name: 'Run', parameters: {}, position: [-200, 0] },
   output: [{}]
 });
 
-const config = node({
+// The other way in. WF-G's form calls this workflow twice - once to see what a
+// run would do, once to carry out what a person ticked - and the difference
+// between the two is entirely in what arrives here.
+//
+// It carries one field, not nine, because the set of things a form may change
+// is a decision that belongs in code that is tested rather than in a node's
+// parameter list. Apply Proposals runs it through mergeOverrides, which refuses
+// anything outside that set and refuses all of it on a copy that may not write.
+const called = trigger({
+  type: 'n8n-nodes-base.executeWorkflowTrigger',
+  version: 1.2,
+  config: {
+    name: 'Called With',
+    parameters: {
+      inputSource: 'workflowInputs',
+      workflowInputs: { values: [{ name: 'overrides', type: 'string' }] }
+    },
+    position: [-200, 200]
+  },
+  output: [{ overrides: '{}' }]
+});
+
+const defaults = node({
   type: 'n8n-nodes-base.set',
   version: 3.5,
   config: {
-    name: 'Config',
+    name: 'Defaults',
     parameters: { mode: 'raw', jsonOutput: ${S(JSON.stringify(CONFIG, null, 2))} },
-    position: [200, 0]
+    position: [0, 0]
   },
   output: [${JSON.stringify(CONFIG)}]
+});
+
+const config = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: {
+    name: 'Config',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: ${S(configCode)} },
+    position: [200, 0]
+  },
+  output: [${JSON.stringify({ ...CONFIG, overrideRefusals: [] })}]
 });
 
 const listFiles = node({
@@ -1427,7 +1517,7 @@ const summary = node({
 
 const noteHeader = sticky(
   ${S(HEADER_NOTE)},
-  [run, config, listFiles, pickReports, fetchReports, reportsToBase64, readReports, review, pick],
+  [run, defaults, config, listFiles, pickReports, fetchReports, reportsToBase64, readReports, review, pick],
   { color: 6, width: 1680, height: 460 },
 );
 
@@ -1451,6 +1541,7 @@ const noteSafety = sticky(
 
 export default workflow(${S('upperform-wf-f-organizer' + (TARGET.name === 'prod' ? '' : '-' + TARGET.name))}, ${S(NAME)})
   .add(run)
+  .to(defaults)
   .to(config)
   .to(listFiles)
   .to(pickReports)
@@ -1475,6 +1566,8 @@ export default workflow(${S('upperform-wf-f-organizer' + (TARGET.name === 'prod'
     .onFalse(both.input(1)))
   .add(both)
   .to(summary)
+  .add(called)
+  .to(defaults)
   .add(noteHeader)
   .add(noteReading)
   .add(noteStructure)

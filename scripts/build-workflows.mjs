@@ -18,6 +18,7 @@ const targets = [
   ['wf-d-attachments', '../workflows/wf-d-attachments.mjs'],
   ['wf-f-organizer', '../workflows/wf-f-organizer.mjs'],
   ['wf-p-permissions', '../workflows/wf-p-permissions.mjs'],
+  ['wf-g-selfserve', '../workflows/wf-g-selfserve.mjs'],
 ];
 
 for (const [name, path] of targets) {

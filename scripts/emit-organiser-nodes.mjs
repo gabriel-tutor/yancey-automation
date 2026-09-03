@@ -12,6 +12,7 @@ import {
   APPLY,
   COMPOSE,
   CONFIG,
+  CONFIG_MERGE,
   CONFIRM,
   PICK,
   PICK_REPORTS,
@@ -35,7 +36,11 @@ import {
  * body verbatim; the rest are tree-shaken against workflows/helpers-manifest.mjs.
  */
 const out = {
-  Config: JSON.stringify(CONFIG, null, 2),
+  // Two nodes now, not one. Defaults holds the settings the build produced;
+  // Config is what everything downstream reads, and it is Defaults folded
+  // together with whatever a caller was allowed to change.
+  Defaults: JSON.stringify(CONFIG, null, 2),
+  Config: await codeNode(HELPERS['wf-f/Config'], CONFIG_MERGE),
   'Pick The Reports': await codeNode(HELPERS['wf-f/Pick The Reports'], PICK_REPORTS),
   'Read Reports': await codeNode(HELPERS['wf-f/Read Reports'], READ_REPORTS),
   'Review The Library': await codeNode(HELPERS['wf-f/Review The Library'], REVIEW),

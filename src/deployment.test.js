@@ -24,6 +24,7 @@ const GENERATORS = {
   wfD: 'wf-d-attachments.mjs',
   wfE: 'wf-e-errors.mjs',
   wfF: 'wf-f-organizer.mjs',
+  wfG: 'wf-g-selfserve.mjs',
   wfT: 'wf-t-preflight.mjs',
   wfP: 'wf-p-permissions.mjs',
   wfS: 'wf-s-seed.mjs',

@@ -6,7 +6,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 
 /**
- * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[], filenames?: string[], library?: string[], naming?: string[], powerbi?: string[], structure?: string[], changes?: string[] }} HelperNeeds
+ * @typedef {{ lib?: string[], prompts?: string[], unzip?: string[], attachments?: string[], filenames?: string[], library?: string[], naming?: string[], powerbi?: string[], structure?: string[], changes?: string[], selfserve?: string[] }} HelperNeeds
  */
 
 /** @type {Record<string, string>} */
@@ -33,10 +33,14 @@ const SOURCES = {
   structure: './src/structure.js',
   // Turning a reviewed plan into calls SharePoint will accept.
   changes: './src/changes.js',
+
+  // What a run started from the self-serve form is allowed to change about
+  // itself. It lives with the front end because that is the only caller.
+  selfserve: './src/selfserve.js',
 };
 
-/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments' | 'filenames' | 'library' | 'naming' | 'powerbi' | 'structure' | 'changes'>} */
-const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments', 'filenames', 'library', 'naming', 'powerbi', 'structure', 'changes'];
+/** @type {ReadonlyArray<'lib' | 'prompts' | 'unzip' | 'attachments' | 'filenames' | 'library' | 'naming' | 'powerbi' | 'structure' | 'changes' | 'selfserve'>} */
+const SOURCE_KEYS = ['lib', 'prompts', 'unzip', 'attachments', 'filenames', 'library', 'naming', 'powerbi', 'structure', 'changes', 'selfserve'];
 
 
 /**

@@ -43,6 +43,10 @@ export const HELPERS = {
   'wf-f/Compose Request': { naming: ['buildNamingRequest'] },
   // The whole of the apply side: what the model proposed, what a person
   // approved, the structure it invented, and the calls all of that turns into.
+  // The merge sits next to the settings it merges, and out of Apply Proposals,
+  // which is forty-nine kilobytes that would otherwise be retyped on every
+  // change to it.
+  'wf-f/Config': { selfserve: ['mergeOverrides'] },
   'wf-f/Apply Proposals': {
     naming: ['applyProposals', 'applyApprovedPlan', 'approvedProgress', 'namingCandidates'],
     structure: ['planStructure', 'planFolderRenames'],
@@ -58,4 +62,10 @@ export const HELPERS = {
     ],
     library: ['reportsIn', 'folderOf'],
   },
+
+  // The web front end. It decides nothing itself - it turns a caller's request
+  // into a plan that binds the run which carries it out, and a run into the
+  // data the page draws itself from.
+  'wf-g/Decide': { selfserve: ['approvedFrom'] },
+  'wf-g/Answer': { selfserve: ['offeredChanges'] },
 };

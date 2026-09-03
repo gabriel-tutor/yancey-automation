@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Document Organiser · Upperform Partners</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --ground: #f6f7f8;
+  --panel: #ffffff;
+  --panel-sunken: #f0f2f4;
+  --ink: #1b2027;
+  --ink-soft: #4a555f;
+  --ink-faint: #78848f;
+  --rule: #dfe4e8;
+  --rule-firm: #c6ced5;
+  --accent: #136f63;
+  --accent-ink: #0d5349;
+  --accent-wash: #e6f1ef;
+  --good: #1f6f3f;
+  --good-wash: #e7f2ec;
+  --warn: #8a5a12;
+  --warn-wash: #f7efe0;
+  --bad: #93331f;
+  --bad-wash: #f8ebe7;
+  --shadow: 0 1px 2px rgba(27, 32, 39, .06), 0 8px 24px -12px rgba(27, 32, 39, .18);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ground: #12161a;
+    --panel: #1a1f25;
+    --panel-sunken: #151a1f;
+    --ink: #e8edf1;
+    --ink-soft: #a9b6c1;
+    --ink-faint: #7d8b96;
+    --rule: #2a323a;
+    --rule-firm: #3a444e;
+    --accent: #4bb3a2;
+    --accent-ink: #7fd0c1;
+    --accent-wash: #16302c;
+    --good: #6cc48d;
+    --good-wash: #162a1f;
+    --warn: #d6a75a;
+    --warn-wash: #2d2415;
+    --bad: #e08b76;
+    --bad-wash: #2f1b16;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 16px/1.55 "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding: 32px 20px 140px;
+}
+.wrap { max-width: 860px; margin: 0 auto; }
+
+/* ---- masthead ---------------------------------------------------------- */
+.masthead { margin-bottom: 28px; }
+.eyebrow {
+  font-size: 12px; font-weight: 500; letter-spacing: .11em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 0 0 6px;
+}
+h1 {
+  font-family: Newsreader, Georgia, serif;
+  font-weight: 500; font-size: clamp(30px, 5vw, 42px); line-height: 1.12;
+  letter-spacing: -.015em; margin: 0 0 10px; text-wrap: balance;
+}
+.standfirst { margin: 0; max-width: 60ch; color: var(--ink-soft); font-size: 16.5px; }
+
+/* ---- panels ------------------------------------------------------------ */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 22px 24px;
+  margin-bottom: 18px;
+}
+.panel h2 {
+  font-family: Newsreader, Georgia, serif;
+  font-weight: 500; font-size: 21px; letter-spacing: -.01em; margin: 0 0 4px;
+}
+.panel > p { margin: 0 0 14px; color: var(--ink-soft); }
+.panel > p:last-child { margin-bottom: 0; }
+
+/* ---- the tally --------------------------------------------------------- */
+.tally { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; margin-bottom: 18px; background: var(--panel); }
+.tally div { flex: 1 1 120px; padding: 14px 18px; border-right: 1px solid var(--rule); }
+.tally div:last-child { border-right: 0; }
+.tally b {
+  display: block; font-family: Newsreader, Georgia, serif; font-weight: 500;
+  font-size: 27px; line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.tally span { font-size: 12.5px; color: var(--ink-faint); letter-spacing: .02em; }
+.tally .lead b { color: var(--accent); }
+
+/* ---- change rows ------------------------------------------------------- */
+.changes { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.change { border-bottom: 1px solid var(--rule); }
+.change label {
+  display: grid; grid-template-columns: 22px 1fr; gap: 12px;
+  padding: 13px 4px; cursor: pointer; align-items: start;
+}
+.change label:hover { background: var(--panel-sunken); }
+.change input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--accent); }
+.kind {
+  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 4px;
+  background: var(--accent-wash); color: var(--accent-ink); margin-bottom: 5px;
+}
+.kind[data-kind="folder"], .kind[data-kind="folderRename"] { background: var(--warn-wash); color: var(--warn); }
+.path { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; word-break: break-word; }
+.from { color: var(--ink-soft); }
+.to { color: var(--ink); font-weight: 500; }
+.arrow { color: var(--ink-faint); padding: 0 2px; }
+.into { color: var(--ink-soft); font-size: 12.5px; margin-top: 3px; }
+
+.selectall {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 2px;
+}
+.linkish {
+  background: none; border: 0; padding: 0; font: inherit; font-size: 14px;
+  color: var(--accent); cursor: pointer; text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.linkish:hover { color: var(--accent-ink); }
+
+/* ---- notes ------------------------------------------------------------- */
+.note { border-left: 3px solid var(--rule-firm); padding: 10px 0 10px 14px; margin: 0 0 12px; color: var(--ink-soft); font-size: 15px; }
+.note.warn { border-color: var(--warn); background: var(--warn-wash); color: var(--warn); padding-right: 14px; border-radius: 0 6px 6px 0; }
+.note.bad { border-color: var(--bad); background: var(--bad-wash); color: var(--bad); padding-right: 14px; border-radius: 0 6px 6px 0; }
+.note.good { border-color: var(--good); background: var(--good-wash); color: var(--good); padding-right: 14px; border-radius: 0 6px 6px 0; }
+.note strong { font-weight: 600; }
+
+details { border-top: 1px solid var(--rule); padding-top: 12px; margin-top: 16px; }
+summary { cursor: pointer; font-size: 14.5px; color: var(--ink-soft); font-weight: 500; }
+summary:hover { color: var(--ink); }
+details ul { margin: 12px 0 0; padding-left: 18px; color: var(--ink-soft); font-size: 14.5px; }
+details li { margin-bottom: 9px; }
+details li b { color: var(--ink); font-weight: 500; font-family: "IBM Plex Mono", monospace; font-size: 13px; }
+
+/* ---- buttons ----------------------------------------------------------- */
+button.primary {
+  font: 500 15.5px/1 "IBM Plex Sans", sans-serif;
+  background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+  padding: 14px 22px; cursor: pointer; transition: background .15s;
+}
+button.primary:hover:not(:disabled) { background: var(--accent-ink); }
+button.primary:disabled { opacity: .5; cursor: default; }
+button.ghost {
+  font: 500 15.5px/1 "IBM Plex Sans", sans-serif;
+  background: transparent; color: var(--ink-soft); border: 1px solid var(--rule-firm);
+  border-radius: 8px; padding: 14px 20px; cursor: pointer;
+}
+button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- the action bar ---------------------------------------------------- */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  background: var(--panel); border-top: 1px solid var(--rule);
+  padding: 14px 20px; box-shadow: 0 -6px 20px -12px rgba(0,0,0,.3);
+}
+.bar-in { max-width: 860px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.bar .count { font-size: 14.5px; color: var(--ink-soft); flex: 1 1 auto; }
+.bar .count b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---- working ----------------------------------------------------------- */
+.working { display: flex; align-items: center; gap: 13px; }
+.spinner {
+  width: 18px; height: 18px; flex: none; border-radius: 50%;
+  border: 2px solid var(--rule-firm); border-top-color: var(--accent);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+.elapsed { font-variant-numeric: tabular-nums; color: var(--ink-faint); font-size: 14px; }
+
+[hidden] { display: none !important; }
+.foot { margin-top: 26px; font-size: 13px; color: var(--ink-faint); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Upperform Partners</p>
+    <h1>Document Organiser</h1>
+    <p class="standfirst">
+      Reads the SharePoint library, works out what each file should be called and where it
+      belongs, and shows you the list. Nothing is renamed or moved until you choose it.
+    </p>
+  </header>
+
+  <!-- Start ------------------------------------------------------------- -->
+  <section class="panel" id="start">
+    <h2>Take a look</h2>
+    <p>
+      This opens each document, works out a name from what is inside it, and checks that name
+      against the convention. It takes about a minute. <strong>Nothing changes yet.</strong>
+    </p>
+    <button class="primary" id="scan">Look at the library</button>
+  </section>
+
+  <!-- Working ----------------------------------------------------------- -->
+  <section class="panel" id="busy" hidden>
+    <div class="working">
+      <div class="spinner"></div>
+      <div>
+        <div id="busy-what">Reading the library…</div>
+        <div class="elapsed"><span id="elapsed">0</span>s elapsed · usually about a minute</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Failure ------------------------------------------------------------ -->
+  <section class="panel" id="broke" hidden>
+    <h2>That did not work</h2>
+    <p class="note bad" id="broke-why"></p>
+    <button class="primary" id="retry">Try again</button>
+  </section>
+
+  <!-- Results ------------------------------------------------------------ -->
+  <div id="results" hidden>
+    <div class="tally" id="tally"></div>
+    <div id="notes"></div>
+
+    <section class="panel" id="choose" hidden>
+      <div class="selectall">
+        <h2 style="margin:0">What it would change</h2>
+        <button class="linkish" id="toggleall">Select none</button>
+      </div>
+      <p style="margin:6px 0 10px">Tick what you want carried out. Anything left unticked stays exactly as it is.</p>
+      <ul class="changes" id="list"></ul>
+    </section>
+
+    <section class="panel" id="outcome" hidden>
+      <h2 id="outcome-head"></h2>
+      <div id="outcome-body"></div>
+    </section>
+
+    <section class="panel" id="left-alone" hidden>
+      <h2>What it left alone</h2>
+      <p>Every one of these is a decision the tool declined to make on its own.</p>
+      <div id="refusals"></div>
+    </section>
+  </div>
+
+  <p class="foot" id="foot" hidden></p>
+</div>
+
+<!-- The action bar ------------------------------------------------------- -->
+<div class="bar" id="bar" hidden>
+  <div class="bar-in">
+    <div class="count" id="count"></div>
+    <button class="ghost" id="again" hidden>Look again</button>
+    <button class="primary" id="apply">Carry out the ticked changes</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var el = function (id) { return document.getElementById(id); };
+  var offered = [];        // what the last look found; the page holds it, not the server
+  var ticked = new Set();  // indices of what is chosen
+  var timer = null;
+
+  /* -------------------------------------------------------------- helpers */
+
+  function show(id, on) { el(id).hidden = !on; }
+
+  function text(tag, value, className) {
+    var node = document.createElement(tag);
+    node.textContent = value == null ? '' : String(value);
+    if (className) node.className = className;
+    return node;
+  }
+
+  function plural(n, one, many) { return n === 1 ? one : (many || one + 's'); }
+
+  /** Elapsed seconds, because a minute of silence looks like a hang. */
+  function startClock(what) {
+    var began = Date.now();
+    el('busy-what').textContent = what;
+    el('elapsed').textContent = '0';
+    timer = setInterval(function () {
+      el('elapsed').textContent = String(Math.round((Date.now() - began) / 1000));
+    }, 1000);
+  }
+  function stopClock() { if (timer) { clearInterval(timer); timer = null; } }
+
+  /* ------------------------------------------------------------ the call */
+
+  function ask(chosen, what) {
+    show('start', false);
+    show('broke', false);
+    show('results', false);
+    show('bar', false);
+    show('foot', false);
+    show('busy', true);
+    startClock(what);
+
+    return fetch('/api/organise', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chosen: chosen || [] })
+    })
+      .then(function (r) { return r.json().then(function (j) { return { status: r.status, body: j }; }); })
+      .then(function (answer) {
+        stopClock();
+        show('busy', false);
+        if (answer.status !== 200 || !answer.body || answer.body.ok === false) {
+          var why = (answer.body && answer.body.error) || 'The organiser answered ' + answer.status + '.';
+          if (answer.body && answer.body.detail) why += ' ' + answer.body.detail;
+          el('broke-why').textContent = why;
+          show('broke', true);
+          return null;
+        }
+        return answer.body;
+      })
+      .catch(function (err) {
+        stopClock();
+        show('busy', false);
+        el('broke-why').textContent =
+          'The page could not reach the organiser. ' + (err && err.message ? err.message : '');
+        show('broke', true);
+        return null;
+      });
+  }
+
+  /* -------------------------------------------------------------- drawing */
+
+  function drawTally(run) {
+    var tally = el('tally');
+    tally.textContent = '';
+    var cells = [
+      { n: run.scanned, label: 'documents read' },
+      { n: run.compliant, label: 'already correct' }
+    ];
+    if (run.applying) {
+      cells.push({ n: run.applied.length, label: plural(run.applied.length, 'change') + ' carried out', lead: true });
+      if (run.failed.length) cells.push({ n: run.failed.length, label: 'could not be done' });
+    } else {
+      cells.push({ n: run.offered.length, label: run.offered.length === 1 ? 'change proposed' : 'changes proposed', lead: true });
+    }
+    cells.forEach(function (cell) {
+      var box = document.createElement('div');
+      if (cell.lead) box.className = 'lead';
+      box.appendChild(text('b', cell.n));
+      box.appendChild(text('span', cell.label));
+      tally.appendChild(box);
+    });
+  }
+
+  /** What a run could not see or would not do. These go above the list, always. */
+  function drawNotes(run) {
+    var notes = el('notes');
+    notes.textContent = '';
+
+    function note(kind, strongPart, rest) {
+      var p = document.createElement('p');
+      p.className = 'note ' + kind;
+      if (strongPart) p.appendChild(text('strong', strongPart + ' '));
+      p.appendChild(document.createTextNode(rest));
+      notes.appendChild(p);
+    }
+
+    if (run.truncated) {
+      note('bad', 'This run did not see the whole library.',
+        'It read ' + run.pages + ' ' + plural(run.pages, 'page') + ' and there were more, so nothing will be changed until it can read all of it.');
+    }
+    if (run.canArm === false) {
+      note('warn', 'This is the sandbox copy.',
+        'It can look at the library but is not allowed to change it, so ticking things will report back rather than rename anything.');
+    }
+    (run.overrideRefusals || []).forEach(function (why) { note('warn', '', why); });
+    if (run.unusable > 0) {
+      note('warn', '', run.unusable + ' ' + plural(run.unusable, 'entry', 'entries') + ' could not be matched to a change and ' + plural(run.unusable, 'was', 'were') + ' ignored.');
+    }
+    if (run.beyondModel > 0) {
+      note('', '', run.beyondModel + ' more ' + plural(run.beyondModel, 'document') + ' could be renamed than this run looked at. Run it again afterwards to reach them.');
+    }
+    if (run.readContents === false) {
+      note('', '', 'Names were chosen from file names and folders only — nothing inside a document was read.');
+    }
+    if ((run.heldBack || []).length > 0) {
+      note('warn', '', run.heldBack.length + ' ' + plural(run.heldBack.length, 'change') + ' did not fit in one run. Look again to carry out the rest.');
+    }
+  }
+
+  var KIND_WORD = {
+    rename: 'Rename',
+    move: 'File',
+    'rename+move': 'Rename and file',
+    folder: 'New folder',
+    folderRename: 'Rename folder'
+  };
+
+  function drawList(run) {
+    offered = run.offered || [];
+    ticked = new Set(offered.map(function (o) { return o.index; }));
+
+    var list = el('list');
+    list.textContent = '';
+
+    offered.forEach(function (change) {
+      var li = document.createElement('li');
+      li.className = 'change';
+
+      var label = document.createElement('label');
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = true;
+      box.addEventListener('change', function () {
+        if (box.checked) ticked.add(change.index); else ticked.delete(change.index);
+        drawCount();
+      });
+
+      var body = document.createElement('div');
+      var kind = text('span', KIND_WORD[change.kind] || change.kind, 'kind');
+      kind.setAttribute('data-kind', change.kind);
+      body.appendChild(kind);
+
+      var line = document.createElement('div');
+      line.className = 'path';
+      if (change.kind === 'folder') {
+        line.appendChild(text('span', change.into, 'to'));
+      } else if (change.kind === 'folderRename') {
+        line.appendChild(text('span', change.from, 'from'));
+        line.appendChild(text('span', ' → ', 'arrow'));
+        line.appendChild(text('span', change.to, 'to'));
+      } else {
+        line.appendChild(text('span', change.from, 'from'));
+        if (change.to) {
+          line.appendChild(text('span', ' → ', 'arrow'));
+          line.appendChild(text('span', change.to, 'to'));
+        }
+      }
+      body.appendChild(line);
+
+      if (change.into && change.kind !== 'folder') {
+        body.appendChild(text('div', 'into ' + change.into + (change.createsFolder ? ' (a new folder)' : ''), 'into'));
+      }
+
+      label.appendChild(box);
+      label.appendChild(body);
+      li.appendChild(label);
+      list.appendChild(li);
+    });
+  }
+
+  function drawRefusals(run) {
+    var host = el('refusals');
+    host.textContent = '';
+    var any = false;
+
+    function group(title, entries) {
+      if (!entries || !entries.length) return;
+      any = true;
+      var d = document.createElement('details');
+      d.open = true;
+      d.appendChild(text('summary', title + ' (' + entries.length + ')'));
+      var ul = document.createElement('ul');
+      entries.forEach(function (entry) {
+        var li = document.createElement('li');
+        if (entry.names && entry.names.length) {
+          li.appendChild(text('b', entry.names.join(', ')));
+          li.appendChild(document.createTextNode(' — '));
+        }
+        li.appendChild(document.createTextNode(entry.because));
+        ul.appendChild(li);
+      });
+      d.appendChild(ul);
+      host.appendChild(d);
+    }
+
+    group('Documents left alone', run.refused);
+    group('Folders not created or renamed', run.folderRefusals);
+
+    if ((run.unreadable || []).length) {
+      any = true;
+      var d = document.createElement('details');
+      d.appendChild(text('summary', 'Could not be opened (' + run.unreadable.length + ')'));
+      var ul = document.createElement('ul');
+      run.unreadable.forEach(function (name) { ul.appendChild(text('li', name)); });
+      d.appendChild(ul);
+      host.appendChild(d);
+    }
+
+    show('left-alone', any);
+  }
+
+  function drawOutcome(run) {
+    el('outcome-head').textContent = run.failed.length
+      ? 'Some of it could not be done'
+      : (run.applied.length ? 'Done' : 'Nothing was changed');
+
+    var body = el('outcome-body');
+    body.textContent = '';
+
+    if (run.failed.length) {
+      var bad = document.createElement('p');
+      bad.className = 'note bad';
+      bad.textContent = run.failed.length + ' ' + plural(run.failed.length, 'change') + ' could not be carried out:';
+      body.appendChild(bad);
+      var ul = document.createElement('ul');
+      run.failed.forEach(function (f) {
+        ul.appendChild(text('li', typeof f === 'string' ? f : (f.what || f.file || '') + ' — ' + (f.because || f.error || 'no reason given')));
+      });
+      body.appendChild(ul);
+    }
+
+    if (run.applied.length) {
+      var good = document.createElement('p');
+      good.className = 'note good';
+      good.textContent = run.applied.length + ' ' + plural(run.applied.length, 'change') + ' carried out.';
+      body.appendChild(good);
+      var done = document.createElement('ul');
+      run.applied.forEach(function (a) {
+        done.appendChild(text('li', typeof a === 'string' ? a : (a.what || a.file || JSON.stringify(a))));
+      });
+      body.appendChild(done);
+    }
+  }
+
+  function drawCount() {
+    var n = ticked.size;
+    el('count').innerHTML = '';
+    el('count').appendChild(text('b', n));
+    el('count').appendChild(document.createTextNode(' of ' + offered.length + ' selected'));
+    el('apply').disabled = n === 0;
+    el('toggleall').textContent = n === offered.length ? 'Select none' : 'Select all';
+  }
+
+  /* --------------------------------------------------------------- states */
+
+  function afterLook(run) {
+    if (!run) return;
+    drawTally(run);
+    drawNotes(run);
+    drawRefusals(run);
+    show('outcome', false);
+
+    if (!run.offered.length) {
+      // Nothing to do is good news, and saying it that way is the difference
+      // between a working tool and one that looks like it failed.
+      var notes = el('notes');
+      var p = document.createElement('p');
+      p.className = 'note good';
+      p.appendChild(text('strong', 'Nothing needs changing. '));
+      p.appendChild(document.createTextNode(
+        'All ' + run.scanned + ' documents already follow the naming convention and are where they belong.'));
+      notes.insertBefore(p, notes.firstChild);
+      show('choose', false);
+      show('results', true);
+      el('again').hidden = false;
+      el('apply').hidden = true;
+      el('count').textContent = '';
+      show('bar', true);
+      return;
+    }
+
+    drawList(run);
+    drawCount();
+    show('choose', true);
+    show('results', true);
+    el('again').hidden = false;
+    el('apply').hidden = false;
+    show('bar', true);
+  }
+
+  function afterApply(run) {
+    if (!run) return;
+    drawTally(run);
+    drawNotes(run);
+    drawOutcome(run);
+    drawRefusals(run);
+    show('choose', false);
+    show('outcome', true);
+    show('results', true);
+    el('apply').hidden = true;
+    el('again').hidden = false;
+    el('count').textContent = '';
+    show('bar', true);
+  }
+
+  /* --------------------------------------------------------------- events */
+
+  el('scan').addEventListener('click', function () { ask([], 'Reading the library…').then(afterLook); });
+  el('retry').addEventListener('click', function () { ask([], 'Reading the library…').then(afterLook); });
+  el('again').addEventListener('click', function () { ask([], 'Reading the library…').then(afterLook); });
+
+  el('toggleall').addEventListener('click', function () {
+    var all = ticked.size === offered.length;
+    ticked = all ? new Set() : new Set(offered.map(function (o) { return o.index; }));
+    Array.prototype.forEach.call(el('list').querySelectorAll('input'), function (box) { box.checked = !all; });
+    drawCount();
+  });
+
+  el('apply').addEventListener('click', function () {
+    var chosen = offered.filter(function (o) { return ticked.has(o.index); });
+    if (!chosen.length) return;
+    ask(chosen, 'Carrying out ' + chosen.length + ' ' + plural(chosen.length, 'change') + '…').then(afterApply);
+  });
+})();
+</script>
+</body>
+</html>
