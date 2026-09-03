@@ -302,5 +302,80 @@
     ],
     "applied": "2026-09-03",
     "run": "10297"
+  },
+  {
+    "kind": "rename",
+    "from": "Electric_Operations_Daily_Review_Dashboard.xlsx",
+    "to": "Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "status assumed to be Draft, the document does not say",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "10420"
+  },
+  {
+    "kind": "rename",
+    "from": "Draft_Assessment Tool_6 Walkthru_26-Jan-2026_YD.xlsx",
+    "to": "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "10420"
+  },
+  {
+    "kind": "rename",
+    "from": "DIMP_Dashboard.xlsx",
+    "to": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+    "assumptions": [
+      "status assumed to be Draft, the document does not say",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "10420"
+  },
+  {
+    "kind": "rename",
+    "from": "Latest_ActionTracker_YD.xlsx",
+    "to": "Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "status assumed to be Draft, the document does not say",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "10420"
+  },
+  {
+    "kind": "rename",
+    "from": "Mooyah_Cleaning_Gantt.xlsx",
+    "to": "Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "status assumed to be Draft, the document does not say",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "10420"
+  },
+  {
+    "kind": "rename and move",
+    "from": "PD_Reliability_Preloaded_Final.xlsx",
+    "to": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
+    "assumptions": [
+      "no project code was evidenced, so none was added",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v1.0"
+    ],
+    "applied": "2026-09-03",
+    "run": "10420",
+    "fromFolder": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References"
   }
 ]
