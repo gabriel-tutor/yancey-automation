@@ -179,15 +179,47 @@ describe('what a pinned plan gates', () => {
     expect(changes.length).toBe(1);
   });
 
-  it('needs the destination approved before it will move anything', () => {
+  /**
+   * A plan is a list of names, so it binds names. Reading its silence about
+   * folders as a refusal would mean pinning a plan forbade every folder the
+   * agent proposed — the same mistake as gating proposals, one level up. The
+   * folder is governed by its own switch, which is what a person arms after
+   * reading the page.
+   */
+  it('still moves a file the plan says nothing about, when moving is armed', () => {
     const wantsMove = row({
       placement: 'move',
       destination: LIB + '/Resources and References/x.xlsx',
-      approved: true,
+      approved: false,
     });
-    expect(plannedChanges([wantsMove], { applyMoves: true, requireApproval: true })).toEqual([]);
-    const withInto = { ...wantsMove, approvedInto: LIB + '/Resources and References' };
-    expect(plannedChanges([withInto], { applyMoves: true, requireApproval: true }).length).toBe(1);
+    const changes = plannedChanges([wantsMove], { applyMoves: true, requireApproval: true });
+    expect(changes.length).toBe(1);
+    expect(changes[0]?.newPath).toBe(LIB + '/Resources and References/x.xlsx');
+    // ...but its name is untouched, because that is what the plan governs.
+    expect(changes[0]?.kind).toBe('move');
+  });
+
+  it('uses the destination a plan line names, over the one this run worked out', () => {
+    const changes = plannedChanges(
+      [
+        row({
+          placement: 'move',
+          destination: LIB + '/Somewhere The Model Chose/x.xlsx',
+          approvedInto: LIB + '/Resources and References',
+        }),
+      ],
+      { applyMoves: true, requireApproval: true },
+    );
+    expect(changes[0]?.newPath).toBe(LIB + '/Resources and References/x.xlsx');
+  });
+
+  it('moves nothing when moving is not armed, whatever the plan says', () => {
+    const wantsMove = row({
+      placement: 'move',
+      destination: LIB + '/Resources and References/x.xlsx',
+      approvedInto: LIB + '/Resources and References',
+    });
+    expect(plannedChanges([wantsMove], { applyMoves: false, requireApproval: true })).toEqual([]);
   });
 });
 

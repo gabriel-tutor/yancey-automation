@@ -120,6 +120,14 @@ function nameOf(path) {
  * signed off is applied, and the rest stays a proposal on the page rather than
  * disappearing.
  *
+ * It binds **names**, because a list of names is what a plan is. It does not
+ * bind folders: a plan that never mentions a destination has not refused one,
+ * and reading it as a refusal would mean a pinned plan silently forbade every
+ * folder the agent proposed — the same mistake as gating proposals, one level
+ * up. Where a plan line *does* name a destination in `into`, that is the folder
+ * used. Where it does not, the move is governed by `applyMoves`, which is the
+ * switch a person arms after reading the page.
+ *
  * @param {any[]} rows plan rows
  * @param {{ applyRenames?: boolean, applyMoves?: boolean, requireApproval?: boolean }} [options]
  * @returns {Array<{ kind: string, oldName: string, newName: string, oldPath: string, newPath: string, why: string[] }>}
@@ -133,14 +141,14 @@ export function plannedChanges(rows, options) {
     if (!path) continue;
 
     const nameApproved = opts.requireApproval ? row.approved === true : true;
-    const moveApproved = opts.requireApproval ? Boolean(row.approvedInto) : true;
 
     const wantName = opts.applyRenames === true && Boolean(row.proposed) && nameApproved;
-    const wantMove =
-      opts.applyMoves === true && row.placement === 'move' && Boolean(row.destination) && moveApproved;
+    const wantMove = opts.applyMoves === true && row.placement === 'move' && Boolean(row.destination);
     if (!wantName && !wantMove) continue;
 
-    const folder = wantMove ? folderOf(String(row.destination)) : folderOf(path);
+    // A plan line that names a destination overrides what this run worked out.
+    const into = row.approvedInto ? String(row.approvedInto) : folderOf(String(row.destination));
+    const folder = wantMove ? into : folderOf(path);
     const name = wantName ? String(row.proposed) : nameOf(path);
     const newPath = folder + '/' + name;
 
