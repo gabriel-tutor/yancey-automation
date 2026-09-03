@@ -2,7 +2,7 @@ import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from './helpers-manifest.mjs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DEPLOY, E, ROOT, S, SDK_IMPORT, TARGET } from './shared.mjs';
+import { DEPLOY, E, ROOT, S, SDK_IMPORT, SUFFIX, TARGET } from './shared.mjs';
 
 /**
  * The plan a person has read and signed off, kept as data rather than typed
@@ -52,6 +52,9 @@ function approvedPlan() {
  * does not satisfy the convention is dropped. The worst a bad answer can do is
  * leave a file alone.
  */
+export /** The switches that let a run change the library. See the sandbox guard below. */
+const ARMING = ['applyRenames', 'applyMoves', 'applyStructure', 'applyFolderRenames', 'applyProposed'];
+
 export const CONFIG = {
   host: TARGET.sharepointHost || 'https://upperformpartners.sharepoint.com',
   sitePath: TARGET.sharepointSite || '/sites/TaskManagement',
@@ -173,7 +176,7 @@ export const CONFIG = {
  * one reason: to find out what it reads, so the guard can refuse on evidence
  * rather than on two files having similar names.
  */
-const PICK_REPORTS = `
+export const PICK_REPORTS = `
 const cfg = $('Config').first().json;
 const listed = $input.first().json || {};
 const items = Array.isArray(listed.value) ? listed.value : [];
@@ -218,7 +221,7 @@ return reports.map(function (r, i) {
  * A report that will not open is recorded as unreadable rather than as reading
  * nothing, because those are opposite conclusions.
  */
-const READ_REPORTS = `
+export const READ_REPORTS = `
 const meta = $('Pick The Reports').all().map(function (i) { return i.json || {}; });
 const got = $input.all();
 
@@ -391,7 +394,7 @@ return candidates.map(function (r) {
  * position holds where paired-item tracking through a failed HTTP call might
  * not.
  */
-const READ_CONTENTS = `
+export const READ_CONTENTS = `
 const cfg = $('Config').first().json;
 const picks = $('Pick What To Name').all().map(function (i) { return i.json || {}; });
 const got = $input.all();
@@ -800,7 +803,7 @@ return fitting.send.map(function (a) {
 });
 `;
 
-const CONFIRM = `
+export const CONFIRM = `
 const planned = $('Apply Proposals').all().map(function (i) { return i.json; });
 const results = $input.all().map(function (i) { return i.json || {}; });
 
@@ -916,7 +919,7 @@ return [{ json: {
 }}];
 `;
 
-export const NAME = 'WF-F · Organise Documents';
+export const NAME = 'WF-F · Organise Documents' + SUFFIX;
 
 const HEADER_NOTE = [
   '## WF-F · Organise Documents',
@@ -1029,6 +1032,27 @@ export async function build() {
         TARGET.name +
         '.sharepointCredential in config/deploy.json, or build for a target that owns the library.',
     );
+  }
+
+  // The sandbox reads the same library through the same credential, because
+  // there is only one and the real edge cases are in the real library. So the
+  // one thing it must never ship is an armed switch: a dev build that could
+  // write is not a sandbox, it is a second production workflow nobody is
+  // watching. This is a build failure rather than a silent correction, because
+  // quietly changing what somebody asked for is how a setting stops meaning
+  // anything.
+  if (TARGET.name !== 'prod') {
+    const armed = ARMING.filter((key) => /** @type {any} */ (CONFIG)[key] === true);
+    if (armed.length > 0) {
+      throw new Error(
+        'refusing to build the organiser for ' +
+          TARGET.name +
+          ' with ' +
+          armed.join(' and ') +
+          ' armed. The sandbox reads the same library as production; a dev build that can ' +
+          'write to it is a second production workflow. Set them false in CONFIG, or build for prod.',
+      );
+    }
   }
 
   const pickReportsCode = await codeNode(HELPERS['wf-f/Pick The Reports'], PICK_REPORTS);
@@ -1425,7 +1449,7 @@ const noteSafety = sticky(
   { color: 5, width: 1300, height: 600 },
 );
 
-export default workflow('upperform-wf-f-organizer', ${S(NAME)})
+export default workflow(${S('upperform-wf-f-organizer' + (TARGET.name === 'prod' ? '' : '-' + TARGET.name))}, ${S(NAME)})
   .add(run)
   .to(config)
   .to(listFiles)

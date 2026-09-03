@@ -21,12 +21,12 @@
     "_credentialNote": "n8n caches a credential's display name inside each node, so a renamed credential leaves stale labels behind and the ID is the only thing that means anything. This block used to map gBDmBd3jHGBqqQjl to 'Outlook - Dev (gtutor)'; that ID is in fact 'Outlook - Yancey', the production credential. WF-S's seeder inherited the mistake and was bound to Yancey's live mailbox while its sticky note promised dev-only. Use targets.<env>.outlookCredentialId.",
     "outlookProd": {
       "id": "gBDmBd3jHGBqqQjl",
-      "name": "Outlook \u2013 Yancey",
+      "name": "Outlook – Yancey",
       "type": "microsoftOutlookOAuth2Api"
     },
     "outlookDev": {
       "id": "vNJuWdSXhjzB0Jo1",
-      "name": "Outlook \u2013 Dev (gtutor)",
+      "name": "Outlook – Dev (gtutor)",
       "type": "microsoftOutlookOAuth2Api"
     }
   },
@@ -45,7 +45,7 @@
     "prod": {
       "label": "Yancey (live)",
       "nameSuffix": "",
-      "outlookCredential": "Outlook \u2013 Yancey",
+      "outlookCredential": "Outlook – Yancey",
       "dataTables": {
         "emailLog": "cKOjAskKEn5wYTuf",
         "emailLogName": "agent_email_log_yancey",
@@ -80,8 +80,8 @@
     },
     "dev": {
       "label": "gtutor sandbox",
-      "nameSuffix": " \u00b7 dev",
-      "outlookCredential": "Outlook \u2013 Dev (gtutor)",
+      "nameSuffix": " · dev",
+      "outlookCredential": "Outlook – Dev (gtutor)",
       "dataTables": {
         "emailLog": "JZP4Wzctro2gA3ya",
         "emailLogName": "agent_email_log_dev",
@@ -95,16 +95,21 @@
         "wfE": "E302rNL5D7NuBy5c",
         "wfT": "8Y3MEkP7A4kEiuGK",
         "wfD": "P2BfDd7Y782I13ZD",
-        "wfS": "CNttEItjnRC4RkZZ"
+        "wfS": "CNttEItjnRC4RkZZ",
+        "wfF": "6r1FMIaY7nZBnGWl"
       },
       "digestTo": "gtutor@partnersperform.com",
       "mailboxLabel": "gtutor@partnersperform.com (dev sandbox)",
       "draftingMailbox": "gtutor@partnersperform.com",
       "outlookCredentialId": "vNJuWdSXhjzB0Jo1",
-      "sharepointCredential": null,
-      "sharepointCredentialType": null,
+      "sharepointCredential": "Microsoft SharePoint account",
+      "sharepointCredentialType": "microsoftSharePointOAuth2Api",
       "draftingEnabled": true,
-      "draftingAliases": []
+      "draftingAliases": [],
+      "sharepointCredentialId": "We80s2s9pbxJWWp2",
+      "sharepointHost": "https://upperformpartners.sharepoint.com",
+      "sharepointSite": "/sites/TaskManagement",
+      "_wfFNote": "The organiser sandbox. It is a separate workflow so that deploying half-finished node code cannot disturb the one Yancey is running - n8n has no published version here (activeVersionId is null), so a manual Execute runs whatever was last saved, and there is no other separation. It reads the SAME library through the SAME credential, because there is only one and the real edge cases are in the real library. That makes it isolated for DEPLOYMENT and not for WRITES: every apply switch ships false and the build refuses if any is true, but nothing stops a person flipping one in the editor. Treat a run here as read-only and arm nothing."
     }
   },
   "_sharepointNote": "Phase 2, resolved 2026-09-02. The earlier 403s came from probing SharePoint with the *Outlook* credential, which proves nothing: the SharePoint node has its own credential type, microsoftSharePointOAuth2Api, targeting the SharePoint resource rather than Microsoft Graph. The permissions that matter live under Office 365 SharePoint Online (00000003-0000-0ff1-ce00-000000000000), not Graph Sites.*, on the same Entra app already used for Outlook. No new app and no admin were needed. Host is upperformpartners.sharepoint.com, not partnersperform. Writing was blocked because AllSites.Write sat unconsented while the credential asked for .default, which means 'whatever is already consented' and so hands back a weaker token in silence rather than an error - reconnecting changes nothing. Naming the scope explicitly forces the consent prompt. Do not press Grant admin consent on that page: it would also grant AllSites.FullControl, which is tenant-wide full control for a workflow that renames files.",
@@ -119,7 +124,7 @@
     "_confidenceNote": "Yancey set confidenceMin to 0.80 on 2026-08-28, up from 0.60. Anything the classifier is less sure of than that is surfaced with below_confidence_min rather than replied to."
   },
   "retention": {
-    "_note": "Answering Yancey's question of 2026-08-28. n8n execution history \u2014 which holds full message bodies while a run is in flight \u2014 is pruned after 168 hours (7 days) by EXECUTIONS_DATA_PRUNE and EXECUTIONS_DATA_MAX_AGE on the VPS. The decision log (agent_email_log_yancey) holds subject, sender, label, reasoning and links, and is retained indefinitely so the audit trail survives; rows are closed after autoCloseDays but never deleted. Deleting a client's decision record is his call, not ours, so logRetentionDays defaults to 0 (never). Set it to a number of days to enable purging of closed rows.",
+    "_note": "Answering Yancey's question of 2026-08-28. n8n execution history — which holds full message bodies while a run is in flight — is pruned after 168 hours (7 days) by EXECUTIONS_DATA_PRUNE and EXECUTIONS_DATA_MAX_AGE on the VPS. The decision log (agent_email_log_yancey) holds subject, sender, label, reasoning and links, and is retained indefinitely so the audit trail survives; rows are closed after autoCloseDays but never deleted. Deleting a client's decision record is his call, not ours, so logRetentionDays defaults to 0 (never). Set it to a number of days to enable purging of closed rows.",
     "executionHistoryDays": 7,
     "logRetentionDays": 0
   },

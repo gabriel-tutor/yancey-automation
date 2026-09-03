@@ -124,3 +124,49 @@ describe('the deployment map', () => {
     }
   });
 });
+
+/**
+ * The organiser sandbox.
+ *
+ * It exists so that deploying half-finished node code cannot disturb the
+ * workflow Yancey is running — n8n has no published version of it
+ * (`activeVersionId` is null), so a manual Execute runs whatever was last
+ * saved, and there is no other separation.
+ *
+ * It reads the SAME library through the SAME credential, because there is only
+ * one and the real edge cases are in the real library. That makes it isolated
+ * for deployment and not for writes, so the one thing it must never ship is an
+ * armed switch: a dev build that can write to production is a second production
+ * workflow nobody is watching.
+ */
+describe('the organiser sandbox', () => {
+  const dev = deploy.targets.dev;
+
+  it('can reach the library at all', () => {
+    expect(dev.sharepointCredential, 'without this the organiser refuses to build').toBeTruthy();
+    expect(dev.sharepointHost).toBeTruthy();
+    expect(dev.sharepointSite).toBeTruthy();
+  });
+
+  it('is a different workflow from the one Yancey runs', () => {
+    expect(dev.workflows.wfF, 'the sandbox has no workflow to deploy into').toBeTruthy();
+    expect(dev.workflows.wfF).not.toBe(deploy.targets.prod.workflows.wfF);
+  });
+
+  it('says in the file what it is and is not isolated from', () => {
+    expect(dev._wfFNote).toContain('SAME library');
+    expect(dev._wfFNote).toContain('read-only');
+  });
+
+  /**
+   * A build failure rather than a silent correction: quietly changing what
+   * somebody asked for is how a setting stops meaning anything.
+   */
+  it('refuses to build with any switch that could write armed', async () => {
+    const { CONFIG } = await import('../workflows/wf-f-organizer.mjs');
+    for (const key of ['applyRenames', 'applyMoves', 'applyStructure', 'applyFolderRenames', 'applyProposed']) {
+      const armed = /** @type {any} */ (CONFIG)[key];
+      expect(armed, key + ' ships armed, which the sandbox build refuses').toBe(false);
+    }
+  });
+});

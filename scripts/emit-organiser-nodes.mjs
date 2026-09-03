@@ -12,19 +12,38 @@ import {
   APPLY,
   COMPOSE,
   CONFIG,
+  CONFIRM,
   PICK,
+  PICK_REPORTS,
+  READ_CONTENTS,
+  READ_REPORTS,
   REVIEW,
   SAFETY_NOTE,
   STRUCTURE_NOTE,
   SUMMARY,
 } from '../workflows/wf-f-organizer.mjs';
 
+/**
+ * Every Code node, not only the ones a given change happens to touch.
+ *
+ * It started as the four I was editing, which was fine while the only target
+ * was a workflow that already had the rest. It is not fine for a fresh copy:
+ * the sandbox was created with placeholder bodies, and a partial emitter would
+ * have left half of it unable to run with no obvious sign of which half.
+ *
+ * `Confirm What Changed` and `Summary` carry no helpers, so they are the node
+ * body verbatim; the rest are tree-shaken against workflows/helpers-manifest.mjs.
+ */
 const out = {
   Config: JSON.stringify(CONFIG, null, 2),
+  'Pick The Reports': await codeNode(HELPERS['wf-f/Pick The Reports'], PICK_REPORTS),
+  'Read Reports': await codeNode(HELPERS['wf-f/Read Reports'], READ_REPORTS),
   'Review The Library': await codeNode(HELPERS['wf-f/Review The Library'], REVIEW),
   'Pick What To Name': await codeNode(HELPERS['wf-f/Pick What To Name'], PICK),
+  'Read Contents': await codeNode(HELPERS['wf-f/Read Contents'], READ_CONTENTS),
   'Compose Request': await codeNode(HELPERS['wf-f/Compose Request'], COMPOSE),
   'Apply Proposals': await codeNode(HELPERS['wf-f/Apply Proposals'], APPLY),
+  'Confirm What Changed': CONFIRM,
   Summary: SUMMARY,
   notes: { structure: STRUCTURE_NOTE, safety: SAFETY_NOTE },
 };
