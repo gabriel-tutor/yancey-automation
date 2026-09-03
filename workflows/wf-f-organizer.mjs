@@ -82,6 +82,23 @@ export const CONFIG = {
   applyStructure: false,
   applyFolderRenames: false,
 
+  // Apply what this run proposed, not only what the plan pinned.
+  //
+  // A pinned plan is a list of names and nothing outside it is ever applied.
+  // That is right until it is the only thing left: a document dropped into the
+  // library after the plan was signed can then never be renamed at all without
+  // somebody editing config/approved-plan.json by hand - which is not a thing
+  // anyone does in front of a client, and it is how six correctly-named
+  // documents sat there untouched.
+  //
+  // Arming this says the proposals on THIS run are approved as they stand. It
+  // is the same trust the switches already carry when no plan exists at all,
+  // made available without having to throw the plan away to get it. What it
+  // gives up is the binding between the page a person read and what happens,
+  // because the model is not deterministic - so it is a deliberate switch
+  // rather than a default, and the plan note says out loud when it is armed.
+  applyProposed: false,
+
   // Freedom, a little bit. Yancey asked for a structure the agent invents
   // rather than one he specifies - "I wanted to give it freedom a little bit on
   // the folder structure" - and these are what stop that becoming twenty

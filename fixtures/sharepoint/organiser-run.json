@@ -1,21 +1,21 @@
 {
-  "executionId": "10399",
-  "ranAt": "2026-09-03T17:39:19.510Z",
+  "executionId": "10423",
+  "ranAt": "2026-09-03T18:00:48.337Z",
   "summary": {
     "nothingToDo": true,
     "library": "Documents",
     "site": "/sites/TaskManagement",
     "scanned": 27,
-    "compliant": 21,
+    "compliant": 27,
     "proposed": 0,
-    "awaiting": 6,
+    "awaiting": 0,
     "blocked": 0,
-    "unfiled": 8,
+    "unfiled": 7,
     "movesProposed": 0,
-    "namedByModel": 8,
+    "namedByModel": 1,
     "reportsRead": 4,
     "reportsUnreadable": [],
-    "approvedCount": 11,
+    "approvedCount": 15,
     "approvedMissing": [],
     "approvedDone": [
       "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
@@ -26,10 +26,16 @@
       "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
       "NIPSCO_Master-Roster_2025-07-31_Draft_v0.1.xlsx",
       "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
-      "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix"
+      "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
+      "Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
+      "Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
+      "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
+      "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+      "Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
+      "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx"
     ],
     "pinned": true,
-    "planNote": "applying the approved plan of 11 - everything else is proposed and waiting - 9 already carried out on an earlier run",
+    "planNote": "applying the approved plan of 15 - everything else is proposed and waiting - 15 already carried out on an earlier run",
     "modelNote": "the model read and named 27 documents",
     "truncated": false,
     "listed": 39,
@@ -41,7 +47,7 @@
     "folderRefusals": [
       {
         "file": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
-        "folder": "TCO Programme",
+        "folder": "TCO Project Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
@@ -51,7 +57,7 @@
       },
       {
         "file": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
-        "folder": "TCO Programme",
+        "folder": "TCO Project Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
@@ -81,32 +87,32 @@
       },
       {
         "file": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
-        "folder": "Dashboards",
+        "folder": "Performance Management",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
         "file": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
         "file": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
         "file": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
         "file": "DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
         "file": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
-        "folder": "DIMP Folder",
+        "folder": "DIMP Materials",
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
@@ -115,13 +121,13 @@
         "because": "it sits inside a numbered stage folder, and those record how far the work has got — nothing about a file says which stage it belongs in"
       },
       {
-        "file": "DIMP_Dashboard.xlsx",
-        "folder": "DIMP Folder",
-        "because": "that would file it inside a numbered stage folder, which asserts how far the work has got"
+        "file": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
+        "folder": "TCO Project Materials",
+        "because": "only this one document was put in it, and a folder holding one file is the pile it came from with an extra click in front"
       },
       {
-        "file": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
-        "folder": "TCO Programme",
+        "file": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+        "folder": "DIMP Materials",
         "because": "only this one document was put in it, and a folder holding one file is the pile it came from with an extra click in front"
       }
     ],
@@ -130,6 +136,10 @@
       {
         "folder": "1. Assigned Tasks",
         "because": "it is a numbered stage folder, and the numbering is what makes the sequence readable"
+      },
+      {
+        "folder": "DIMP Folder",
+        "because": "it sits inside a numbered stage folder, and renaming a folder repaths everything in it — those documents are held back one at a time for the same reason"
       },
       {
         "folder": "Task 1",
@@ -181,18 +191,21 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [],
+      "assumptions": [
+        "no project code was evidenced, so none was added"
+      ],
       "blocked": "",
-      "category": "document",
-      "categoryWhy": "from the .docx extension",
+      "category": "Process Guide",
+      "categoryWhy": "from reading the document, not its extension",
       "folder": "Resources and References",
       "placement": "unfiled",
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "destination": "",
-      "namedBy": "",
-      "why": "",
+      "namedBy": "model",
+      "why": "The contents describe Task Management Channel stages, folder descriptions, and naming conventions.",
       "folderSuggestion": "Resources and References",
-      "approved": false
+      "approved": false,
+      "awaiting": ""
     },
     {
       "current": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
@@ -248,7 +261,7 @@
       "destination": "",
       "namedBy": "",
       "why": "",
-      "folderSuggestion": "TCO Programme",
+      "folderSuggestion": "TCO Project Materials",
       "approved": false
     },
     {
@@ -286,7 +299,7 @@
       "destination": "",
       "namedBy": "approved",
       "why": "",
-      "folderSuggestion": "TCO Programme",
+      "folderSuggestion": "TCO Project Materials",
       "approved": false,
       "awaiting": ""
     },
@@ -298,15 +311,15 @@
       "proposed": "",
       "assumptions": [],
       "blocked": "",
-      "category": "Power BI Report",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "Power BI report",
+      "categoryWhy": "a .pbix is a Power BI report",
       "folder": "4. Completed Tasks",
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
       "namedBy": "approved",
-      "why": "The filename identifies a TCO pilot-program oversight Power BI report.",
-      "folderSuggestion": "TCO Programme",
+      "why": "",
+      "folderSuggestion": "TCO Project Materials",
       "approved": false,
       "awaiting": ""
     },
@@ -373,21 +386,18 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Profit Analysis",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "image",
+      "categoryWhy": "from the .png extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The image analyzes net profit by fiscal quarter, year, reporting period, and goal attainment.",
+      "namedBy": "",
+      "why": "",
       "folderSuggestion": "Dashboards",
-      "approved": false,
-      "awaiting": ""
+      "approved": false
     },
     {
       "current": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
@@ -395,21 +405,18 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Sales Analysis",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "image",
+      "categoryWhy": "from the .png extension",
       "folder": "Task 2",
       "placement": "settled",
       "placementWhy": "it sits under 1. Assigned Tasks, and those numbered folders record how far the work has got — nothing about a file says which stage it belongs in",
       "destination": "",
-      "namedBy": "model",
-      "why": "The image analyzes units sold by fiscal period, year, and quarter.",
+      "namedBy": "",
+      "why": "",
       "folderSuggestion": "Dashboards",
-      "approved": false,
-      "awaiting": ""
+      "approved": false
     },
     {
       "current": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
@@ -417,19 +424,17 @@
       "compliant": true,
       "problems": [],
       "proposed": "",
-      "assumptions": [
-        "no project code was evidenced, so none was added"
-      ],
+      "assumptions": [],
       "blocked": "",
-      "category": "Power BI Report",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "Power BI report",
+      "categoryWhy": "a .pbix is a Power BI report",
       "folder": "2. In Progress",
       "placement": "settled",
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
       "namedBy": "approved",
-      "why": "The filename identifies a metric dashboard report, and its generic name is made specific as performance metrics.",
-      "folderSuggestion": "Dashboards",
+      "why": "",
+      "folderSuggestion": "Performance Management",
       "approved": false,
       "awaiting": ""
     },
@@ -449,7 +454,7 @@
       "destination": "",
       "namedBy": "",
       "why": "",
-      "folderSuggestion": "DIMP Folder",
+      "folderSuggestion": "DIMP Materials",
       "approved": false
     },
     {
@@ -468,7 +473,7 @@
       "destination": "",
       "namedBy": "",
       "why": "",
-      "folderSuggestion": "DIMP Folder",
+      "folderSuggestion": "DIMP Materials",
       "approved": false
     },
     {
@@ -487,7 +492,7 @@
       "destination": "",
       "namedBy": "approved",
       "why": "",
-      "folderSuggestion": "DIMP Folder",
+      "folderSuggestion": "DIMP Materials",
       "approved": false,
       "awaiting": ""
     },
@@ -507,7 +512,7 @@
       "destination": "",
       "namedBy": "approved",
       "why": "",
-      "folderSuggestion": "DIMP Folder",
+      "folderSuggestion": "DIMP Materials",
       "approved": false,
       "awaiting": ""
     },
@@ -527,7 +532,7 @@
       "destination": "",
       "namedBy": "approved",
       "why": "",
-      "folderSuggestion": "DIMP Folder",
+      "folderSuggestion": "DIMP Materials",
       "approved": false,
       "awaiting": ""
     },
@@ -568,7 +573,7 @@
       "placementWhy": "filed under Performance Management",
       "destination": "",
       "namedBy": "approved",
-      "why": "The instructions identify initiative, action, sub-action, and metric registers for a performance management system.",
+      "why": "The workbook includes initiative, action, sub-action, and metric registers.",
       "folderSuggestion": "Performance Management",
       "approved": false,
       "awaiting": ""
@@ -590,173 +595,132 @@
       "placementWhy": "a Power BI report is referenced by path wherever it is published or set to refresh, so moving it breaks the same things renaming it would",
       "destination": "",
       "namedBy": "approved",
-      "why": "The filename identifies a Power BI report for the performance management system.",
+      "why": "The filename identifies a Power BI report for the performance-management system.",
       "folderSuggestion": "Performance Management",
       "approved": false,
       "awaiting": ""
     },
     {
-      "current": "Electric_Operations_Daily_Review_Dashboard.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/Electric_Operations_Daily_Review_Dashboard.xlsx",
-      "compliant": false,
-      "problems": [
-        "ends with \"Dashboard\" rather than a version like v0.1 or v1.0"
-      ],
-      "proposed": "Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "current": "Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
+      "assumptions": [],
       "blocked": "",
-      "category": "Operations Dashboard",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "Dashboards",
       "placement": "settled",
       "placementWhy": "filed under Dashboards",
       "destination": "",
-      "namedBy": "model",
-      "why": "The workbook is headed Electric Operations Executive Dashboard and contains daily gate and LOA scorecards.",
+      "namedBy": "approved",
+      "why": "",
       "folderSuggestion": "Dashboards",
       "approved": false,
-      "awaiting": "proposed on this run — approve it and the next run applies it",
-      "approvedInto": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards"
+      "approvedInto": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards",
+      "awaiting": ""
     },
     {
-      "current": "Draft_Assessment Tool_6 Walkthru_26-Jan-2026_YD.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Draft_Assessment Tool_6 Walkthru_26-Jan-2026_YD.xlsx",
-      "compliant": false,
-      "problems": [
-        "contains a space — use hyphens within a phrase and underscores between sections",
-        "contains a special character — letters, numbers, hyphens and underscores only",
-        "ends with \"YD\" rather than a version like v0.1 or v1.0"
-      ],
-      "proposed": "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "version assumed to be v0.1"
-      ],
+      "current": "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
+      "assumptions": [],
       "blocked": "",
-      "category": "Assessment Tool",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "Resources and References",
       "placement": "unfiled",
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "destination": "",
-      "namedBy": "model",
-      "why": "The instructions describe a structured Wiring for Success assessment tool with triage, ratings, evidence, and actions.",
+      "namedBy": "approved",
+      "why": "",
       "folderSuggestion": "Resources and References",
       "approved": false,
-      "awaiting": "proposed on this run — approve it and the next run applies it"
+      "awaiting": ""
     },
     {
-      "current": "DIMP_Dashboard.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/DIMP_Dashboard.xlsx",
-      "compliant": false,
-      "problems": [
-        "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
-      ],
-      "proposed": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
-      "assumptions": [
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "current": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
+      "assumptions": [],
       "blocked": "",
-      "category": "Risk Dashboard",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "Resources and References",
       "placement": "unfiled",
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "destination": "",
-      "namedBy": "model",
-      "why": "The instructions explicitly identify a DIMP Leak Repair Capacity scoring dashboard and cost optimizer.",
-      "folderSuggestion": "DIMP Folder",
+      "namedBy": "approved",
+      "why": "",
+      "folderSuggestion": "DIMP Materials",
       "approved": false,
-      "awaiting": "proposed on this run — approve it and the next run applies it"
+      "awaiting": ""
     },
     {
-      "current": "Latest_ActionTracker_YD.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Latest_ActionTracker_YD.xlsx",
-      "compliant": false,
-      "problems": [
-        "uses \"Latest\" — the version number says which one is current",
-        "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
-      ],
-      "proposed": "Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "current": "Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
+      "assumptions": [],
       "blocked": "",
-      "category": "Action Tracker",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "Resources and References",
       "placement": "unfiled",
       "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
       "destination": "",
-      "namedBy": "model",
-      "why": "The sheet is headed Damage Prevention Wiring Action Tracker and tracks action status, ratings, evidence, and impact.",
+      "namedBy": "approved",
+      "why": "",
       "folderSuggestion": "Resources and References",
       "approved": false,
-      "awaiting": "proposed on this run — approve it and the next run applies it"
+      "awaiting": ""
     },
     {
-      "current": "Mooyah_Cleaning_Gantt.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/Mooyah_Cleaning_Gantt.xlsx",
-      "compliant": false,
-      "problems": [
-        "does not follow [Project]_[Document]_[YYYY-MM-DD]_[Status]_v#.# — for example SCE_PM_Ride-Along-Plan_2026-09-01_Draft_v0.1"
-      ],
-      "proposed": "Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "status assumed to be Draft, the document does not say",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v0.1"
-      ],
+      "current": "Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
+      "assumptions": [],
       "blocked": "",
-      "category": "Cleaning Dashboard",
-      "categoryWhy": "from reading the document, not its extension",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
       "folder": "Dashboards",
       "placement": "settled",
       "placementWhy": "filed under Dashboards",
       "destination": "",
-      "namedBy": "model",
-      "why": "The workbook is a MOOYAH cleaning performance summary with daily cleaning scores and pass or fail results.",
+      "namedBy": "approved",
+      "why": "",
       "folderSuggestion": "Dashboards",
       "approved": false,
-      "awaiting": "proposed on this run — approve it and the next run applies it",
-      "approvedInto": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards"
+      "approvedInto": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards",
+      "awaiting": ""
     },
     {
-      "current": "PD_Reliability_Preloaded_Final.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/PD_Reliability_Preloaded_Final.xlsx",
-      "compliant": false,
-      "problems": [
-        "has no version — keep the v#.# even when the document is Final"
-      ],
-      "proposed": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
-      "assumptions": [
-        "no project code was evidenced, so none was added",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v1.0"
-      ],
+      "current": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
+      "compliant": true,
+      "problems": [],
+      "proposed": "",
+      "assumptions": [],
       "blocked": "",
-      "category": "Reliability Workbook",
-      "categoryWhy": "from reading the document, not its extension",
-      "folder": "Resources and References",
-      "placement": "unfiled",
-      "placementWhy": "it sits above the filing rather than in it, with folders of documents beneath it, and no folder beside it says what it holds",
+      "category": "spreadsheet",
+      "categoryWhy": "from the .xlsx extension",
+      "folder": "Dashboards",
+      "placement": "settled",
+      "placementWhy": "filed under Dashboards",
       "destination": "",
-      "namedBy": "model",
-      "why": "The filename identifies a preloaded power-delivery reliability workbook and explicitly marks it Final.",
-      "folderSuggestion": "Resources and References",
+      "namedBy": "approved",
+      "why": "",
+      "folderSuggestion": "Dashboards",
       "approved": false,
-      "awaiting": "proposed on this run — approve it and the next run applies it"
+      "awaiting": ""
     }
   ]
 }
