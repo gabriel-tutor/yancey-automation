@@ -19,7 +19,7 @@
  * a proposal that fails `diagnose` is refused rather than applied, which means
  * the worst a bad answer can do is leave a file alone.
  */
-import { STATUSES, diagnose, proposeFileName } from './filenames.js';
+import { STATUSES, diagnose, parseFileName, proposeFileName } from './filenames.js';
 import { folderOf, isReport, pathKey, reportReading, splitExtension } from './library.js';
 
 /**
@@ -368,9 +368,23 @@ export function applyProposals(rows, proposals, options) {
     const useStatus = status || String(assumeStatus || '');
     if (!status && useStatus) assumptions.push('status assumed to be ' + useStatus + ', the document does not say');
 
+    // Where the date comes from, in order of how much it is worth trusting.
+    //
+    // The file timestamp used to be the only fallback, and on a library this
+    // tool has already renamed that is a loop: renaming a file sets its
+    // Modified date to today, so the next run reads today's date back off it
+    // and proposes renaming it again. A live run turned 24 correctly dated
+    // documents into 24 proposals to re-date them to today - deleting the real
+    // dates, which are the thing the convention exists to preserve.
+    //
+    // A date already in the name is a date somebody put there. It beats a
+    // timestamp, which only records when the file was last touched.
+    const existing = parseFileName(String(row.current));
+    const inName = existing.ok ? existing.date : '';
     const stamp = modified.get(String(row.path)) || '';
-    const useDate = date || stamp;
-    if (!date && stamp) assumptions.push('date taken from the file timestamp, not the document');
+    const useDate = date || inName || stamp;
+    if (!date && inName) assumptions.push('date kept from the current file name');
+    else if (!date && stamp) assumptions.push('date taken from the file timestamp, not the document');
 
     // An approved version starts at v1.0, so assuming v0.1 under a Final status
     // would produce a name his own guide calls wrong.

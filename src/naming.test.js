@@ -748,3 +748,62 @@ describe('where an approved line has got to', () => {
     ).toEqual(['Vanished.xlsx']);
   });
 });
+
+describe('where the date comes from', () => {
+  /** A one-row list; the helper hands back the row so the type checker has one.
+   * @param {string} name @param {string} modified @returns {any[]} */
+  const rowFor = (name, modified) => [{
+    current: name,
+    path: '/lib/' + name,
+    compliant: false,
+    proposed: '',
+    blocked: '',
+    approved: false,
+    modified: modified,
+  }];
+
+  /** @param {any[]} rows @returns {any} */
+  const only = (rows) => rows[0];
+
+  it('keeps the date already in the name rather than re-dating to today', () => {
+    // The live failure: renaming a file sets its Modified date to today, so the
+    // next run read today's date back off it and proposed renaming 24 correctly
+    // dated documents to today - deleting the real dates.
+    const rows = rowFor('Channel-Process-Guide_2025-04-07_Draft_v0.1.docx', '2026-09-03T10:00:00Z');
+    applyProposals(rows, [{ file: only(rows).current, document: 'Channel-Process-Guide', status: 'Draft', version: 'v0.1' }], {
+      files: [{ path: only(rows).path, name: only(rows).current, modified: '2026-09-03T10:00:00Z' }],
+      reports: [],
+    });
+    expect(only(rows).proposed).toBe('');
+    expect(only(rows).compliant).toBe(true);
+  });
+
+  it('says so when it keeps the date from the name', () => {
+    const rows = rowFor('Old-Name_2025-04-07_Draft_v0.1.docx', '2026-09-03T10:00:00Z');
+    applyProposals(rows, [{ file: only(rows).current, document: 'Tidier-Name', status: 'Draft', version: 'v0.1' }], {
+      files: [{ path: only(rows).path, name: only(rows).current, modified: '2026-09-03T10:00:00Z' }],
+      reports: [],
+    });
+    expect(only(rows).proposed).toBe('Tidier-Name_2025-04-07_Draft_v0.1.docx');
+    expect(only(rows).assumptions).toContain('date kept from the current file name');
+  });
+
+  it('still falls back to the timestamp when the name carries no date', () => {
+    const rows = rowFor('messy name.xlsx', '2026-05-19T10:00:00Z');
+    applyProposals(rows, [{ file: only(rows).current, document: 'Tidy-Name', status: 'Draft', version: 'v0.1' }], {
+      files: [{ path: only(rows).path, name: only(rows).current, modified: '2026-05-19T10:00:00Z' }],
+      reports: [],
+    });
+    expect(only(rows).proposed).toBe('Tidy-Name_2026-05-19_Draft_v0.1.xlsx');
+    expect(only(rows).assumptions).toContain('date taken from the file timestamp, not the document');
+  });
+
+  it('lets the model override both when the document itself says a date', () => {
+    const rows = rowFor('Report_2025-04-07_Draft_v0.1.docx', '2026-09-03T10:00:00Z');
+    applyProposals(rows, [{ file: only(rows).current, document: 'Report', date: '2024-11-02', status: 'Draft', version: 'v0.1' }], {
+      files: [{ path: only(rows).path, name: only(rows).current, modified: '2026-09-03T10:00:00Z' }],
+      reports: [],
+    });
+    expect(only(rows).proposed).toBe('Report_2024-11-02_Draft_v0.1.docx');
+  });
+});
