@@ -117,8 +117,14 @@ describe('the plan the generator hands to the workflow', () => {
     }
   });
 
-  it('carries every filing line through with its destination', () => {
-    const filings = plan.plan.filter((/** @type {any} */ l) => !l.to && l.into);
-    expect(filings.length, 'the demo needs at least one pinned destination').toBeGreaterThan(0);
+  /**
+   * A destination is pinned whether or not the same line also pins a name — a
+   * line that started as filing-only gains a `to` the moment that document's
+   * name is approved too, and it is still the thing that puts the folder beyond
+   * the model's whim.
+   */
+  it('pins at least one destination, whether or not it also pins a name', () => {
+    const filed = plan.plan.filter((/** @type {any} */ l) => l.into);
+    expect(filed.length, 'the folder structure needs at least one pinned destination').toBeGreaterThan(0);
   });
 });

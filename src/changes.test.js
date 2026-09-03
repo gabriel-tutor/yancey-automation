@@ -184,6 +184,20 @@ describe('what a pinned plan gates', () => {
     expect(changes[0]?.newName).toBe('NIPSCO_Action-Tracker_2026-02-01_Draft_v0.1.xlsx');
   });
 
+  /**
+   * A pinned plan is a list of names, and nothing outside it is ever applied.
+   * That is right until it is the only thing left: a document that arrives
+   * after the plan was signed can then never be renamed at all without somebody
+   * editing the plan file by hand, which is not a thing anyone does in front of
+   * a client. Arming this says the proposals on this run are approved as they
+   * stand — the same trust the switches already carry when no plan exists.
+   */
+  it('applies what this run proposed when the operator says to', () => {
+    const changes = plannedChanges([unapproved], { applyRenames: true, requireApproval: false });
+    expect(changes.length).toBe(1);
+    expect(changes[0]?.newName).toBe('NIPSCO_Action-Tracker_2026-02-01_Draft_v0.1.xlsx');
+  });
+
   it('applies everything proposed when no plan is pinned', () => {
     const changes = plannedChanges([unapproved], { applyRenames: true, requireApproval: false });
     expect(changes.length).toBe(1);

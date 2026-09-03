@@ -538,7 +538,8 @@ if (pinned) {
   const progress = approvedProgress(rows, approved);
   approvedMissing = progress.missing;
   approvedDone = progress.done;
-  planNote = (cfg.revert === true ? 'REVERTING the approved plan of ' : 'applying the approved plan of ') + approved.length + ' - everything else is proposed and waiting';
+  planNote = (cfg.revert === true ? 'REVERTING the approved plan of ' : 'applying the approved plan of ') + approved.length +
+    (cfg.applyProposed === true ? ' AND everything else this run proposed, because applyProposed is armed' : ' - everything else is proposed and waiting');
   if (approvedDone.length > 0) {
     planNote += ' - ' + approvedDone.length + ' already carried out on an earlier run';
   }
@@ -600,8 +601,13 @@ const couldBeNamed = namingCandidates(rows, reports, {
 }).length;
 const beyondModel = Math.max(0, couldBeNamed - (Number(cfg.maxNamed) || 30));
 
-const toRename = rows.filter(function (r) { return r.proposed && (!pinned || r.approved === true); });
-const awaiting = rows.filter(function (r) { return r.proposed && pinned && r.approved !== true; });
+// A pinned plan binds what is applied - unless the operator has said that this
+// run's proposals are approved as they stand, which is what applyProposed is
+// for. Without it a document that arrives after the plan was signed can never
+// be renamed at all without somebody editing the plan file by hand.
+const binding = pinned && cfg.applyProposed !== true;
+const toRename = rows.filter(function (r) { return r.proposed && (!binding || r.approved === true); });
+const awaiting = rows.filter(function (r) { return r.proposed && binding && r.approved !== true; });
 const movable = rows.filter(function (r) { return r.placement === 'move' && r.destination; });
 
 const summary = {
@@ -620,7 +626,7 @@ const summary = {
   approvedCount: approved.length,
   approvedMissing: approvedMissing,
   approvedDone: approvedDone,
-  pinned: pinned,
+  pinned: binding,
   planNote: planNote,
   modelNote: modelNote,
   truncated: truncated,
@@ -638,6 +644,7 @@ const summary = {
   applyMoves: cfg.applyMoves === true,
   applyStructure: cfg.applyStructure === true,
   applyFolderRenames: cfg.applyFolderRenames === true,
+  applyProposed: cfg.applyProposed === true,
   cap: Number(cfg.maxChangesPerRun) || 5,
   rows: rows
 };
@@ -672,7 +679,8 @@ const wouldLandNowhere = function (folder) {
 const wanted = plannedChanges(rows, {
   applyRenames: cfg.applyRenames === true,
   applyMoves: cfg.applyMoves === true,
-  requireApproval: pinned
+  // A plan binds unless the operator says this run's proposals are approved.
+  requireApproval: binding
 }).filter(function (c) {
   return !wouldLandNowhere(folderOf(c.newPath));
 });
