@@ -3,7 +3,7 @@ import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from '../workflows/helpers-manifest.mjs';
 import { VOICE_GUARD } from '../workflows/wf-b-draft.mjs';
 import { APPLY_CLASSIFICATION } from '../workflows/wf-a-classify.mjs';
-import { APPLY as ORGANISER_APPLY } from '../workflows/wf-f-organizer.mjs';
+import { APPLY as ORGANISER_APPLY, REVIEW as ORGANISER_REVIEW } from '../workflows/wf-f-organizer.mjs';
 
 /**
  * The Code node *bodies* — not just the helper library they import.
@@ -34,7 +34,10 @@ const applyWithAttachmentsCode = await applyClassificationFor('Attach Findings')
 const nodeRef = (map) => (name) => {
   if (!(name in map)) throw new Error("node '" + name + "' did not run");
   const value = map[name];
-  return { first: () => ({ json: value }), all: () => [{ json: value }], item: { json: value } };
+  // An array stands for a node that emitted more than one item — a paginated
+  // HTTP request, one item per page. Anything else is the single item it is.
+  const items = (Array.isArray(value) ? value : [value]).map((json) => ({ json }));
+  return { first: () => items[0], all: () => items, item: items[0] };
 };
 
 /**
@@ -677,7 +680,7 @@ describe('WF-F Apply Proposals on a library it has not seen before', () => {
   const DASH = REFS + '/Dashboards';
 
   /**
-   * @param {{ cfg?: any, files?: any[], folders?: string[], rows?: any[], truncated?: boolean, proposals?: any[] }} setup
+   * @param {{ cfg?: any, files?: any[], folders?: string[], rows?: any[], moreToRead?: boolean, proposals?: any[] }} setup
    * @returns {any[]}
    */
   const apply = (setup) =>
@@ -712,6 +715,9 @@ describe('WF-F Apply Proposals on a library it has not seen before', () => {
           files: setup.files || [],
           folders: setup.folders || [LIB, REFS],
           rows: setup.rows || [],
+          listed: (setup.files || []).length + (setup.folders || [LIB, REFS]).length,
+          pages: 1,
+          moreToRead: setup.moreToRead === true,
           dependencies: { byFile: {}, unreadable: [], read: [] },
         },
       }),
@@ -742,23 +748,35 @@ describe('WF-F Apply Proposals on a library it has not seen before', () => {
    * partly known. Reviewing a slice and calling it the library is how a rename
    * lands on a document this run never saw.
    */
+  /**
+   * The last page it read still offered another, so it stopped at the page cap
+   * rather than at the end of the library.
+   */
   it('applies nothing at all when it has not read the whole library', () => {
     const rows = [doc('a.xlsx', REFS, { placement: 'move', destination: DASH + '/a.xlsx' })];
-    // One file and two folders is three list items, which is everything a
-    // maxItems of 3 was allowed to read — so there may be more behind it.
-    const out = apply({ rows, files: [{ name: 'a.xlsx', path: REFS + '/a.xlsx' }], cfg: { maxItems: 3 } });
+    const out = apply({ rows, files: [{ name: 'a.xlsx', path: REFS + '/a.xlsx' }], moreToRead: true });
     expect(out.length).toBe(1);
     expect(out[0].nothingToDo).toBe(true);
     expect(out[0].truncated).toBe(true);
-    expect(out[0].listed).toBe(3);
     expect(out[0].planNote).toContain('NOTHING WAS APPLIED');
+    expect(out[0].planNote).toContain('Raise maxPages');
   });
 
   it('applies the same plan once it has', () => {
     const rows = [doc('a.xlsx', REFS, { placement: 'move', destination: DASH + '/a.xlsx' })];
-    const out = apply({ rows, files: [{ name: 'a.xlsx', path: REFS + '/a.xlsx' }], cfg: { maxItems: 5000 } });
+    const out = apply({ rows, files: [{ name: 'a.xlsx', path: REFS + '/a.xlsx' }], moreToRead: false });
     expect(out[0].nothingToDo).toBe(false);
     expect(out[0].summary.truncated).toBe(false);
+  });
+
+  /**
+   * A library of exactly maxItems documents read in one page is complete, and
+   * the old count-based guess called it partial and stalled for ever.
+   */
+  it('does not call a full page a partial library', () => {
+    const rows = [doc('a.xlsx', REFS, { placement: 'move', destination: DASH + '/a.xlsx' })];
+    const out = apply({ rows, files: [{ name: 'a.xlsx', path: REFS + '/a.xlsx' }], cfg: { maxItems: 3 } });
+    expect(out[0].nothingToDo).toBe(false);
   });
 
   /** A cap that falls between a folder and its documents creates an empty one. */
@@ -966,5 +984,79 @@ describe('WF-F Apply Proposals on a library it has not seen before', () => {
     });
     expect(out[0].nothingToDo).toBe(true);
     expect(out[0].rows[0].blocked).toContain('already sits');
+  });
+});
+
+/**
+ * The node that turns a listing into a library.
+ *
+ * A library bigger than one request is read a page at a time, and the two ways
+ * that goes wrong are opposite: reading only the first page and calling it the
+ * library, or reading every page and still calling it partial. The nextLink on
+ * the last page is what tells them apart, and it is exact rather than a guess
+ * from how many items came back.
+ */
+const organiserReviewCode = await codeNode(HELPERS['wf-f/Review The Library'], ORGANISER_REVIEW);
+
+describe('WF-F Review The Library node body', () => {
+  const SITE = '/sites/TaskManagement';
+  const LIB = SITE + '/Shared Documents/Power BI Task Management';
+
+  /** @param {string} name */
+  const file = (name) => ({ FileLeafRef: name, FileRef: LIB + '/' + name, Modified: '2026-04-15T10:00:00Z', FSObjType: 0 });
+  /** @param {string} path */
+  const folder = (path) => ({ FileLeafRef: path.slice(path.lastIndexOf('/') + 1), FileRef: path, FSObjType: '1' });
+
+  /** @param {any[]} pages @returns {any} */
+  const review = (pages) =>
+    run(organiserReviewCode, {
+      $: nodeRef({
+        Config: { libraryTitle: 'Documents', sitePath: SITE, maxItems: 5000, assumeStatus: 'Draft', renameReports: true },
+        'List The Library': pages,
+      }),
+      $input: { first: () => ({ json: { dependencies: { byFile: {}, unreadable: [], read: [] } } }) },
+      Buffer,
+    })[0].json;
+
+  it('reads one page as the whole library', () => {
+    const out = review([{ value: [file('a.xlsx'), folder(LIB + '/One')] }]);
+    expect(out.files.map((/** @type {any} */ f) => f.name)).toEqual(['a.xlsx']);
+    expect(out.folders).toEqual([LIB + '/One']);
+    expect(out.listed).toBe(2);
+    expect(out.moreToRead).toBe(false);
+  });
+
+  it('joins every page it was given into one library', () => {
+    const out = review([
+      { value: [file('a.xlsx')], 'odata.nextLink': 'https://next/1' },
+      { value: [file('b.xlsx')], 'odata.nextLink': 'https://next/2' },
+      { value: [file('c.xlsx')] },
+    ]);
+    expect(out.files.map((/** @type {any} */ f) => f.name)).toEqual(['a.xlsx', 'b.xlsx', 'c.xlsx']);
+    expect(out.listed).toBe(3);
+    expect(out.moreToRead, 'the last page offered no more').toBe(false);
+  });
+
+  /**
+   * The page cap stopping short is the case that matters: everything read looks
+   * exactly like a complete library unless the last page says otherwise.
+   */
+  it('says there is more when the last page it read offered more', () => {
+    const out = review([
+      { value: [file('a.xlsx')], 'odata.nextLink': 'https://next/1' },
+      { value: [file('b.xlsx')], 'odata.nextLink': 'https://next/2' },
+    ]);
+    expect(out.listed).toBe(2);
+    expect(out.moreToRead).toBe(true);
+  });
+
+  it('takes the OData 4 spelling of the same thing', () => {
+    expect(review([{ value: [file('a.xlsx')], '@odata.nextLink': 'https://next/1' }]).moreToRead).toBe(true);
+  });
+
+  it('is not upset by a page that came back empty', () => {
+    const out = review([{ value: [file('a.xlsx')] }, {}]);
+    expect(out.listed).toBe(1);
+    expect(out.moreToRead).toBe(false);
   });
 });

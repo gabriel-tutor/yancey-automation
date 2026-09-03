@@ -1742,9 +1742,10 @@
     if (data.truncated) {
       gaps.push({
         what: 'It has not read the whole library',
-        why: 'The listing returned ' + data.listed + ' items, which is everything this run was ' +
-          'allowed to read, so there may be more. A name checked against half a library is not ' +
-          'checked, so nothing was applied. Raising maxItems is the whole fix.'
+        why: 'It read ' + data.listed + ' items over ' + data.pages + ' page(s), and the last one ' +
+          'still offered another — so it stopped at the page cap rather than at the end. A name ' +
+          'checked against half a library is not checked, so nothing was applied. Raising maxPages ' +
+          'is the whole fix.'
       });
     }
     if (data.beyondModel > 0) {

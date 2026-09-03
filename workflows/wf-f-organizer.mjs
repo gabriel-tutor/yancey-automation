@@ -57,12 +57,15 @@ export const CONFIG = {
   sitePath: TARGET.sharepointSite || '/sites/TaskManagement',
   libraryTitle: 'Documents',
 
-  // One page of list items, and SharePoint's own ceiling for a single request.
-  // It was 200, which is fine for this library and wrong as a default: a name
-  // checked for collisions against half a library is not checked at all. If a
-  // library ever exceeds this the run reads what it can, reports that it did,
-  // and applies nothing.
+  // How many list items one request asks for, and SharePoint's own ceiling for
+  // a single one. A library larger than this is read a page at a time.
   maxItems: 5000,
+
+  // How many of those pages one run will fetch - 60,000 documents at the ceiling
+  // above, which is far past anything here and still a bound rather than a loop.
+  // If the last page fetched still offers another, the run has not seen the
+  // whole library: it says so and applies nothing.
+  maxPages: 12,
 
   // Both off by default. A rename or a move breaks every saved link, Teams tab
   // and Power BI data source that points at the old path, so either happens
@@ -231,8 +234,25 @@ return [{ json: {
 
 export const REVIEW = `
 const cfg = $('Config').first().json;
-const listed = $('List The Library').first().json || {};
-const items = Array.isArray(listed.value) ? listed.value : [];
+
+// A library bigger than one request comes back a page at a time, one item per
+// page, so the library is every page joined rather than the first one.
+//
+// The two ways that goes wrong are opposite: reading only the first page and
+// calling it the library, or reading all of them and still calling it partial.
+// The nextLink on the LAST page tells them apart exactly - if it offered more
+// and the run stopped anyway, it stopped at the page cap and has not seen
+// everything. Counting items could never distinguish those, and a library of
+// exactly maxItems documents would have stalled for ever.
+const pages = $('List The Library').all().map(function (i) { return i.json || {}; });
+const items = [];
+for (const page of pages) {
+  if (Array.isArray(page.value)) {
+    for (const it of page.value) items.push(it);
+  }
+}
+const lastPage = pages[pages.length - 1] || {};
+const moreToRead = Boolean(lastPage['odata.nextLink'] || lastPage['@odata.nextLink']);
 
 const dependencies = ($input.first().json || {}).dependencies || { byFile: {}, unreadable: [], read: [] };
 
@@ -290,6 +310,12 @@ return [{ json: {
   files: files,
   folders: folders,
   rows: rows,
+  // What was read, and whether that was all of it. Counted from the listing
+  // rather than from what it was sorted into, because an item with no name is
+  // dropped on the way and counting after that reports a short library.
+  listed: items.length,
+  pages: pages.length,
+  moreToRead: moreToRead,
   dependencies: dependencies,
   reportsRead: dependencies.read,
   reportsUnreadable: dependencies.unreadable
@@ -464,17 +490,12 @@ if (incoming.error) {
   }
 }
 
-// A library bigger than one page of list items is a library this run has only
-// partly seen, and a name checked for collisions against half a library is not
-// checked at all. Nothing is applied while this is true.
-//
-// The count comes from the listing itself rather than from the files and
-// folders it was sorted into: an item with no name is dropped on the way, and
-// counting after that could report a full page as a short one and apply changes
-// against a library it had not finished reading.
-const listing = $('List The Library').first().json || {};
-const listed = Array.isArray(listing.value) ? listing.value.length : files.length + (review.folders || []).length;
-const truncated = listed >= (Number(cfg.maxItems) || 200);
+// A library this run has only partly seen is a library whose collisions are
+// only partly known, and a name checked against half of one is not checked at
+// all. Nothing is applied while that is true. Review The Library reads every
+// page and reports whether the last one it read offered another.
+const listed = Number(review.listed) || files.length + (review.folders || []).length;
+const truncated = review.moreToRead === true;
 
 const reports = reportsIn(files);
 const dependencies = review.dependencies || { byFile: {}, unreadable: [], read: [] };
@@ -604,6 +625,7 @@ const summary = {
   modelNote: modelNote,
   truncated: truncated,
   listed: listed,
+  pages: Number(review.pages) || 1,
   beyondModel: beyondModel,
   newFolders: wantedFolders,
   unreachableFolders: needed.unreachable,
@@ -728,8 +750,8 @@ const fitting = truncated
   : fittingActions(actions, Number(cfg.maxChangesPerRun) || 5);
 summary.heldBack = fitting.held;
 if (truncated && actions.length > 0) {
-  summary.planNote += ' - NOTHING WAS APPLIED: the library has at least ' + summary.listed +
-    ' items, which is everything this run was allowed to list, so it has not seen all of it. Raise maxItems.';
+  summary.planNote += ' - NOTHING WAS APPLIED: the library has more than the ' + summary.listed +
+    ' items this run read, because the last page it fetched offered another. Raise maxPages.';
 }
 
 // Nothing to do still emits one item, so the summary always runs and the
@@ -842,6 +864,7 @@ return [{ json: {
   // a page claiming a completeness the run did not have.
   truncated: r.truncated === true,
   listed: r.listed,
+  pages: r.pages || 1,
   beyondModel: r.beyondModel || 0,
   heldBack: r.heldBack || [],
   unreachableFolders: r.unreachableFolders || [],
@@ -1036,7 +1059,24 @@ const listFiles = node({
       },
       sendHeaders: true,
       headers: { parameters: [{ name: 'Accept', value: 'application/json;odata=nometadata' }] },
-      options: { timeout: 60000 }
+      options: {
+        timeout: 60000,
+        // A library larger than one request comes back with a link to the rest.
+        // odata=nometadata spells it "odata.nextLink"; following it until there
+        // is none is what makes this work on a library rather than on a page of
+        // one. Each page arrives as its own item and Review The Library joins
+        // them.
+        pagination: {
+          pagination: {
+            paginationMode: 'responseContainsNextURL',
+            nextURL: ${E('{{ $response.body["odata.nextLink"] }}')},
+            paginationCompleteWhen: 'other',
+            completeExpression: ${E('{{ !$response.body["odata.nextLink"] }}')},
+            limitPagesFetched: true,
+            maxRequests: ${E("{{ $('Config').first().json.maxPages }}")}
+          }
+        }
+      }
     },
     credentials: { microsoftSharePointOAuth2Api: newCredential(${S(sp)}) },
     position: [400, 0]

@@ -203,6 +203,7 @@ const data = {
   // looked at", which read identically and mean opposite things.
   truncated: run.summary?.truncated === true,
   listed: Number(run.summary?.listed || 0),
+  pages: Number(run.summary?.pages || 1),
   beyondModel: Number(run.summary?.beyondModel || 0),
   // A group is a folder and everything that goes into it, a folder rename, or a
   // single document — the key says which, and the page should say it in the
