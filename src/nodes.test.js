@@ -339,6 +339,8 @@ describe('WF-F Apply Proposals node body', () => {
     approvedPlan: [],
     assumeStatus: 'Draft',
     revert: false,
+    maxItems: 5000,
+    maxNamed: 30,
     ...over,
   });
 
@@ -554,6 +556,8 @@ describe('WF-F structure, through the node that applies it', () => {
           renameReports: true,
           approvedPlan: [],
           assumeStatus: 'Draft',
+          maxItems: 5000,
+          maxNamed: 30,
           ...over,
         },
         'Review The Library': {
@@ -644,5 +648,223 @@ describe('WF-F structure, through the node that applies it', () => {
     expect(out[0].newFolders, 'still proposed, just not applied').toEqual([
       REFS + '/Dashboards',
     ]);
+  });
+});
+
+/**
+ * The things that make it work on a library other than this one: a listing that
+ * did not reach the end, a cap that falls between a folder and its documents,
+ * and two documents composed onto the same path.
+ */
+describe('WF-F Apply Proposals on a library it has not seen before', () => {
+  const HOST = 'https://upperformpartners.sharepoint.com';
+  const SITE = '/sites/TaskManagement';
+  const LIB = SITE + '/Shared Documents/Power BI Task Management';
+  const REFS = LIB + '/Resources and References';
+  const DASH = REFS + '/Dashboards';
+
+  /**
+   * @param {{ cfg?: any, files?: any[], folders?: string[], rows?: any[], truncated?: boolean, proposals?: any[] }} setup
+   * @returns {any[]}
+   */
+  const apply = (setup) =>
+    run(organiserApplyCode, {
+      $: nodeRef({
+        Config: {
+          host: HOST,
+          sitePath: SITE,
+          applyRenames: true,
+          applyMoves: true,
+          applyStructure: true,
+          applyFolderRenames: false,
+          maxChangesPerRun: 12,
+          maxNewFolders: 6,
+          minPerFolder: 2,
+          renameReports: true,
+          approvedPlan: [],
+          assumeStatus: 'Draft',
+          maxItems: 5000,
+          maxNamed: 30,
+          ...(setup.cfg || {}),
+        },
+        'Review The Library': {
+          library: 'Documents',
+          site: SITE,
+          files: setup.files || [],
+          folders: setup.folders || [LIB, REFS],
+          rows: setup.rows || [],
+          dependencies: { byFile: {}, unreadable: [], read: [] },
+        },
+      }),
+      $input: {
+        first: () => ({
+          json: { output: [{ content: [{ text: JSON.stringify({ proposals: setup.proposals || [], folders: [] }) }] }] },
+        }),
+      },
+      Buffer,
+    }).map((/** @type {any} */ i) => i.json);
+
+  /** @param {string} name @param {string} folder @param {Partial<any>} [over] */
+  const doc = (name, folder, over) => ({
+    current: name,
+    path: folder + '/' + name,
+    proposed: '',
+    blocked: '',
+    compliant: false,
+    assumptions: [],
+    placement: 'settled',
+    placementWhy: '',
+    destination: '',
+    ...over,
+  });
+
+  /**
+   * A library bigger than one page is a library whose collisions are only
+   * partly known. Reviewing a slice and calling it the library is how a rename
+   * lands on a document this run never saw.
+   */
+  it('applies nothing at all when it has not read the whole library', () => {
+    const rows = [doc('a.xlsx', REFS, { placement: 'move', destination: DASH + '/a.xlsx' })];
+    // One file and two folders is three list items, which is everything a
+    // maxItems of 3 was allowed to read — so there may be more behind it.
+    const out = apply({ rows, files: [{ name: 'a.xlsx', path: REFS + '/a.xlsx' }], cfg: { maxItems: 3 } });
+    expect(out.length).toBe(1);
+    expect(out[0].nothingToDo).toBe(true);
+    expect(out[0].truncated).toBe(true);
+    expect(out[0].listed).toBe(3);
+    expect(out[0].planNote).toContain('NOTHING WAS APPLIED');
+  });
+
+  it('applies the same plan once it has', () => {
+    const rows = [doc('a.xlsx', REFS, { placement: 'move', destination: DASH + '/a.xlsx' })];
+    const out = apply({ rows, files: [{ name: 'a.xlsx', path: REFS + '/a.xlsx' }], cfg: { maxItems: 5000 } });
+    expect(out[0].nothingToDo).toBe(false);
+    expect(out[0].summary.truncated).toBe(false);
+  });
+
+  /** A cap that falls between a folder and its documents creates an empty one. */
+  it('holds back a whole folder rather than half of it', () => {
+    const rows = ['a.xlsx', 'b.xlsx', 'c.xlsx'].map((n) =>
+      doc(n, REFS, { placement: 'move', destination: DASH + '/' + n }),
+    );
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = apply({ rows, files, cfg: { maxChangesPerRun: 2 } });
+    expect(out.length).toBe(1);
+    expect(out[0].nothingToDo).toBe(true);
+    expect(out[0].heldBack).toEqual([{ group: 'folder:' + DASH, actions: 4 }]);
+  });
+
+  it('sends the folder and every document in it when they fit', () => {
+    const rows = ['a.xlsx', 'b.xlsx'].map((n) =>
+      doc(n, REFS, { placement: 'move', destination: DASH + '/' + n }),
+    );
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = apply({ rows, files, cfg: { maxChangesPerRun: 3 } });
+    expect(out.map((/** @type {any} */ o) => o.kind)).toEqual(['create folder', 'move', 'move']);
+    expect(out[0].summary.heldBack).toEqual([]);
+    expect(out[0].newPath, 'the folder before anything goes into it').toBe(DASH);
+  });
+
+  /**
+   * Two documents of the same name in different folders, both filed into one:
+   * `flags=0` means the second call fails rather than overwriting, but planning
+   * a call you know will fail is not a review.
+   */
+  it('refuses two documents that would land on one path, and sends neither', () => {
+    const rows = [
+      doc('Report.xlsx', LIB + '/One', { placement: 'move', destination: DASH + '/Report.xlsx' }),
+      doc('Report.xlsx', LIB + '/Two', { placement: 'move', destination: DASH + '/Report.xlsx' }),
+    ];
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = apply({ rows, files, folders: [LIB, REFS, LIB + '/One', LIB + '/Two'] });
+    expect(out.length).toBe(1);
+    expect(out[0].nothingToDo).toBe(true);
+    for (const row of out[0].rows) {
+      expect(row.blocked).toContain('would land on the same path');
+    }
+  });
+
+  /** And with nothing left to go in it, the folder is not created either. */
+  it('does not create a folder whose documents were all refused', () => {
+    const rows = [
+      doc('Report.xlsx', LIB + '/One', { placement: 'move', destination: DASH + '/Report.xlsx' }),
+      doc('Report.xlsx', LIB + '/Two', { placement: 'move', destination: DASH + '/Report.xlsx' }),
+    ];
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = apply({ rows, files, folders: [LIB, REFS, LIB + '/One', LIB + '/Two'] });
+    expect(out[0].newFolders).toEqual([]);
+  });
+
+  /**
+   * A run can propose creating "Dashboards" and renaming another folder to
+   * "Dashboards" in the same breath. Whichever ran second would fail, and the
+   * rename check only knew about folders that existed before the run started.
+   */
+  it('will not rename a folder onto one it is about to create', () => {
+    const rows = ['a.xlsx', 'b.xlsx'].map((n) =>
+      doc(n, REFS, { placement: 'move', destination: DASH + '/' + n }),
+    );
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = run(organiserApplyCode, {
+      $: nodeRef({
+        Config: {
+          host: HOST, sitePath: SITE, applyRenames: false, applyMoves: true,
+          applyStructure: true, applyFolderRenames: true, maxChangesPerRun: 12,
+          maxNewFolders: 6, minPerFolder: 2, renameReports: true, approvedPlan: [],
+          assumeStatus: 'Draft', maxNamed: 30,
+        },
+        'Review The Library': {
+          library: 'Documents', site: SITE, files, folders: [LIB, REFS, REFS + '/Old'],
+          rows, truncated: false, listed: files.length,
+          dependencies: { byFile: {}, unreadable: [], read: [] },
+        },
+      }),
+      $input: {
+        first: () => ({
+          json: {
+            output: [{ content: [{ text: JSON.stringify({
+              proposals: [],
+              folders: [{ from: REFS + '/Old', to: 'Dashboards', why: 'x' }],
+            }) }] }],
+          },
+        }),
+      },
+      Buffer,
+    }).map((/** @type {any} */ i) => i.json);
+    expect(out.some((/** @type {any} */ o) => o.kind === 'rename folder')).toBe(false);
+    const refused = out[0].summary.folderRenameRefusals;
+    expect(refused[0]?.because).toContain('already sits beside it');
+  });
+
+  /**
+   * Documents past maxNamed were never shown to the model, so nothing was
+   * proposed for them — a fact about the run, not about them, and one that
+   * reads as "nothing needed doing" unless it is said out loud.
+   */
+  it('counts the documents it never got to', () => {
+    const rows = ['a.xlsx', 'b.xlsx', 'c.xlsx'].map((n) => doc(n, REFS));
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    const out = apply({ rows, files, cfg: { maxNamed: 2 } });
+    expect(out[0].beyondModel).toBe(1);
+  });
+
+  it('counts none when it read everything it could', () => {
+    const rows = ['a.xlsx', 'b.xlsx'].map((n) => doc(n, REFS));
+    const files = rows.map((r) => ({ name: r.current, path: r.path }));
+    expect(apply({ rows, files, cfg: { maxNamed: 30 } })[0].beyondModel).toBe(0);
+  });
+
+  it('refuses a move onto a document already sitting there', () => {
+    const rows = [doc('a.xlsx', LIB + '/One', { placement: 'move', destination: REFS + '/a.xlsx' })];
+    const out = apply({
+      rows,
+      files: [
+        { name: 'a.xlsx', path: LIB + '/One/a.xlsx' },
+        { name: 'a.xlsx', path: REFS + '/a.xlsx' },
+      ],
+      folders: [LIB, REFS, LIB + '/One'],
+    });
+    expect(out[0].nothingToDo).toBe(true);
+    expect(out[0].rows[0].blocked).toContain('already sits');
   });
 });

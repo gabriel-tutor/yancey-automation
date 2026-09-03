@@ -263,3 +263,46 @@ describe('renaming a folder', () => {
     expect(plan.refused).toEqual([]);
   });
 });
+
+/**
+ * SharePoint compares paths without regard to case, so `Dashboards` and
+ * `dashboards` are one folder. Treating them as two would have this proposing a
+ * folder that already exists, and the create failing on a name collision it
+ * could have seen coming.
+ */
+describe('folders whose names differ only in case', () => {
+  it('files into the folder that is there rather than making another', () => {
+    const rows = [at('a.xlsx', LIB, 'resources and references')];
+    const plan = planStructure(rows, { folders: [LIB, REFS] });
+    expect(plan.create).toEqual([]);
+    expect(rows[0]?.destination, 'the path SharePoint actually holds').toBe(REFS + '/a.xlsx');
+  });
+
+  it('refuses a folder rename onto a name that differs only in case', () => {
+    const KAREN = LIB + '/PD alignment Excel and Power BI - Karen';
+    const plan = planFolderRenames([{ from: KAREN, to: 'RESOURCES AND REFERENCES' }], {
+      folders: [LIB, KAREN, REFS],
+    });
+    expect(plan.renames).toEqual([]);
+    expect(plan.refused[0]?.because).toContain('already sits beside it');
+  });
+
+  it('renames a folder the listing spelled differently', () => {
+    const odd = LIB + '/pd alignment';
+    const plan = planFolderRenames([{ from: LIB + '/PD Alignment', to: 'PD Alignment Notes' }], {
+      folders: [LIB, odd],
+    });
+    expect(plan.renames.length, 'the folder is there, spelled another way').toBe(1);
+    expect(plan.renames[0]?.from, 'moved from the path that exists').toBe(odd);
+  });
+
+  it('will not put a document beside a file of that name in any case', () => {
+    const rows = [at('a.xlsx', REFS, 'Dashboards'), at('b.xlsx', REFS, 'Dashboards')];
+    const plan = planStructure(rows, {
+      folders: [REFS],
+      files: [{ name: 'DASHBOARDS', path: REFS + '/DASHBOARDS' }],
+    });
+    expect(plan.create).toEqual([]);
+    expect(plan.refused[0]?.because).toContain('a file of that name already sits beside it');
+  });
+});

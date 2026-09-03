@@ -138,7 +138,16 @@ describe('the review page agrees with the run', () => {
 });
 
 describe('the review page renders', () => {
-  it('builds every section without throwing', () => {
+  /**
+   * Run the page's own script against a minimal stand-in for the browser.
+   *
+   * `over` replaces fields on the page's data block, which is how the states a
+   * healthy library never reaches — a listing that stopped short, a folder that
+   * would not fit — get tested at all.
+   *
+   * @param {Record<string, any>} [over]
+   */
+  const render = (over) => {
     const script = html.match(/<script>\n([\s\S]*?)<\/script>\s*$/);
     if (!script || script[1] === undefined) throw new Error('the page has no render script');
 
@@ -172,7 +181,7 @@ describe('the review page renders', () => {
     };
 
     const dataBlock = html.match(/<script type="application\/json" id="data">([\s\S]*?)<\/script>/);
-    box('data').textContent = dataBlock?.[1] ?? '{}';
+    box('data').textContent = JSON.stringify({ ...JSON.parse(dataBlock?.[1] ?? '{}'), ...(over || {}) });
 
     const missing = /** @type {string[]} */ ([]);
     // @ts-expect-error - a deliberately minimal stand-in for the browser
@@ -193,6 +202,11 @@ describe('the review page renders', () => {
     // docs/organiser-plan.html from this repository, nothing is interpolated
     // into it, and it runs against the stand-in above rather than a real DOM.
     new Function(script[1])();
+    return { box, missing };
+  };
+
+  it('builds every section without throwing', () => {
+    const { box, missing } = render();
 
     expect(missing, 'the script asked for elements the page does not have').toEqual([]);
 
@@ -219,5 +233,31 @@ describe('the review page renders', () => {
       expect(box('refused').children.length).toBeGreaterThan(0);
     }
     expect(box('stamp').textContent).toContain('renamed');
+  });
+
+  /**
+   * "Nothing else needed doing" and "nothing else was looked at" read the same
+   * on a page that shows neither. These are the three ways a run comes back
+   * incomplete, and each has to say so in words a person can act on.
+   */
+  it('says what a run did not do, when it did not do it', () => {
+    const { box } = render({
+      truncated: true,
+      listed: 5000,
+      heldBack: [{ folder: 'Programme/Dashboards', actions: 9 }],
+      unreachableFolders: ['/sites/Elsewhere/Somewhere'],
+    });
+    const cards = box('incomplete').children;
+    expect(cards.length).toBe(3);
+    const said = cards.map((/** @type {any} */ c) => c.children.map((/** @type {any} */ g) => g.textContent).join(' '));
+    expect(said[0]).toContain('has not read the whole library');
+    expect(said[0]).toContain('5000');
+    expect(said[1]).toContain('Programme/Dashboards was held back');
+    expect(said[2]).toContain('could not be created');
+  });
+
+  it('says nothing about gaps when there are none', () => {
+    const { box } = render({ truncated: false, heldBack: [], unreachableFolders: [] });
+    expect(box('incomplete').children.length).toBe(0);
   });
 });

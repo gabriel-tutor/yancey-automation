@@ -108,6 +108,187 @@ function nameOf(path) {
 }
 
 /**
+ * The folder a row would end up in.
+ *
+ * There is one of these because there was once more than one, and the two
+ * disagreed: a document renamed and moved got a call built from its old folder
+ * and a call built from its new one. Every question about where something lands
+ * — the call, the collision check, the review page — asks this.
+ *
+ * @param {any} row
+ * @returns {string}
+ */
+export function landingFolder(row) {
+  if (row && row.placement === 'move' && row.destination) {
+    // A plan line that names a destination overrides what this run worked out.
+    return row.approvedInto ? String(row.approvedInto) : folderOf(String(row.destination));
+  }
+  return folderOf(String((row && row.path) || ''));
+}
+
+/**
+ * The full path a row would end up at, name and folder together.
+ *
+ * @param {any} row
+ * @returns {string}
+ */
+export function landingPath(row) {
+  const path = String((row && row.path) || '');
+  return landingFolder(row) + '/' + String((row && row.proposed) || nameOf(path));
+}
+
+/** SharePoint Online refuses a server-relative path longer than this. */
+const MAX_PATH = 400;
+
+/**
+ * Hold back a change that cannot land, before it is ever sent.
+ *
+ * `flags=0` means SharePoint refuses rather than overwrites, so a collision
+ * costs a failed call rather than a document — but a run that plans a call it
+ * knows will fail is not reviewing anything. It is guessing, and finding out in
+ * front of whoever is watching.
+ *
+ * Three ways a change cannot land:
+ *
+ *   two documents composed onto one path   whichever ran second would fail
+ *   something is already sitting there     unless that something is moving away
+ *   the path is longer than 400 characters SharePoint's own ceiling
+ *
+ * This reads the proposal as proposed, not as gated by the switches, because
+ * the review page is what a person signs off and a plan with a collision inside
+ * it is a plan to fix rather than one to half-apply. A refusal cancels the whole
+ * change — name and folder together — because the safe state for a document
+ * nobody can place is the one it is already in.
+ *
+ * @param {any[]} rows plan rows
+ * @param {Array<{ name: string, path: string }>} files what the library holds
+ * @param {{ maxPathLength?: number }} [options]
+ * @returns {any[]} the same rows
+ */
+export function refuseImpossible(rows, files, options) {
+  const opts = options || {};
+  const limit = Number(opts.maxPathLength) > 0 ? Number(opts.maxPathLength) : MAX_PATH;
+  const list = Array.isArray(rows) ? rows : [];
+
+  /** @param {any} row @returns {boolean} */
+  const changing = (row) => landingPath(row) !== String(row.path || '');
+
+  // Where each moving document would land, keyed without case because
+  // SharePoint compares paths without case.
+  /** @type {Map<string, any[]>} */
+  const claims = new Map();
+  for (const row of list) {
+    if (!row || !row.path || !changing(row)) continue;
+    const key = landingPath(row).toLowerCase();
+    const group = claims.get(key) || [];
+    group.push(row);
+    claims.set(key, group);
+  }
+
+  // A document that is itself moving away frees the path it is on.
+  const leaving = new Set(
+    list.filter((row) => row && row.path && changing(row)).map((row) => String(row.path).toLowerCase()),
+  );
+  const occupied = new Set(
+    (Array.isArray(files) ? files : [])
+      .map((f) => String((f && f.path) || '').toLowerCase())
+      .filter((path) => path && !leaving.has(path)),
+  );
+
+  /** @param {any} row @returns {(because: string) => void} */
+  const hold = (row) => (/** @type {string} */ because) => {
+    row.proposed = '';
+    row.approved = false;
+    row.awaiting = '';
+    row.placement = 'settled';
+    row.destination = '';
+    row.blocked = because;
+  };
+
+  for (const row of list) {
+    if (!row || !row.path || !changing(row)) continue;
+    const landing = landingPath(row);
+    const key = landing.toLowerCase();
+    const refuse = hold(row);
+
+    const together = claims.get(key) || [];
+    if (together.length > 1) {
+      refuse(
+        together.length +
+          ' documents would land on the same path — ' +
+          landing +
+          ', so they need names or folders that tell them apart',
+      );
+      continue;
+    }
+    if (occupied.has(key) && key !== String(row.path).toLowerCase()) {
+      refuse('something already sits at ' + landing + ', and nothing here overwrites what is there');
+      continue;
+    }
+    if (landing.length > limit) {
+      refuse(
+        'that path is ' +
+          landing.length +
+          ' characters, longer than the ' +
+          limit +
+          ' characters SharePoint accepts',
+      );
+    }
+  }
+
+  return list;
+}
+
+/**
+ * The actions that fit in one run, taken as whole groups.
+ *
+ * A grouping is one folder plus every document that goes into it. Cutting the
+ * list at the cap could fall between them, which creates a folder and leaves
+ * its documents outside — a state nobody chose and nobody asked for. A group
+ * that does not fit is skipped rather than stopping the run, so a cap set too
+ * low still makes progress on everything else, and what was held back is
+ * reported rather than silently dropped.
+ *
+ * @param {Array<{ group?: string }>} actions each carrying the group it belongs to
+ * @param {number} cap
+ * @returns {{ send: any[], held: Array<{ group: string, actions: number }> }}
+ */
+export function fittingActions(actions, cap) {
+  const limit = Number(cap) > 0 ? Number(cap) : 0;
+  /** @type {string[]} */
+  const order = [];
+  /** @type {Map<string, any[]>} */
+  const byGroup = new Map();
+
+  for (const action of Array.isArray(actions) ? actions : []) {
+    const key = String((action && action.group) || '');
+    if (!byGroup.has(key)) {
+      byGroup.set(key, []);
+      order.push(key);
+    }
+    (byGroup.get(key) || []).push(action);
+  }
+
+  /** @type {any[]} */
+  const send = [];
+  /** @type {Array<{ group: string, actions: number }>} */
+  const held = [];
+  let used = 0;
+
+  for (const key of order) {
+    const group = byGroup.get(key) || [];
+    if (used + group.length <= limit) {
+      for (const action of group) send.push(action);
+      used += group.length;
+    } else {
+      held.push({ group: key, actions: group.length });
+    }
+  }
+
+  return { send, held };
+}
+
+/**
  * One change per file, or none.
  *
  * A row can want a new name, a new folder, or both. Both is still one call, and
@@ -146,9 +327,7 @@ export function plannedChanges(rows, options) {
     const wantMove = opts.applyMoves === true && row.placement === 'move' && Boolean(row.destination);
     if (!wantName && !wantMove) continue;
 
-    // A plan line that names a destination overrides what this run worked out.
-    const into = row.approvedInto ? String(row.approvedInto) : folderOf(String(row.destination));
-    const folder = wantMove ? into : folderOf(path);
+    const folder = wantMove ? landingFolder(row) : folderOf(path);
     const name = wantName ? String(row.proposed) : nameOf(path);
     const newPath = folder + '/' + name;
 
@@ -170,28 +349,69 @@ export function plannedChanges(rows, options) {
 }
 
 /**
- * Folders an approved destination needs, that are not there yet.
+ * Folders the documents would land in, that are not there yet.
+ *
+ * Every move needs somewhere to land, and this asks the question once for all
+ * of them rather than trusting whichever step proposed the move to have also
+ * proposed the folder. It was written the narrow way first — only the folders a
+ * pinned plan named — and a move to a folder nothing had thought to create went
+ * straight through to a call that could only fail.
  *
  * A person who approved filing a document into a folder approved the folder
- * with it. Without this, pinning a destination would be useless on the run that
- * matters: the folder the plan names is exactly the one the library does not
- * have, and every move into it would fail for want of somewhere to land.
+ * with it, and the same is true of a grouping the agent invented: the folder is
+ * not a separate decision, it is the other half of the move.
  *
- * Order matters and is the caller's job — these are created before anything
- * moves into them.
+ * A destination can be several levels deeper than anything that exists, and
+ * `addUsingPath` will not create a folder whose parent is missing — so every
+ * missing level is named, shallowest first, and creating them in that order is
+ * the caller's job.
  *
- * @param {any[]} rows plan rows, carrying `approvedInto` where a plan named one
- * @param {string[]} existing folders the library already has
- * @returns {string[]}
+ * The walk up stops at the first folder known to exist. A destination with no
+ * such ancestor is reported as unreachable rather than created: walking further
+ * would end at `/sites`, and nothing here has any business creating those.
+ * Pass the parent folder of every file alongside the folder list, because a
+ * folder holding a document certainly exists whether or not it was listed.
+ *
+ * @param {any[]} rows plan rows
+ * @param {string[]} existing folders known to be there
+ * @returns {{ create: string[], unreachable: string[] }}
  */
 export function foldersNeeded(rows, existing) {
-  const there = new Set((Array.isArray(existing) ? existing : []).map(String));
+  // SharePoint compares paths without case, so a folder that differs only in
+  // case is the same folder, and creating it again would fail.
+  const there = new Set(
+    (Array.isArray(existing) ? existing : []).map((f) => String(f).toLowerCase()),
+  );
   /** @type {string[]} */
-  const needed = [];
+  const create = [];
+  /** @type {string[]} */
+  const unreachable = [];
+  const planned = new Set();
+
   for (const row of Array.isArray(rows) ? rows : []) {
-    const into = String((row && row.approvedInto) || '');
-    if (!into || there.has(into) || needed.indexOf(into) !== -1) continue;
-    needed.push(into);
+    if (!row || row.placement !== 'move' || !row.destination) continue;
+    const into = landingFolder(row);
+    if (!into || there.has(into.toLowerCase()) || planned.has(into.toLowerCase())) continue;
+
+    // Walk up to the first level that is already there, collecting what is not.
+    /** @type {string[]} */
+    const missing = [];
+    let at = into;
+    while (at && at.indexOf('/') !== -1 && !there.has(at.toLowerCase()) && !planned.has(at.toLowerCase())) {
+      missing.unshift(at);
+      at = folderOf(at);
+    }
+
+    if (!at || (!there.has(at.toLowerCase()) && !planned.has(at.toLowerCase()))) {
+      unreachable.push(into);
+      continue;
+    }
+
+    for (const path of missing) {
+      create.push(path);
+      planned.add(path.toLowerCase());
+    }
   }
-  return needed;
+
+  return { create, unreachable };
 }

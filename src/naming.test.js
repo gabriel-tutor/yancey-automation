@@ -49,6 +49,46 @@ describe('which files a model is allowed to name', () => {
   });
 });
 
+/**
+ * Naming and placing are different questions and they have different answers.
+ * A document with no extension cannot be given a name in a convention that ends
+ * in one — but it can certainly be put in the right folder, and a file the
+ * organiser can never touch at all is a gap rather than a guardrail.
+ */
+describe('which files a model may be shown', () => {
+  const ODD = [...FILES, { name: 'README', path: ROOT + '/README', modified: '2026-04-15T10:00:00Z' }];
+  /** @returns {any[]} */
+  const oddRows = () => planRenames(ODD, {});
+
+  it('does not offer a file with no extension for renaming', () => {
+    expect(namingCandidates(oddRows(), REPORTS).map((r) => r.current)).not.toContain('README');
+  });
+
+  it('does offer it when the question is where it belongs', () => {
+    const names = namingCandidates(oddRows(), REPORTS, { forPlacement: true }).map((r) => r.current);
+    expect(names).toContain('README');
+  });
+
+  /** Moving a report changes its path exactly as renaming it would. */
+  it('still keeps a report out of both', () => {
+    const names = namingCandidates(oddRows(), REPORTS, { forPlacement: true }).map((r) => r.current);
+    expect(names).not.toContain('NiSource Metric Dashboard.pbix');
+    expect(names).not.toContain('NiSource Metric Data.xlsx');
+  });
+
+  it('records where the model said an unnameable document belongs', () => {
+    const rows = oddRows();
+    applyProposals(
+      rows,
+      [{ file: 'README', project: '', document: 'Read-Me', status: '', date: '', version: '', category: 'notes', folder: 'Resources and References', why: 'x' }],
+      { files: ODD, reports: REPORTS },
+    );
+    const row = rows.find((r) => r.current === 'README');
+    expect(row?.folderSuggestion).toBe('Resources and References');
+    expect(row?.proposed, 'there is no extension to build a name around').toBeFalsy();
+  });
+});
+
 describe('turning the model’s words into a name', () => {
   it('writes a real project and document name where a regex could write neither', () => {
     const rows = freshRows();

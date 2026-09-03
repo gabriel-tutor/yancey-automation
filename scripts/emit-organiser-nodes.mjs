@@ -8,10 +8,21 @@
 import { writeFileSync } from 'node:fs';
 import { codeNode } from './bundle.mjs';
 import { HELPERS } from '../workflows/helpers-manifest.mjs';
-import { APPLY, COMPOSE, CONFIG, SAFETY_NOTE, STRUCTURE_NOTE, SUMMARY } from '../workflows/wf-f-organizer.mjs';
+import {
+  APPLY,
+  COMPOSE,
+  CONFIG,
+  PICK,
+  REVIEW,
+  SAFETY_NOTE,
+  STRUCTURE_NOTE,
+  SUMMARY,
+} from '../workflows/wf-f-organizer.mjs';
 
 const out = {
   Config: JSON.stringify(CONFIG, null, 2),
+  'Review The Library': await codeNode(HELPERS['wf-f/Review The Library'], REVIEW),
+  'Pick What To Name': await codeNode(HELPERS['wf-f/Pick What To Name'], PICK),
   'Compose Request': await codeNode(HELPERS['wf-f/Compose Request'], COMPOSE),
   'Apply Proposals': await codeNode(HELPERS['wf-f/Apply Proposals'], APPLY),
   Summary: SUMMARY,

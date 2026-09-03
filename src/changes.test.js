@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { fileChangeUrl, folderChangeUrl, folderCreateUrl, foldersNeeded, odataQueryValue, plannedChanges } from './changes.js';
+import {
+  fileChangeUrl,
+  fittingActions,
+  folderChangeUrl,
+  folderCreateUrl,
+  foldersNeeded,
+  odataQueryValue,
+  plannedChanges,
+  refuseImpossible,
+} from './changes.js';
 
 /**
  * Both of these tests exist because of a specific failure on 3 September, in
@@ -239,29 +248,250 @@ describe('the folder calls', () => {
   });
 });
 
-describe('a folder an approved destination needs', () => {
+/**
+ * Where a change would land, and whether it can.
+ *
+ * Everything above answers "what call do we send". These answer the question
+ * that has to come first: would the call succeed? `flags=0` means SharePoint
+ * refuses rather than overwrites, so a collision is a failed call rather than a
+ * lost document — but a run that plans a call it knows will fail is not
+ * reviewing anything, it is guessing and finding out in front of the client.
+ */
+describe('a change that cannot land', () => {
   const REFS = LIB + '/Resources and References';
+  const DASH = REFS + '/Dashboards';
+
+  /** @param {any[]} rows @param {any[]} [files] @param {any} [opts] */
+  const refuse = (rows, files, opts) => {
+    refuseImpossible(rows, files || [], opts);
+    return rows;
+  };
+
+  it('refuses two documents that would land on one path', () => {
+    const rows = [
+      row({ current: 'a.xlsx', path: LIB + '/One/a.xlsx', placement: 'move', destination: DASH + '/a.xlsx' }),
+      row({ current: 'a.xlsx', path: LIB + '/Two/a.xlsx', placement: 'move', destination: DASH + '/a.xlsx' }),
+    ];
+    refuse(rows);
+    for (const r of rows) {
+      expect(r.placement).toBe('settled');
+      expect(r.destination).toBe('');
+      expect(r.blocked).toContain('would land on the same path');
+    }
+  });
+
+  /** Two files can share a name while they sit in different folders. */
+  it('refuses a move onto a document that is already there', () => {
+    const rows = [
+      row({ current: 'a.xlsx', path: LIB + '/One/a.xlsx', placement: 'move', destination: DASH + '/a.xlsx' }),
+    ];
+    refuse(rows, [{ name: 'a.xlsx', path: DASH + '/a.xlsx' }]);
+    expect(rows[0]?.placement).toBe('settled');
+    expect(rows[0]?.blocked).toContain('already sits');
+  });
+
+  it('allows the move when the document there is itself moving away', () => {
+    const rows = [
+      row({ current: 'a.xlsx', path: LIB + '/One/a.xlsx', placement: 'move', destination: DASH + '/a.xlsx' }),
+      row({ current: 'a.xlsx', path: DASH + '/a.xlsx', placement: 'move', destination: LIB + '/Two/a.xlsx' }),
+    ];
+    refuse(rows, [
+      { name: 'a.xlsx', path: LIB + '/One/a.xlsx' },
+      { name: 'a.xlsx', path: DASH + '/a.xlsx' },
+    ]);
+    expect(rows[0]?.placement).toBe('move');
+    expect(rows[1]?.placement).toBe('move');
+  });
+
+  /** SharePoint compares paths without case, so these are the same path. */
+  it('sees a collision that differs only in case', () => {
+    const rows = [
+      row({ current: 'a.xlsx', path: LIB + '/One/a.xlsx', placement: 'move', destination: DASH + '/A.XLSX' }),
+    ];
+    refuse(rows, [{ name: 'a.xlsx', path: DASH + '/a.xlsx' }]);
+    expect(rows[0]?.blocked).toContain('already sits');
+  });
+
+  it('refuses a rename onto a name already in the same folder', () => {
+    const rows = [
+      row({ current: 'Messy.xlsx', path: REFS + '/Messy.xlsx', proposed: 'SCE_Plan_2026-01-01_Draft_v0.1.xlsx' }),
+    ];
+    refuse(rows, [{ name: 'SCE_Plan_2026-01-01_Draft_v0.1.xlsx', path: REFS + '/SCE_Plan_2026-01-01_Draft_v0.1.xlsx' }]);
+    expect(rows[0]?.proposed).toBe('');
+    expect(rows[0]?.blocked).toContain('already sits');
+  });
 
   /**
-   * The run that made this necessary: the model grouped two workbooks into a
-   * new `Dashboards` folder, and an hour later grouped only one of them there,
-   * so the folder was refused by the rule that a new folder must hold two
-   * documents. Pinning the destination fixes the filing; this fixes the folder,
-   * because a person who approved the destination approved the folder with it.
+   * SharePoint Online refuses a server-relative path over 400 characters, and
+   * the failure it gives back says nothing about which document caused it.
    */
-  it('names the folder a pinned destination has nowhere to land in', () => {
+  it('refuses a path longer than SharePoint accepts', () => {
+    const deep = LIB + '/' + 'A folder with quite a long name'.repeat(15);
+    const rows = [row({ current: 'a.xlsx', path: LIB + '/a.xlsx', placement: 'move', destination: deep + '/a.xlsx' })];
+    refuse(rows);
+    expect(rows[0]?.blocked).toContain('longer than the 400 characters');
+    expect(rows[0]?.placement).toBe('settled');
+  });
+
+  it('leaves a change that lands somewhere free entirely alone', () => {
     const rows = [
-      row({ approvedInto: REFS + '/Dashboards' }),
-      row({ approvedInto: REFS + '/Dashboards' }),
+      row({
+        current: 'a.xlsx',
+        path: LIB + '/One/a.xlsx',
+        proposed: 'SCE_Plan_2026-01-01_Draft_v0.1.xlsx',
+        placement: 'move',
+        destination: DASH + '/a.xlsx',
+      }),
     ];
-    expect(foldersNeeded(rows, [LIB, REFS])).toEqual([REFS + '/Dashboards']);
+    refuse(rows, [{ name: 'a.xlsx', path: LIB + '/One/a.xlsx' }]);
+    expect(rows[0]?.proposed).toBe('SCE_Plan_2026-01-01_Draft_v0.1.xlsx');
+    expect(rows[0]?.placement).toBe('move');
+    expect(rows[0]?.blocked).toBeFalsy();
   });
 
-  it('says nothing about a folder that is already there', () => {
-    expect(foldersNeeded([row({ approvedInto: REFS })], [LIB, REFS])).toEqual([]);
+  /** A file that is not changing cannot collide with itself. */
+  it('says nothing about a document that is staying put', () => {
+    const rows = [row({ current: 'a.xlsx', path: LIB + '/a.xlsx' })];
+    refuse(rows, [{ name: 'a.xlsx', path: LIB + '/a.xlsx' }]);
+    expect(rows[0]?.blocked).toBeFalsy();
   });
 
-  it('says nothing when no destination was approved', () => {
-    expect(foldersNeeded([row({ placement: 'move', destination: REFS + '/x.xlsx' })], [LIB])).toEqual([]);
+  /** A plan line's destination is the one that gets used, so it is the one checked. */
+  it('checks the destination a plan pinned, not the one the run worked out', () => {
+    const rows = [
+      row({
+        current: 'a.xlsx',
+        path: LIB + '/One/a.xlsx',
+        placement: 'move',
+        destination: LIB + '/Somewhere/a.xlsx',
+        approvedInto: DASH,
+      }),
+    ];
+    refuse(rows, [{ name: 'a.xlsx', path: DASH + '/a.xlsx' }]);
+    expect(rows[0]?.blocked).toContain('already sits');
+  });
+});
+
+describe('what fits in one run', () => {
+  /** @param {string} group @param {string} name */
+  const action = (group, name) => ({ group, newName: name });
+
+  /**
+   * A grouping is one folder plus every document that goes into it. Slicing the
+   * list at the cap could cut between them, which creates a folder and leaves
+   * the documents outside it — a state nobody chose and nobody asked for.
+   */
+  it('never sends half a folder', () => {
+    const actions = [
+      action('f:Dashboards', 'Dashboards'),
+      action('f:Dashboards', 'a.xlsx'),
+      action('f:Dashboards', 'b.xlsx'),
+      action('one:c', 'c.xlsx'),
+    ];
+    const { send, held } = fittingActions(actions, 2);
+    expect(send.map((a) => a.newName)).toEqual(['c.xlsx']);
+    expect(held).toEqual([{ group: 'f:Dashboards', actions: 3 }]);
+  });
+
+  it('sends whole groups in order while they fit', () => {
+    const actions = [
+      action('f:Dashboards', 'Dashboards'),
+      action('f:Dashboards', 'a.xlsx'),
+      action('one:b', 'b.xlsx'),
+    ];
+    const { send, held } = fittingActions(actions, 3);
+    expect(send.map((a) => a.newName)).toEqual(['Dashboards', 'a.xlsx', 'b.xlsx']);
+    expect(held).toEqual([]);
+  });
+
+  /** Skipping rather than stopping means a run still makes progress. */
+  it('carries on past a group that does not fit', () => {
+    const actions = [
+      action('f:Big', '1'),
+      action('f:Big', '2'),
+      action('f:Big', '3'),
+      action('one:small', '4'),
+    ];
+    const { send } = fittingActions(actions, 2);
+    expect(send.map((a) => a.newName)).toEqual(['4']);
+  });
+
+  it('sends nothing when there is no room at all', () => {
+    expect(fittingActions([action('a', 'x')], 0).send).toEqual([]);
+  });
+});
+
+describe('the folders the documents need', () => {
+  const REFS = LIB + '/Resources and References';
+  /** @param {string} into @param {Partial<any>} [over] */
+  const heading = (into, over) =>
+    row({ placement: 'move', destination: into + '/x.xlsx', ...over });
+
+  it('creates every missing level, shallowest first', () => {
+    const rows = [heading(REFS + '/Dashboards/Weekly')];
+    expect(foldersNeeded(rows, [LIB, REFS]).create).toEqual([
+      REFS + '/Dashboards',
+      REFS + '/Dashboards/Weekly',
+    ]);
+  });
+
+  /**
+   * Written the narrow way first — only folders a pinned plan named — and a
+   * move to a folder nothing had thought to create went straight through to a
+   * call that could only fail.
+   */
+  it('names a folder the run invented, not only one a plan pinned', () => {
+    const rows = [heading(REFS + '/Dashboards')];
+    expect(rows[0]?.approvedInto).toBeUndefined();
+    expect(foldersNeeded(rows, [LIB, REFS]).create).toEqual([REFS + '/Dashboards']);
+  });
+
+  it('matches an existing folder without case', () => {
+    const rows = [heading(LIB + '/RESOURCES AND REFERENCES')];
+    expect(foldersNeeded(rows, [LIB, REFS]).create).toEqual([]);
+  });
+
+  /**
+   * A destination with no known ancestor cannot be created safely: the walk up
+   * would end at /sites, and this has no business making site collections.
+   */
+  it('refuses a destination with no ancestor it knows exists', () => {
+    const rows = [heading('/sites/Elsewhere/Shared Documents/Somewhere')];
+    const { create, unreachable } = foldersNeeded(rows, [LIB, REFS]);
+    expect(create).toEqual([]);
+    expect(unreachable).toEqual(['/sites/Elsewhere/Shared Documents/Somewhere']);
+  });
+
+  it('names each folder once however many documents want it', () => {
+    const rows = [heading(REFS + '/Dashboards'), heading(REFS + '/Dashboards')];
+    expect(foldersNeeded(rows, [LIB, REFS]).create).toEqual([REFS + '/Dashboards']);
+  });
+
+  it('uses the folder a plan pinned over the one the run worked out', () => {
+    const rows = [heading(LIB + '/Somewhere', { approvedInto: REFS + '/Dashboards' })];
+    expect(foldersNeeded(rows, [LIB, REFS]).create).toEqual([REFS + '/Dashboards']);
+  });
+
+  it('says nothing about a document that is staying where it is', () => {
+    expect(foldersNeeded([row({})], [LIB]).create).toEqual([]);
+  });
+});
+
+/**
+ * Names that are not plain ASCII.
+ *
+ * The escaping here covers what would end an OData string literal or start a new
+ * query parameter. Everything else — accented letters, CJK, an em-dash in a
+ * title — is left exactly as it is, because the HTTP layer percent-encodes a URL
+ * on the way out and encoding it twice would send the escape rather than the
+ * character. This is a decision, not an omission.
+ */
+describe('a file name that is not plain ASCII', () => {
+  it('passes accented and non-Latin characters through untouched', () => {
+    expect(odataQueryValue('/a/Résumé — 日本語.docx')).toBe('/a/Résumé%20—%20日本語.docx');
+  });
+
+  it('still escapes what would break the request around them', () => {
+    expect(odataQueryValue("/a/Café & Bar's 50%.docx")).toBe("/a/Café%20%26%20Bar''s%2050%25.docx");
   });
 });

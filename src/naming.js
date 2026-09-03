@@ -27,7 +27,8 @@ const FIRST_APPROVED = { major: 1, minor: 0 };
 const FIRST_DRAFT = { major: 0, minor: 1 };
 
 /**
- * Files a model may name.
+ * Files a model may name — or, with `forPlacement`, files it may be shown at
+ * all.
  *
  * The Power BI guards are not negotiable and never reach the model: a `.pbix`
  * keeps its data-source paths inside itself, so no amount of reading the
@@ -35,15 +36,22 @@ const FIRST_DRAFT = { major: 0, minor: 1 };
  * game, including files that already parse — those are the ones carrying no
  * project code, which is exactly what the regex could not supply.
  *
+ * Naming and placing are different questions with different answers. A document
+ * with no extension cannot be given a name in a convention that ends in one,
+ * but it can certainly be put in the right folder — and a file the organiser
+ * can never touch at all is a gap rather than a guardrail. `forPlacement`
+ * relaxes the extension rule and nothing else: a report is still kept out of
+ * both, because moving one changes its path exactly as renaming it would.
+ *
  * @param {Array<{ current: string, path: string, blocked?: string, compliant?: boolean }>} rows
  * @param {Array<{ name: string, path?: string }>} reports
- * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] }, includeReports?: boolean }} [options]
+ * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] }, includeReports?: boolean, forPlacement?: boolean }} [options]
  * @returns {Array<{ current: string, path: string }>}
  */
 export function namingCandidates(rows, reports, options) {
   return (Array.isArray(rows) ? rows : []).filter((row) => {
     const name = String(row.current || '');
-    if (!splitExtension(name).extension) return false;
+    if (!splitExtension(name).extension && !(options && options.forPlacement)) return false;
     // A report is excluded by default. Not because renaming one is unsafe in
     // the way a workbook is - the reports here read nothing from this library -
     // but because a .pbix is also referenced from outside it, by whatever
@@ -315,7 +323,10 @@ export function applyProposals(rows, proposals, options) {
   const modified = new Map(
     (opts.files || []).map((f) => [String(f.path), String(f.modified || '').slice(0, 10)]),
   );
-  const allowed = new Set(namingCandidates(rows, reports, opts).map((r) => String(r.current)));
+  const nameable = new Set(namingCandidates(rows, reports, opts).map((r) => String(r.current)));
+  const placeable = new Set(
+    namingCandidates(rows, reports, { ...opts, forPlacement: true }).map((r) => String(r.current)),
+  );
   const byName = new Map(
     (Array.isArray(proposals) ? proposals : []).map((p) => [String(p && p.file), p]),
   );
@@ -325,15 +336,18 @@ export function applyProposals(rows, proposals, options) {
     if (!p) continue;
 
     // Defence in depth. A guarded file should never have been sent, and must
-    // not be renamed even if a proposal comes back for it anyway.
-    if (!allowed.has(String(row.current))) continue;
+    // not be touched even if a proposal comes back for it anyway.
+    if (!placeable.has(String(row.current))) continue;
 
     // Where a document belongs and what it is called are separate judgements,
     // so the folder is recorded before the name is checked. A file that is
-    // already named correctly can still be in the wrong place, and a name that
-    // fails the convention should not take a good filing decision with it.
+    // already named correctly can still be in the wrong place, a name that
+    // fails the convention should not take a good filing decision with it, and
+    // a document with no extension can be filed even though it cannot be named.
     // `planStructure` decides which of these suggestions become real folders.
     row.folderSuggestion = String(p.folder || '').trim();
+
+    if (!nameable.has(String(row.current))) continue;
 
     const document = String(p.document || '').trim();
     if (!document) continue;

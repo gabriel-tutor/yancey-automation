@@ -409,3 +409,32 @@ export function categoriseAll(files, options) {
     return { name: String(file.name || ''), path: String(file.path || ''), ...found };
   });
 }
+
+/**
+ * The folder every one of these paths sits inside.
+ *
+ * A library root is not a constant, and writing it as one made the review page
+ * a page about *this* library rather than a page about a library: it stripped a
+ * literal site path off everything, and pointed anywhere else it would have
+ * rendered every folder as its full server path.
+ *
+ * The prefix is taken on path separators, so two folders called `Task
+ * Management` and `Task Force` share `/a` rather than `/a/Task `.
+ *
+ * @param {string[]} paths
+ * @returns {string}
+ */
+export function libraryRootOf(paths) {
+  const real = (Array.isArray(paths) ? paths : []).map(String).filter(Boolean);
+  if (real.length === 0) return '';
+
+  let shared = String(real[0]).split('/');
+  for (const path of real.slice(1)) {
+    const parts = path.split('/');
+    let n = 0;
+    while (n < shared.length && n < parts.length && shared[n] === parts[n]) n += 1;
+    shared = shared.slice(0, n);
+  }
+
+  return shared.join('/');
+}

@@ -56,7 +56,13 @@ export const CONFIG = {
   host: TARGET.sharepointHost || 'https://upperformpartners.sharepoint.com',
   sitePath: TARGET.sharepointSite || '/sites/TaskManagement',
   libraryTitle: 'Documents',
-  maxItems: 200,
+
+  // One page of list items, and SharePoint's own ceiling for a single request.
+  // It was 200, which is fine for this library and wrong as a default: a name
+  // checked for collisions against half a library is not checked at all. If a
+  // library ever exceeds this the run reads what it can, reports that it did,
+  // and applies nothing.
+  maxItems: 5000,
 
   // Both off by default. A rename or a move breaks every saved link, Teams tab
   // and Power BI data source that points at the old path, so either happens
@@ -223,7 +229,7 @@ return [{ json: {
 }}];
 `;
 
-const REVIEW = `
+export const REVIEW = `
 const cfg = $('Config').first().json;
 const listed = $('List The Library').first().json || {};
 const items = Array.isArray(listed.value) ? listed.value : [];
@@ -291,16 +297,20 @@ return [{ json: {
 `;
 
 /** Which documents a model may name, and where to fetch each one from. */
-const PICK = `
+export const PICK = `
 const cfg = $('Config').first().json;
 const review = $input.first().json || {};
 const rows = review.rows || [];
 const files = review.files || [];
 
 const reports = reportsIn(files);
+// forPlacement lets a document with no extension be shown: it cannot be given
+// a name in a convention that ends in one, but it can be put in the right
+// folder, and a file the organiser can never touch at all is a gap.
 const candidates = namingCandidates(rows, reports, {
   dependencies: review.dependencies,
-  includeReports: cfg.renameReports === true
+  includeReports: cfg.renameReports === true,
+  forPlacement: true
 }).slice(0, Number(cfg.maxNamed) || 30);
 
 // Always emit something, so the branch below runs even when there is nothing
@@ -454,6 +464,15 @@ if (incoming.error) {
   }
 }
 
+// A library bigger than one page of list items is a library this run has only
+// partly seen, and a name checked for collisions against half a library is not
+// checked at all. Every list item became either a file or a folder, so the two
+// counted together are exactly what the listing returned - and if that reached
+// the ceiling it was asked for, there may be more behind it. Nothing is applied
+// while this is true.
+const listed = files.length + (review.folders || []).length;
+const truncated = listed >= (Number(cfg.maxItems) || 200);
+
 const reports = reportsIn(files);
 const dependencies = review.dependencies || { byFile: {}, unreadable: [], read: [] };
 applyProposals(rows, proposals, {
@@ -516,25 +535,44 @@ const structure = planStructure(rows, {
   minPerFolder: Number(cfg.minPerFolder) || 2,
   includeReports: cfg.renameReports === true
 });
+// Nothing that follows may plan a change that cannot land. Two documents
+// composed onto one path, a document already sitting where another wants to be,
+// a path past SharePoint's 400-character ceiling: each is a call that fails, and
+// finding out by sending it is not a review.
+refuseImpossible(rows, files);
+
+// Every move needs somewhere to land, and this asks once for all of them rather
+// than trusting whichever step proposed the move to have proposed the folder
+// too. A folder is not a separate decision - it is the other half of the move -
+// so this covers what a plan pinned and what the agent invented alike, and a
+// folder nothing lands in any more is not created at all.
+//
+// A folder holding a document certainly exists whether or not the listing named
+// it, so the parents of every file count as known.
+const knownFolders = (review.folders || []).concat(files.map(function (f) {
+  return String(f.path || '').slice(0, String(f.path || '').lastIndexOf('/'));
+}));
+const needed = foldersNeeded(rows, knownFolders);
+const wantedFolders = needed.create;
+
+// The folders about to be created count as existing for the rename check, or a
+// run could propose creating "Dashboards" and renaming another folder to
+// "Dashboards" in the same breath, and whichever ran second would fail.
 const folderPlan = planFolderRenames(modelFolders, {
-  folders: review.folders || [],
+  folders: (review.folders || []).concat(wantedFolders),
   files: files,
   includeReports: cfg.renameReports === true
 });
 
-// A folder the approved plan files something into, that is not there yet. A
-// person who approved the destination approved the folder with it - and without
-// this, pinning a destination would fail on exactly the run that needs it, when
-// the folder the plan names is the one the library does not have.
-//
-// This is also what makes the structure repeatable. The folder a model suggests
-// is no more deterministic than the name it writes: two runs an hour apart put
-// the same two workbooks in a new Dashboards folder and then did not, so the
-// folder was created once and refused the next time for holding one document.
-// Pinned first, proposed second, each path once.
-const pinnedFolders = foldersNeeded(rows, review.folders || []);
-const proposedFolders = structure.create.filter(function (f) { return pinnedFolders.indexOf(f) === -1; });
-const wantedFolders = pinnedFolders.concat(proposedFolders);
+// Documents past maxNamed were never shown to the model, so nothing was
+// proposed for them - which is a fact about this run rather than about them,
+// and reads as "nothing needed doing" unless it is said out loud.
+const couldBeNamed = namingCandidates(rows, reports, {
+  dependencies: dependencies,
+  includeReports: cfg.renameReports === true,
+  forPlacement: true
+}).length;
+const beyondModel = Math.max(0, couldBeNamed - (Number(cfg.maxNamed) || 30));
 
 const toRename = rows.filter(function (r) { return r.proposed && (!pinned || r.approved === true); });
 const awaiting = rows.filter(function (r) { return r.proposed && pinned && r.approved !== true; });
@@ -559,7 +597,11 @@ const summary = {
   pinned: pinned,
   planNote: planNote,
   modelNote: modelNote,
+  truncated: truncated,
+  listed: listed,
+  beyondModel: beyondModel,
   newFolders: wantedFolders,
+  unreachableFolders: needed.unreachable,
   folderRefusals: structure.refused,
   folderRenames: folderPlan.renames,
   folderRenameRefusals: folderPlan.refused,
@@ -586,28 +628,34 @@ const creating = cfg.applyStructure === true;
 const newFolders = creating ? wantedFolders : [];
 
 // A move into a folder that does not exist yet cannot happen unless that folder
-// is being created on this run. Filing into a folder that is already there is
+// is being created on this run - and that holds however deep the destination
+// is, not just directly inside it. Filing into a folder that is already there is
 // gated by applyMoves alone.
-const blockedByStructure = {};
-if (!creating) {
-  for (const f of wantedFolders) blockedByStructure[f] = true;
-}
+const notBeingCreated = creating ? [] : wantedFolders;
+const wouldLandNowhere = function (folder) {
+  return notBeingCreated.some(function (f) { return folder === f || folder.indexOf(f + '/') === 0; });
+};
 
 const fileChanges = plannedChanges(rows, {
   applyRenames: cfg.applyRenames === true,
   applyMoves: cfg.applyMoves === true,
   requireApproval: pinned
 }).filter(function (c) {
-  return !blockedByStructure[folderOf(c.newPath)];
+  return !wouldLandNowhere(c.newPath.slice(0, c.newPath.lastIndexOf('/')));
 });
 
 // Order is the whole of the safety here. Folders are created before anything
 // moves into them, and folders are renamed LAST - everything inside a folder
 // moves with it, so a file change computed against the old path has to happen
 // while that path is still real.
+//
+// Every action carries the group it belongs to, because a folder and the
+// documents that go into it have to be applied together or not at all: a cap
+// that fell between them would create a folder and leave its documents outside.
 const actions = [];
 for (const path of newFolders) {
   actions.push({
+    group: 'folder:' + path,
     kind: 'create folder',
     oldName: '',
     newName: path.slice(path.lastIndexOf('/') + 1),
@@ -618,7 +666,10 @@ for (const path of newFolders) {
   });
 }
 for (const c of fileChanges) {
+  const folder = c.newPath.slice(0, c.newPath.lastIndexOf('/'));
+  const into = newFolders.filter(function (f) { return folder === f || folder.indexOf(f + '/') === 0; });
   actions.push({
+    group: into.length > 0 ? 'folder:' + into[0] : 'file:' + c.oldPath,
     kind: c.kind,
     oldName: c.oldName,
     newName: c.newName,
@@ -631,6 +682,7 @@ for (const c of fileChanges) {
 if (cfg.applyFolderRenames === true) {
   for (const r of folderPlan.renames) {
     actions.push({
+      group: 'rename:' + r.from,
       kind: 'rename folder',
       oldName: r.from.slice(r.from.lastIndexOf('/') + 1),
       newName: r.to.slice(r.to.lastIndexOf('/') + 1),
@@ -642,13 +694,24 @@ if (cfg.applyFolderRenames === true) {
   }
 }
 
+// A library only partly listed is a library whose collisions are only partly
+// known, so nothing is sent until the whole of it has been read.
+const fitting = truncated
+  ? { send: [], held: [] }
+  : fittingActions(actions, Number(cfg.maxChangesPerRun) || 5);
+summary.heldBack = fitting.held;
+if (truncated && actions.length > 0) {
+  summary.planNote += ' - NOTHING WAS APPLIED: the library has at least ' + summary.listed +
+    ' items, which is everything this run was allowed to list, so it has not seen all of it. Raise maxItems.';
+}
+
 // Nothing to do still emits one item, so the summary always runs and the
 // caller always gets an answer rather than a silent branch.
-if (actions.length === 0) {
+if (fitting.send.length === 0) {
   return [{ json: Object.assign({ nothingToDo: true }, summary) }];
 }
 
-return actions.slice(0, Number(cfg.maxChangesPerRun) || 5).map(function (a) {
+return fitting.send.map(function (a) {
   return { json: {
     nothingToDo: false,
     kind: a.kind,
@@ -748,6 +811,13 @@ return [{ json: {
   approvedCount: r.approvedCount,
   approvedMissing: r.approvedMissing || [],
   approvedDone: r.approvedDone || [],
+  // Facts about what this run could NOT see or do. A page that hides these is
+  // a page claiming a completeness the run did not have.
+  truncated: r.truncated === true,
+  listed: r.listed,
+  beyondModel: r.beyondModel || 0,
+  heldBack: r.heldBack || [],
+  unreachableFolders: r.unreachableFolders || [],
   readContents: r.readContents,
   toRename: toRename,
   awaitingApproval: awaiting,

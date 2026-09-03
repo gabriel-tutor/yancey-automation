@@ -1,15 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  categorise,
-  categoriseAll,
-  folderOf,
-  isReport,
-  planPlacements,
-  reportReading,
-  reportsIn,
-  splitExtension,
-  stageFolderOf,
-} from './library.js';
+import { categorise, categoriseAll, folderOf, isReport, libraryRootOf, planPlacements, reportReading, reportsIn, splitExtension, stageFolderOf } from './library.js';
 
 /**
  * The Task Management library in miniature, keeping the shapes that matter:
@@ -345,5 +335,34 @@ describe('refusing on evidence rather than on resemblance', () => {
         dependencies: { byFile: {}, unreadable: [] },
       }),
     ).toBeNull();
+  });
+});
+
+/**
+ * Nothing here should know which site it is looking at. The review page used to
+ * strip a literal "/sites/TaskManagement/Shared Documents/" off every path,
+ * which made it a page about one library rather than a page about a library.
+ */
+describe('where a library starts', () => {
+  const A = '/sites/Task/Shared Documents/Programme';
+  it('finds the folder every path is inside', () => {
+    expect(libraryRootOf([A + '/One', A + '/Two/Deeper', A + '/a.xlsx'])).toBe(A);
+  });
+
+  it('stops at a path separator rather than mid-name', () => {
+    expect(libraryRootOf(['/a/Task Management', '/a/Task Force'])).toBe('/a');
+  });
+
+  it('answers the path itself when there is only one', () => {
+    expect(libraryRootOf([A])).toBe(A);
+  });
+
+  it('answers nothing when the paths share nothing', () => {
+    expect(libraryRootOf(['/a/one', '/b/two'])).toBe('');
+  });
+
+  it('answers nothing for nothing', () => {
+    expect(libraryRootOf([])).toBe('');
+    expect(libraryRootOf(['', ''])).toBe('');
   });
 });

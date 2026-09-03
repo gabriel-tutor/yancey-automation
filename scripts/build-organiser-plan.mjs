@@ -24,7 +24,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { folderOf } from '../src/library.js';
+import { folderOf, libraryRootOf } from '../src/library.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const runPath = join(root, 'fixtures/sharepoint/organiser-run.json');
@@ -66,21 +66,36 @@ function refusalGroup(blocked) {
   return 'other';
 }
 
+// The library root is the same for every row and only makes the page harder to
+// read — but it is not a constant, and writing it as one made this a page about
+// one library rather than a page about a library. It is whatever folder every
+// path in the run happens to sit inside.
+const libraryRoot = libraryRootOf([
+  ...(run.folders || []).map(String),
+  ...rows.map((r) => folderOf(String(r.path))),
+]);
+
+/** @param {string} path @returns {string} */
+const withoutRoot = (path) => {
+  const value = String(path);
+  if (!libraryRoot) return value;
+  if (value === libraryRoot) return '';
+  return value.indexOf(libraryRoot + '/') === 0 ? value.slice(libraryRoot.length + 1) : value;
+};
+
 /**
- * The library root is the same for every row and only makes the page harder to
- * read. Show where a file lives, not the whole server path.
+ * Where a document lives, without the part of the path that is the same for
+ * everything on the page.
  *
  * @param {string} path
  * @returns {string}
  */
 function folderLabel(path) {
-  const trimmed = folderOf(path).replace(/^\/sites\/TaskManagement\/Shared Documents\/?/, '');
-  return trimmed || '(library root)';
+  return withoutRoot(folderOf(path)) || '(library root)';
 }
 
 /** @param {string} path */
-const asFolderLabel = (path) =>
-  String(path).replace(/^\/sites\/TaskManagement\/Shared Documents\/?/, '') || '(library root)';
+const asFolderLabel = (path) => withoutRoot(path) || '(library root)';
 
 // The folder tree, counted from the rows so the page and the run cannot
 // disagree about how many files sit where. Folders the run listed but that hold
@@ -183,6 +198,17 @@ const data = {
   // just read this and would like you to look" — and the run that could not
   // tell them apart reported eight freshly-named documents as refusals.
   pinned: run.summary?.pinned === true,
+  // What the run could not see or could not fit. Left off the page, these are
+  // the difference between "nothing else needed doing" and "nothing else was
+  // looked at", which read identically and mean opposite things.
+  truncated: run.summary?.truncated === true,
+  listed: Number(run.summary?.listed || 0),
+  beyondModel: Number(run.summary?.beyondModel || 0),
+  heldBack: (run.summary?.heldBack || []).map((/** @type {any} */ h) => ({
+    folder: asFolderLabel(String(h.group || '').replace(/^folder:/, '')),
+    actions: Number(h.actions || 0),
+  })),
+  unreachableFolders: (run.summary?.unreachableFolders || []).map(asFolderLabel),
   // What it came up with when asked to organise rather than to rename.
   newFolders: (run.summary?.newFolders || []).map(asFolderLabel),
   folderRenames: (run.summary?.folderRenames || []).map((/** @type {any} */ r) => ({

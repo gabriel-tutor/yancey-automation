@@ -67,6 +67,26 @@ export function safeFolderName(name) {
   return { ok: true, reason: '' };
 }
 
+/**
+ * The folders that are there, looked up without case and answered with the
+ * spelling SharePoint actually holds.
+ *
+ * SharePoint compares paths without regard to case, so `Dashboards` and
+ * `dashboards` are one folder. Treating them as two proposes a folder that
+ * already exists and fails the create on a collision it could have seen. And
+ * once matched, the answer has to be the path that exists rather than the one
+ * suggested, or everything downstream carries a path the library does not have.
+ *
+ * @param {string[] | undefined} folders
+ * @returns {(path: string) => string}
+ */
+function folderLookup(folders) {
+  /** @type {Map<string, string>} */
+  const byLower = new Map();
+  for (const folder of folders || []) byLower.set(String(folder).toLowerCase(), String(folder));
+  return (path) => byLower.get(String(path).toLowerCase()) || '';
+}
+
 /** @param {string} path @returns {string} */
 function lastSegment(path) {
   const cut = String(path || '').lastIndexOf('/');
@@ -108,13 +128,14 @@ function isOrInStageFolder(folderPath) {
  */
 export function planStructure(rows, options) {
   const opts = options || {};
-  const existing = new Set((opts.folders || []).map(String));
+  const asItIs = folderLookup(opts.folders);
   const maxNew = opts.maxNewFolders === undefined ? 6 : Number(opts.maxNewFolders);
   const minPer = opts.minPerFolder === undefined ? 2 : Number(opts.minPerFolder);
 
-  // A folder cannot take the name of a file already sitting beside it.
+  // A folder cannot take the name of a file already sitting beside it, and
+  // SharePoint does not care which case that file's name is in.
   const takenByAFile = new Set(
-    (opts.files || []).map((f) => folderOf(String(f.path)) + '/' + String(f.name)),
+    (opts.files || []).map((f) => (folderOf(String(f.path)) + '/' + String(f.name)).toLowerCase()),
   );
 
   /** @type {Array<{ file: string, folder: string, because: string }>} */
@@ -159,9 +180,12 @@ export function planStructure(rows, options) {
     // A name beside the document wins; then the one folder of that name
     // anywhere; otherwise a new folder beside the document.
     const beside = parent + '/' + suggestion;
-    const elsewhere = [...existing].filter((f) => f !== beside && lastSegment(f) === suggestion);
-    let target = beside;
-    if (!existing.has(beside)) {
+    const here = asItIs(beside);
+    const elsewhere = (opts.folders || [])
+      .map(String)
+      .filter((f) => f.toLowerCase() !== beside.toLowerCase() && lastSegment(f).toLowerCase() === suggestion.toLowerCase());
+    let target = here || beside;
+    if (!here) {
       if (elsewhere.length === 1) {
         target = String(elsewhere[0]);
       } else if (elsewhere.length > 1) {
@@ -183,7 +207,7 @@ export function planStructure(rows, options) {
       });
       continue;
     }
-    if (takenByAFile.has(target)) {
+    if (takenByAFile.has(target.toLowerCase())) {
       refused.push({
         file: row.current,
         folder: suggestion,
@@ -211,7 +235,7 @@ export function planStructure(rows, options) {
   const groups = [...wanted.entries()].sort((a, b) => b[1].length - a[1].length);
 
   for (const [target, group] of groups) {
-    const alreadyThere = existing.has(target);
+    const alreadyThere = Boolean(asItIs(target));
     if (!alreadyThere && group.length < minPer) {
       for (const row of group) {
         refused.push({
@@ -262,7 +286,7 @@ export function planStructure(rows, options) {
  */
 export function planFolderRenames(proposals, options) {
   const opts = options || {};
-  const existing = new Set((opts.folders || []).map(String));
+  const asItIs = folderLookup(opts.folders);
   const files = opts.files || [];
   /** @type {Array<{ from: string, to: string, why: string }>} */
   const renames = [];
@@ -270,17 +294,20 @@ export function planFolderRenames(proposals, options) {
   const refused = [];
 
   for (const proposal of Array.isArray(proposals) ? proposals : []) {
-    const from = String((proposal && proposal.from) || '');
+    const asked = String((proposal && proposal.from) || '');
     const to = String((proposal && proposal.to) || '').trim();
-    if (!from || !to) continue;
+    if (!asked || !to) continue;
 
-    const current = lastSegment(from);
-    if (current === to) continue;
-
-    if (!existing.has(from)) {
-      refused.push({ folder: from, because: 'there is no folder at that path any more' });
+    // The model copies a path back; SharePoint holds one spelling of it. Move
+    // the one that exists, not the one that was typed.
+    const from = asItIs(asked);
+    if (!from) {
+      refused.push({ folder: asked, because: 'there is no folder at that path any more' });
       continue;
     }
+
+    const current = lastSegment(from);
+    if (current.toLowerCase() === to.toLowerCase()) continue;
     if (STAGE_FOLDER.test(current)) {
       refused.push({
         folder: current,
@@ -311,7 +338,7 @@ export function planFolderRenames(proposals, options) {
 
     const parent = folderOf(from);
     const target = parent + '/' + to;
-    if (existing.has(target)) {
+    if (asItIs(target)) {
       refused.push({ folder: current, because: 'a folder called ' + to + ' already sits beside it' });
       continue;
     }
