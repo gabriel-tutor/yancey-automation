@@ -1207,6 +1207,40 @@ describe('WF-G web endpoint node bodies', () => {
     expect(sent.host).toBeUndefined();
   });
 
+  it('passes settings through to the organiser', () => {
+    const asked = decide({ chosen: [], settings: { renameReports: false, readContents: false, maxChangesPerRun: 4 } });
+    const sent = JSON.parse(asked.overrides);
+    expect(sent.renameReports).toBe(false);
+    expect(sent.readContents).toBe(false);
+    expect(sent.maxChangesPerRun).toBe(4);
+  });
+
+  it('will not let settings arm a run behind the ticks', () => {
+    // The ticks decide what a run does. A caller hiding applyRenames in its
+    // settings has it overwritten, because approvedFrom always writes all five.
+    const asked = decide({ chosen: [], settings: { applyRenames: true, applyMoves: true, applyProposed: true } });
+    const sent = JSON.parse(asked.overrides);
+    expect(sent.applyRenames).toBe(false);
+    expect(sent.applyMoves).toBe(false);
+    expect(sent.applyProposed).toBe(false);
+  });
+
+  it('keeps the ticks when settings arrive alongside them', () => {
+    const asked = decide({
+      chosen: [{ index: 1, label: '1. Rename', kind: 'rename', from: LIB + '/a.xlsx', to: 'B_2026-01-01_Draft_v0.1.xlsx' }],
+      settings: { maxChangesPerRun: 2 },
+    });
+    const sent = JSON.parse(asked.overrides);
+    expect(sent.applyRenames).toBe(true);
+    expect(sent.maxChangesPerRun).toBe(2);
+    expect(sent.approvedPlan).toHaveLength(1);
+  });
+
+  it('ignores settings that are not an object', () => {
+    expect(JSON.parse(decide({ chosen: [], settings: 'nope' }).overrides).renameReports).toBeUndefined();
+    expect(JSON.parse(decide({ chosen: [], settings: [1, 2] }).overrides).renameReports).toBeUndefined();
+  });
+
   it('counts entries it could not use rather than dropping them silently', () => {
     const asked = decide({ chosen: [{ label: 'nonsense' }, { nothing: true }] });
     expect(asked.chosenCount).toBe(0);
@@ -1265,6 +1299,15 @@ describe('WF-G web endpoint node bodies', () => {
     expect(said.truncated).toBe(true);
     expect(said.pages).toBe(12);
     expect(said.beyondModel).toBe(8);
+  });
+
+  it('reports the settings the run actually used, not the ones asked for', () => {
+    const said = answer(Object.assign({}, review, {
+      renameReports: false,
+      readContents: true,
+      maxChangesPerRun: 4,
+    }));
+    expect(said.settings).toEqual({ renameReports: false, readContents: true, maxChangesPerRun: 4 });
   });
 
   it('passes on why a deployment did less than it was asked to', () => {

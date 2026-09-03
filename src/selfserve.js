@@ -58,14 +58,29 @@ const OVERRIDABLE = [
   'applyFolderRenames',
   'applyProposed',
   'revert',
-  // renameReports is deliberately absent. It is read in two places — where
-  // naming candidates are picked and where they are applied — and a caller can
-  // only reach the second, so honouring it here would change a count without
-  // changing what happens. Whether the .pbix files are renamed stays a
-  // deployment decision until both ends read the same answer.
+  'renameReports',
+  'readContents',
   'approvedPlan',
   'maxChangesPerRun',
 ];
+
+/**
+ * Settings a caller may switch OFF but never ON.
+ *
+ * The rule the whole of this file is built on is that a caller may *narrow*
+ * what a run does and never widen it. Turning renameReports on puts the .pbix
+ * files in scope, whose paths are referenced from outside the library; turning
+ * readContents on sends document text out of the tenant. Both are decisions
+ * that belong to the deployment. Turning either off is the caller choosing to
+ * do less, which needs no permission.
+ *
+ * (renameReports was absent from OVERRIDABLE until the merge moved out of the
+ * apply node. It is read both where naming candidates are picked and where they
+ * are applied, and while the merge lived inside Apply it could only reach the
+ * second — honouring it would have changed a count without changing what
+ * happened. Config feeds every node, so both ends now read the same answer.)
+ */
+const NARROW_ONLY = ['readContents', 'renameReports'];
 
 /** The five that turn a review into a write. */
 const ARMING = [
@@ -151,6 +166,19 @@ export function mergeOverrides(base, incoming, options) {
         continue;
       }
       config[key] = true;
+      continue;
+    }
+
+    if (NARROW_ONLY.indexOf(key) !== -1) {
+      if (value === false) {
+        config[key] = false;
+        continue;
+      }
+      if (base && base[key] === true) {
+        config[key] = true;
+        continue;
+      }
+      refused.push(key + ' can be switched off from outside the deployment but not on');
       continue;
     }
 

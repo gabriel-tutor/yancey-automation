@@ -42,6 +42,13 @@ export default async function handler(req, res) {
 
   const chosen = Array.isArray(req.body && req.body.chosen) ? req.body.chosen : [];
 
+  // Forwarded whole rather than picked apart. What a setting is allowed to do
+  // is decided by mergeOverrides in the workflow, where it is tested; a proxy
+  // that also had an opinion would be a second place to keep in step, and the
+  // first version of this file forgot to forward settings at all.
+  const asked = req.body && req.body.settings;
+  const settings = asked && typeof asked === 'object' && !Array.isArray(asked) ? asked : {};
+
   /** @type {Record<string, string>} */
   const headers = { 'Content-Type': 'application/json' };
   // Optional today, and the one thing worth adding tomorrow. See docs/WEB.md.
@@ -51,7 +58,7 @@ export default async function handler(req, res) {
     const answer = await fetch(ORGANISE_URL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ chosen }),
+      body: JSON.stringify({ chosen, settings }),
     });
 
     const text = await answer.text();

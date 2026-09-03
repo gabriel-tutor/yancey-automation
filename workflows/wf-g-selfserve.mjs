@@ -41,6 +41,9 @@ export const DECIDE = `
 const incoming = $input.first().json || {};
 const body = incoming.body || incoming;
 const chosen = Array.isArray(body.chosen) ? body.chosen : [];
+const settings = body.settings && typeof body.settings === 'object' && !Array.isArray(body.settings)
+  ? body.settings
+  : {};
 
 // approvedFrom matches ticks against what was offered. Here the caller sends
 // the changes themselves, so they are both - which also means every entry has
@@ -48,8 +51,14 @@ const chosen = Array.isArray(body.chosen) ? body.chosen : [];
 // rather than quietly dropped.
 const decided = approvedFrom(chosen.map(function (c) { return (c && c.label) || ''; }), chosen);
 
+// Settings first, ticks second, and the order is the point: approvedFrom always
+// writes all five arming switches, so a caller that hides applyRenames in its
+// settings has it overwritten rather than honoured. What arms a run is what was
+// ticked, and nothing else.
+const overrides = Object.assign({}, settings, decided.overrides);
+
 return [{ json: {
-  overrides: JSON.stringify(decided.overrides),
+  overrides: JSON.stringify(overrides),
   applying: decided.chosen.length > 0,
   chosenCount: decided.chosen.length,
   unusable: decided.unknown.length
@@ -117,6 +126,14 @@ return [{ json: {
   canArm: summary.canArm === true,
   overrideRefusals: summary.overrideRefusals || [],
   unusable: Number(asked.unusable) || 0,
+
+  // What the run actually used, so the page can put the toggles back where the
+  // deployment left them rather than where the person moved them.
+  settings: {
+    renameReports: summary.renameReports === true,
+    readContents: summary.readContents === true,
+    maxChangesPerRun: Number(summary.maxChangesPerRun) || 0
+  },
 
   // Only meaningful on an applying call.
   applied: summary.applied || [],

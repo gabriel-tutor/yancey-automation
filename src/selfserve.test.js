@@ -30,6 +30,7 @@ const BASE = {
   revert: false,
   renameReports: true,
   approvedPlan: [{ from: 'baked.xlsx', to: 'Baked.xlsx' }],
+  readContents: true,
   canArm: true,
 };
 
@@ -69,13 +70,38 @@ describe('what a form submission may change about a run', () => {
       libraryTitle: 'Other',
       maxItems: 10,
       modelNaming: 'gpt-3',
-      renameReports: false,
     });
     expect(config.host).toBe(BASE.host);
     expect(config.sitePath).toBe(BASE.sitePath);
     expect(config.libraryTitle).toBe('Documents');
     expect(config.maxItems).toBe(5000);
-    expect(refused).toHaveLength(6);
+    expect(refused).toHaveLength(5);
+  });
+
+  it('lets a caller switch a setting off, which is choosing to do less', () => {
+    const { config, refused } = mergeOverrides(BASE, { renameReports: false, readContents: false });
+    expect(config.renameReports).toBe(false);
+    expect(config.readContents).toBe(false);
+    expect(refused).toEqual([]);
+  });
+
+  it('refuses to switch one on that the deployment has off', () => {
+    // Turning renameReports on puts the .pbix files in scope; turning
+    // readContents on sends document text out of the tenant. A caller may
+    // narrow what a run does and never widen it.
+    const careful = Object.assign({}, BASE, { renameReports: false, readContents: false });
+    const { config, refused } = mergeOverrides(careful, { renameReports: true, readContents: true });
+    expect(config.renameReports).toBe(false);
+    expect(config.readContents).toBe(false);
+    expect(refused).toHaveLength(2);
+    expect(refused[0]).toContain('but not on');
+  });
+
+  it('leaves one on when the deployment already has it on', () => {
+    const { config, refused } = mergeOverrides(BASE, { renameReports: true, readContents: true });
+    expect(config.renameReports).toBe(true);
+    expect(config.readContents).toBe(true);
+    expect(refused).toEqual([]);
   });
 
   it('lowers the cap but never raises it', () => {

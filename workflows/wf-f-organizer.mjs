@@ -917,6 +917,11 @@ return [{ json: {
   // less than it was asked to and never said why.
   overrideRefusals: settings.overrideRefusals || [],
   canArm: settings.canArm === true,
+  // The settings this run actually used, which is not always what was asked
+  // for. A page that shows the toggle a person moved rather than the value the
+  // deployment allowed is a page that lies to them.
+  renameReports: settings.renameReports === true,
+  maxChangesPerRun: Number(settings.maxChangesPerRun) || 0,
   toRename: toRename,
   awaitingApproval: awaiting,
   toMove: toMove,

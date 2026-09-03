@@ -7,50 +7,72 @@
 <title>Document Organiser · Upperform Partners</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap">
 <style>
+/* ---------------------------------------------------------------------------
+   Upperform Partners.
+
+   Palette and type are the firm's own, read off upperform.com rather than
+   invented: Libre Franklin for headings and labels, Poppins for running text,
+   #086bb5 as the accent with #1e1e3d for depth. This is an internal tool that
+   should look like it belongs to the practice, not like a utility bolted on.
+--------------------------------------------------------------------------- */
 :root {
   color-scheme: light;
-  --ground: #f6f7f8;
+
+  --navy: #1e1e3d;
+  --navy-soft: #2c2c55;
+  --accent: #086bb5;
+  --accent-deep: #065489;
+  --accent-bright: #2aa7df;
+  --accent-wash: #e8f2fa;
+
+  --ground: #f4f6f8;
   --panel: #ffffff;
-  --panel-sunken: #f0f2f4;
-  --ink: #1b2027;
-  --ink-soft: #4a555f;
-  --ink-faint: #78848f;
-  --rule: #dfe4e8;
-  --rule-firm: #c6ced5;
-  --accent: #136f63;
-  --accent-ink: #0d5349;
-  --accent-wash: #e6f1ef;
-  --good: #1f6f3f;
-  --good-wash: #e7f2ec;
+  --sunken: #eef1f4;
+  --ink: #24242f;
+  --ink-body: #575757;
+  --ink-mute: #7d838c;
+  --rule: #dde2e8;
+  --rule-firm: #c3cbd4;
+
+  --good: #1d6b46;
+  --good-wash: #e6f2ec;
   --warn: #8a5a12;
-  --warn-wash: #f7efe0;
-  --bad: #93331f;
-  --bad-wash: #f8ebe7;
-  --shadow: 0 1px 2px rgba(27, 32, 39, .06), 0 8px 24px -12px rgba(27, 32, 39, .18);
+  --warn-wash: #faf1e2;
+  --bad: #9c3324;
+  --bad-wash: #faeae7;
+
+  --lift: 0 1px 2px rgba(30, 30, 61, .05), 0 10px 28px -18px rgba(30, 30, 61, .35);
+  --radius: 10px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --ground: #12161a;
-    --panel: #1a1f25;
-    --panel-sunken: #151a1f;
-    --ink: #e8edf1;
-    --ink-soft: #a9b6c1;
-    --ink-faint: #7d8b96;
-    --rule: #2a323a;
-    --rule-firm: #3a444e;
-    --accent: #4bb3a2;
-    --accent-ink: #7fd0c1;
-    --accent-wash: #16302c;
+    --navy: #14142b;
+    --navy-soft: #1e1e3d;
+    --accent: #4aa3e0;
+    --accent-deep: #6fbcef;
+    --accent-bright: #2aa7df;
+    --accent-wash: #16283a;
+
+    --ground: #121220;
+    --panel: #1a1a2e;
+    --sunken: #16162a;
+    --ink: #eceef3;
+    --ink-body: #b4bcc7;
+    --ink-mute: #858d99;
+    --rule: #2b2b47;
+    --rule-firm: #3d3d5e;
+
     --good: #6cc48d;
-    --good-wash: #162a1f;
+    --good-wash: #14291d;
     --warn: #d6a75a;
-    --warn-wash: #2d2415;
-    --bad: #e08b76;
-    --bad-wash: #2f1b16;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .7);
+    --warn-wash: #2c2416;
+    --bad: #e0917c;
+    --bad-wash: #2f1a17;
+
+    --lift: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 28px -18px rgba(0, 0, 0, .8);
   }
 }
 
@@ -58,146 +80,234 @@
 html, body { margin: 0; }
 body {
   background: var(--ground);
-  color: var(--ink);
-  font: 400 16px/1.55 "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink-body);
+  font: 400 15.5px/1.6 Poppins, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
-  padding: 32px 20px 140px;
+  padding-bottom: 132px;
 }
-.wrap { max-width: 860px; margin: 0 auto; }
+h1, h2, h3, .face { font-family: "Libre Franklin", Franklin Gothic Medium, Arial, sans-serif; }
+.wrap { max-width: 940px; margin: 0 auto; padding: 0 22px; }
 
 /* ---- masthead ---------------------------------------------------------- */
-.masthead { margin-bottom: 28px; }
-.eyebrow {
-  font-size: 12px; font-weight: 500; letter-spacing: .11em; text-transform: uppercase;
-  color: var(--ink-faint); margin: 0 0 6px;
+.bar-top { background: var(--navy); color: #fff; padding: 15px 0; }
+.bar-top .wrap { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.mark {
+  font-family: "Libre Franklin", Arial, sans-serif; font-weight: 700; font-size: 16px;
+  letter-spacing: .14em; text-transform: uppercase; color: #fff;
 }
+.mark span { font-weight: 400; color: rgba(255,255,255,.62); }
+.bar-top .tool {
+  margin-left: auto; font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(255,255,255,.62); font-family: "Libre Franklin", Arial, sans-serif; font-weight: 500;
+}
+
+.masthead { padding: 36px 0 26px; }
 h1 {
-  font-family: Newsreader, Georgia, serif;
-  font-weight: 500; font-size: clamp(30px, 5vw, 42px); line-height: 1.12;
-  letter-spacing: -.015em; margin: 0 0 10px; text-wrap: balance;
+  font-weight: 600; font-size: clamp(29px, 4.6vw, 40px); line-height: 1.14;
+  letter-spacing: -.02em; margin: 0 0 12px; color: var(--ink); text-wrap: balance;
 }
-.standfirst { margin: 0; max-width: 60ch; color: var(--ink-soft); font-size: 16.5px; }
+.standfirst { margin: 0; max-width: 62ch; font-weight: 300; font-size: 16.5px; }
 
 /* ---- panels ------------------------------------------------------------ */
 .panel {
-  background: var(--panel);
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  box-shadow: var(--shadow);
-  padding: 22px 24px;
-  margin-bottom: 18px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius);
+  box-shadow: var(--lift); padding: 24px 26px; margin-bottom: 18px;
 }
 .panel h2 {
-  font-family: Newsreader, Georgia, serif;
-  font-weight: 500; font-size: 21px; letter-spacing: -.01em; margin: 0 0 4px;
+  font-weight: 600; font-size: 19px; letter-spacing: -.005em; margin: 0 0 6px; color: var(--ink);
 }
-.panel > p { margin: 0 0 14px; color: var(--ink-soft); }
+.panel > p { margin: 0 0 16px; }
 .panel > p:last-child { margin-bottom: 0; }
+.head-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
 
-/* ---- the tally --------------------------------------------------------- */
-.tally { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; margin-bottom: 18px; background: var(--panel); }
-.tally div { flex: 1 1 120px; padding: 14px 18px; border-right: 1px solid var(--rule); }
+/* ---- settings ---------------------------------------------------------- */
+.settings summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px;
+  font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600; font-size: 15px; color: var(--ink);
+}
+.settings summary::-webkit-details-marker { display: none; }
+.settings summary::before {
+  content: ""; width: 7px; height: 7px; flex: none; margin-right: 2px;
+  border-right: 1.8px solid var(--ink-mute); border-bottom: 1.8px solid var(--ink-mute);
+  transform: rotate(-45deg); transition: transform .18s;
+}
+.settings[open] summary::before { transform: rotate(45deg); }
+.settings summary .now { margin-left: auto; font-family: Poppins, sans-serif; font-weight: 400; font-size: 13.5px; color: var(--ink-mute); }
+.settings .body { padding-top: 6px; }
+
+.setting {
+  display: grid; grid-template-columns: 1fr auto; gap: 14px 18px; align-items: start;
+  padding: 15px 0; border-bottom: 1px solid var(--rule);
+}
+.setting:last-child { border-bottom: 0; padding-bottom: 4px; }
+.setting .name { font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600; font-size: 14.5px; color: var(--ink); }
+.setting .hint { font-size: 13.5px; font-weight: 300; margin-top: 4px; color: var(--ink-mute); max-width: 60ch; line-height: 1.55; }
+.setting .hint code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; background: var(--sunken); padding: 1px 5px; border-radius: 4px; }
+
+/* the switch */
+.switch { position: relative; display: inline-flex; flex: none; }
+.switch input {
+  position: absolute; inset: 0; opacity: 0; margin: 0; width: 100%; height: 100%; cursor: pointer;
+}
+.track {
+  width: 44px; height: 25px; border-radius: 99px; background: var(--rule-firm);
+  transition: background .16s; display: block; position: relative;
+}
+.knob {
+  position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.28); transition: transform .16s;
+}
+.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track .knob { transform: translateX(19px); }
+.switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 3px; }
+.switch input:disabled + .track { opacity: .45; cursor: not-allowed; }
+
+select.cap {
+  font: 400 14.5px Poppins, sans-serif; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--rule-firm); border-radius: 7px; padding: 7px 10px; min-width: 74px;
+}
+
+/* ---- tally ------------------------------------------------------------- */
+.tally {
+  display: flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 18px; background: var(--panel); box-shadow: var(--lift);
+}
+.tally div { flex: 1 1 150px; padding: 17px 22px; border-right: 1px solid var(--rule); }
 .tally div:last-child { border-right: 0; }
 .tally b {
-  display: block; font-family: Newsreader, Georgia, serif; font-weight: 500;
-  font-size: 27px; line-height: 1.1; font-variant-numeric: tabular-nums;
+  display: block; font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600;
+  font-size: 30px; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink);
 }
-.tally span { font-size: 12.5px; color: var(--ink-faint); letter-spacing: .02em; }
-.tally .lead b { color: var(--accent); }
+.tally span {
+  font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-mute);
+  font-family: "Libre Franklin", Arial, sans-serif; font-weight: 500;
+}
+.tally .lead { background: var(--accent-wash); }
+.tally .lead b { color: var(--accent-deep); }
 
-/* ---- change rows ------------------------------------------------------- */
-.changes { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+/* ---- change list ------------------------------------------------------- */
+.section + .section { margin-top: 22px; }
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding-bottom: 9px; border-bottom: 2px solid var(--navy); margin-bottom: 2px;
+}
+.section-head h3 {
+  margin: 0; font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase;
+  font-weight: 600; color: var(--ink);
+}
+.section-head .count { font-size: 13px; color: var(--ink-mute); font-variant-numeric: tabular-nums; }
+
 .change { border-bottom: 1px solid var(--rule); }
 .change label {
-  display: grid; grid-template-columns: 22px 1fr; gap: 12px;
-  padding: 13px 4px; cursor: pointer; align-items: start;
+  display: grid; grid-template-columns: 20px 1fr; gap: 14px; padding: 14px 6px;
+  cursor: pointer; align-items: start;
 }
-.change label:hover { background: var(--panel-sunken); }
-.change input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--accent); }
-.kind {
-  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .07em;
-  text-transform: uppercase; padding: 2px 7px; border-radius: 4px;
-  background: var(--accent-wash); color: var(--accent-ink); margin-bottom: 5px;
+.change label:hover { background: var(--sunken); }
+.change input[type=checkbox] { margin: 2px 0 0; width: 16px; height: 16px; accent-color: var(--accent); }
+.line { display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: baseline; }
+.line .gut { color: var(--ink-mute); font-size: 12px; }
+.path {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.8px; word-break: break-word; line-height: 1.5;
 }
-.kind[data-kind="folder"], .kind[data-kind="folderRename"] { background: var(--warn-wash); color: var(--warn); }
-.path { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; word-break: break-word; }
-.from { color: var(--ink-soft); }
-.to { color: var(--ink); font-weight: 500; }
-.arrow { color: var(--ink-faint); padding: 0 2px; }
-.into { color: var(--ink-soft); font-size: 12.5px; margin-top: 3px; }
+.was { color: var(--ink-mute); }
+.now-name { color: var(--ink); font-weight: 500; }
+.into-note { font-size: 12.5px; color: var(--ink-mute); margin-top: 5px; font-weight: 300; }
+.into-note b { font-weight: 500; color: var(--ink-body); }
 
-.selectall {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 12px; flex-wrap: wrap; margin-bottom: 2px;
+/* ---- notices ----------------------------------------------------------- */
+.note {
+  border-left: 3px solid var(--rule-firm); border-radius: 0 7px 7px 0;
+  padding: 12px 16px; margin: 0 0 12px; font-size: 14.5px; font-weight: 300;
+  background: var(--sunken); color: var(--ink-body);
 }
-.linkish {
-  background: none; border: 0; padding: 0; font: inherit; font-size: 14px;
-  color: var(--accent); cursor: pointer; text-decoration: underline;
-  text-underline-offset: 3px;
+.note b { font-weight: 600; }
+.note.good { border-color: var(--good); background: var(--good-wash); color: var(--good); }
+.note.warn { border-color: var(--warn); background: var(--warn-wash); color: var(--warn); }
+.note.bad  { border-color: var(--bad);  background: var(--bad-wash);  color: var(--bad); }
+
+details.reasons { border-top: 1px solid var(--rule); padding-top: 14px; margin-top: 16px; }
+details.reasons + details.reasons { margin-top: 8px; }
+details.reasons summary {
+  cursor: pointer; font-family: "Libre Franklin", Arial, sans-serif;
+  font-weight: 600; font-size: 13.5px; color: var(--ink-body);
 }
-.linkish:hover { color: var(--accent-ink); }
-
-/* ---- notes ------------------------------------------------------------- */
-.note { border-left: 3px solid var(--rule-firm); padding: 10px 0 10px 14px; margin: 0 0 12px; color: var(--ink-soft); font-size: 15px; }
-.note.warn { border-color: var(--warn); background: var(--warn-wash); color: var(--warn); padding-right: 14px; border-radius: 0 6px 6px 0; }
-.note.bad { border-color: var(--bad); background: var(--bad-wash); color: var(--bad); padding-right: 14px; border-radius: 0 6px 6px 0; }
-.note.good { border-color: var(--good); background: var(--good-wash); color: var(--good); padding-right: 14px; border-radius: 0 6px 6px 0; }
-.note strong { font-weight: 600; }
-
-details { border-top: 1px solid var(--rule); padding-top: 12px; margin-top: 16px; }
-summary { cursor: pointer; font-size: 14.5px; color: var(--ink-soft); font-weight: 500; }
-summary:hover { color: var(--ink); }
-details ul { margin: 12px 0 0; padding-left: 18px; color: var(--ink-soft); font-size: 14.5px; }
-details li { margin-bottom: 9px; }
-details li b { color: var(--ink); font-weight: 500; font-family: "IBM Plex Mono", monospace; font-size: 13px; }
+details.reasons summary:hover { color: var(--ink); }
+details.reasons ul { margin: 12px 0 0; padding-left: 18px; font-size: 14px; font-weight: 300; }
+details.reasons li { margin-bottom: 10px; }
+details.reasons li b {
+  font-weight: 500; color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px;
+}
 
 /* ---- buttons ----------------------------------------------------------- */
-button.primary {
-  font: 500 15.5px/1 "IBM Plex Sans", sans-serif;
-  background: var(--accent); color: #fff; border: 0; border-radius: 8px;
-  padding: 14px 22px; cursor: pointer; transition: background .15s;
+button { font-family: "Libre Franklin", Arial, sans-serif; }
+.primary {
+  font-weight: 600; font-size: 15px; background: var(--accent); color: #fff; border: 0;
+  border-radius: 8px; padding: 13px 24px; cursor: pointer; transition: background .15s;
 }
-button.primary:hover:not(:disabled) { background: var(--accent-ink); }
-button.primary:disabled { opacity: .5; cursor: default; }
-button.ghost {
-  font: 500 15.5px/1 "IBM Plex Sans", sans-serif;
-  background: transparent; color: var(--ink-soft); border: 1px solid var(--rule-firm);
-  border-radius: 8px; padding: 14px 20px; cursor: pointer;
+.primary:hover:not(:disabled) { background: var(--accent-deep); }
+.primary:disabled { opacity: .45; cursor: default; }
+.ghost {
+  font-weight: 600; font-size: 15px; background: transparent; color: var(--ink-body);
+  border: 1px solid var(--rule-firm); border-radius: 8px; padding: 13px 20px; cursor: pointer;
 }
-button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
+.ghost:hover { color: var(--ink); border-color: var(--ink-mute); }
+.linkish {
+  background: none; border: 0; padding: 0; font-family: Poppins, sans-serif; font-size: 13.5px;
+  color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+}
+.linkish:hover { color: var(--accent-deep); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ---- the action bar ---------------------------------------------------- */
+/* ---- action bar -------------------------------------------------------- */
 .bar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 8;
   background: var(--panel); border-top: 1px solid var(--rule);
-  padding: 14px 20px; box-shadow: 0 -6px 20px -12px rgba(0,0,0,.3);
+  padding: 15px 0; box-shadow: 0 -8px 24px -18px rgba(30,30,61,.6);
 }
-.bar-in { max-width: 860px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.bar .count { font-size: 14.5px; color: var(--ink-soft); flex: 1 1 auto; }
+.bar .wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.bar .count { font-size: 14.5px; flex: 1 1 auto; color: var(--ink-body); }
 .bar .count b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* ---- working ----------------------------------------------------------- */
-.working { display: flex; align-items: center; gap: 13px; }
+.working { display: flex; align-items: center; gap: 15px; }
 .spinner {
-  width: 18px; height: 18px; flex: none; border-radius: 50%;
+  width: 20px; height: 20px; flex: none; border-radius: 50%;
   border: 2px solid var(--rule-firm); border-top-color: var(--accent);
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
-.elapsed { font-variant-numeric: tabular-nums; color: var(--ink-faint); font-size: 14px; }
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+  .knob, .track, .settings summary::before { transition: none; }
+}
+.working .what { font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600; color: var(--ink); }
+.elapsed { font-size: 13.5px; color: var(--ink-mute); font-variant-numeric: tabular-nums; }
 
 [hidden] { display: none !important; }
-.foot { margin-top: 26px; font-size: 13px; color: var(--ink-faint); }
+.foot { padding: 8px 0 0; font-size: 12.5px; color: var(--ink-mute); font-weight: 300; }
+
+@media (max-width: 640px) {
+  .setting { grid-template-columns: 1fr; }
+  .setting .switch, .setting select.cap { justify-self: start; }
+  .tally div { flex-basis: 50%; }
+}
 </style>
 </head>
 <body>
+
+<div class="bar-top">
+  <div class="wrap">
+    <span class="mark">Upperform <span>Partners</span></span>
+    <span class="tool">Document Organiser</span>
+  </div>
+</div>
+
 <div class="wrap">
 
   <header class="masthead">
-    <p class="eyebrow">Upperform Partners</p>
-    <h1>Document Organiser</h1>
+    <h1>Organise the document library</h1>
     <p class="standfirst">
       Reads the SharePoint library, works out what each file should be called and where it
       belongs, and shows you the list. Nothing is renamed or moved until you choose it.
@@ -209,9 +319,63 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     <h2>Take a look</h2>
     <p>
       This opens each document, works out a name from what is inside it, and checks that name
-      against the convention. It takes about a minute. <strong>Nothing changes yet.</strong>
+      against the convention. It takes about a minute. <b>Nothing changes yet.</b>
     </p>
-    <button class="primary" id="scan">Look at the library</button>
+
+    <details class="settings" id="settings">
+      <summary>
+        Settings
+        <span class="now" id="settings-now"></span>
+      </summary>
+      <div class="body">
+
+        <div class="setting">
+          <div>
+            <div class="name">Include Power BI reports</div>
+            <div class="hint">
+              A <code>.pbix</code> is referenced from outside the library by whatever dataset or
+              refresh schedule was built from it, and neither the library nor the file can see that.
+              Turn this off to leave the reports alone.
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-reports" checked>
+            <span class="track"><span class="knob"></span></span>
+          </label>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="name">Read what is inside each document</div>
+            <div class="hint">
+              With this on, Office files are opened on the server and only their text is sent for
+              naming. With it off, names are worked out from file names, folders and kinds alone,
+              and nothing from inside a document leaves the tenant.
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-contents" checked>
+            <span class="track"><span class="knob"></span></span>
+          </label>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="name">Most changes in one run</div>
+            <div class="hint">
+              A ceiling on how much can happen at once, so a run stays small enough to check by eye
+              and undo by hand. It can be lowered here but not raised past what the deployment allows.
+            </div>
+          </div>
+          <select class="cap" id="set-cap"></select>
+        </div>
+
+      </div>
+    </details>
+
+    <p style="margin-top:20px">
+      <button class="primary" id="scan">Look at the library</button>
+    </p>
   </section>
 
   <!-- Working ----------------------------------------------------------- -->
@@ -219,7 +383,7 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     <div class="working">
       <div class="spinner"></div>
       <div>
-        <div id="busy-what">Reading the library…</div>
+        <div class="what" id="busy-what">Reading the library…</div>
         <div class="elapsed"><span id="elapsed">0</span>s elapsed · usually about a minute</div>
       </div>
     </div>
@@ -238,12 +402,12 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     <div id="notes"></div>
 
     <section class="panel" id="choose" hidden>
-      <div class="selectall">
+      <div class="head-row" style="margin-bottom:6px">
         <h2 style="margin:0">What it would change</h2>
         <button class="linkish" id="toggleall">Select none</button>
       </div>
-      <p style="margin:6px 0 10px">Tick what you want carried out. Anything left unticked stays exactly as it is.</p>
-      <ul class="changes" id="list"></ul>
+      <p>Tick what you want carried out. Anything left unticked stays exactly as it is.</p>
+      <div id="list"></div>
     </section>
 
     <section class="panel" id="outcome" hidden>
@@ -253,7 +417,7 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
 
     <section class="panel" id="left-alone" hidden>
       <h2>What it left alone</h2>
-      <p>Every one of these is a decision the tool declined to make on its own.</p>
+      <p>Each of these is a decision the tool declined to make on its own.</p>
       <div id="refusals"></div>
     </section>
   </div>
@@ -261,9 +425,8 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
   <p class="foot" id="foot" hidden></p>
 </div>
 
-<!-- The action bar ------------------------------------------------------- -->
 <div class="bar" id="bar" hidden>
-  <div class="bar-in">
+  <div class="wrap">
     <div class="count" id="count"></div>
     <button class="ghost" id="again" hidden>Look again</button>
     <button class="primary" id="apply">Carry out the ticked changes</button>
@@ -276,12 +439,12 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
 
   var el = function (id) { return document.getElementById(id); };
   var offered = [];        // what the last look found; the page holds it, not the server
-  var ticked = new Set();  // indices of what is chosen
+  var ticked = new Set();  // the indices chosen
   var timer = null;
-
-  /* -------------------------------------------------------------- helpers */
+  var cap = 12;            // the deployment's ceiling, learned from the first answer
 
   function show(id, on) { el(id).hidden = !on; }
+  function plural(n, one, many) { return n === 1 ? one : (many || one + 's'); }
 
   function text(tag, value, className) {
     var node = document.createElement(tag);
@@ -290,18 +453,57 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     return node;
   }
 
-  function plural(n, one, many) { return n === 1 ? one : (many || one + 's'); }
+  /* --------------------------------------------------------- the settings */
 
-  /** Elapsed seconds, because a minute of silence looks like a hang. */
-  function startClock(what) {
-    var began = Date.now();
-    el('busy-what').textContent = what;
-    el('elapsed').textContent = '0';
-    timer = setInterval(function () {
-      el('elapsed').textContent = String(Math.round((Date.now() - began) / 1000));
-    }, 1000);
+  function fillCap(limit) {
+    var box = el('set-cap');
+    var keep = Number(box.value) || limit;
+    box.textContent = '';
+    for (var n = 1; n <= limit; n += 1) {
+      var opt = document.createElement('option');
+      opt.value = String(n);
+      opt.textContent = String(n);
+      box.appendChild(opt);
+    }
+    box.value = String(Math.min(keep, limit));
   }
-  function stopClock() { if (timer) { clearInterval(timer); timer = null; } }
+
+  function settings() {
+    return {
+      renameReports: el('set-reports').checked,
+      readContents: el('set-contents').checked,
+      maxChangesPerRun: Number(el('set-cap').value) || cap
+    };
+  }
+
+  /** The one-line summary on the closed Settings row. */
+  function drawSettingsLine() {
+    var s = settings();
+    var bits = [];
+    bits.push(s.renameReports ? 'reports included' : 'reports left alone');
+    bits.push(s.readContents ? 'reads documents' : 'names only');
+    bits.push('up to ' + s.maxChangesPerRun + ' ' + plural(s.maxChangesPerRun, 'change'));
+    el('settings-now').textContent = bits.join(' · ');
+  }
+
+  /**
+   * Put the toggles back where the run actually left them.
+   *
+   * A setting can be refused — the deployment may allow a caller to switch one
+   * off but not on — and a page still showing the position a person moved it to
+   * would be telling them something untrue.
+   */
+  function reconcile(run) {
+    var s = run.settings || {};
+    if (typeof s.renameReports === 'boolean') el('set-reports').checked = s.renameReports;
+    if (typeof s.readContents === 'boolean') el('set-contents').checked = s.readContents;
+    if (Number(s.maxChangesPerRun) > 0) {
+      cap = Math.max(cap, Number(s.maxChangesPerRun));
+      fillCap(cap);
+      el('set-cap').value = String(s.maxChangesPerRun);
+    }
+    drawSettingsLine();
+  }
 
   /* ------------------------------------------------------------ the call */
 
@@ -310,18 +512,23 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     show('broke', false);
     show('results', false);
     show('bar', false);
-    show('foot', false);
     show('busy', true);
-    startClock(what);
+
+    var began = Date.now();
+    el('busy-what').textContent = what;
+    el('elapsed').textContent = '0';
+    timer = setInterval(function () {
+      el('elapsed').textContent = String(Math.round((Date.now() - began) / 1000));
+    }, 1000);
 
     return fetch('/api/organise', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chosen: chosen || [] })
+      body: JSON.stringify({ chosen: chosen || [], settings: settings() })
     })
       .then(function (r) { return r.json().then(function (j) { return { status: r.status, body: j }; }); })
       .then(function (answer) {
-        stopClock();
+        clearInterval(timer);
         show('busy', false);
         if (answer.status !== 200 || !answer.body || answer.body.ok === false) {
           var why = (answer.body && answer.body.error) || 'The organiser answered ' + answer.status + '.';
@@ -333,7 +540,7 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
         return answer.body;
       })
       .catch(function (err) {
-        stopClock();
+        clearInterval(timer);
         show('busy', false);
         el('broke-why').textContent =
           'The page could not reach the organiser. ' + (err && err.message ? err.message : '');
@@ -371,10 +578,10 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     var notes = el('notes');
     notes.textContent = '';
 
-    function note(kind, strongPart, rest) {
+    function note(kind, lead, rest) {
       var p = document.createElement('p');
-      p.className = 'note ' + kind;
-      if (strongPart) p.appendChild(text('strong', strongPart + ' '));
+      p.className = 'note' + (kind ? ' ' + kind : '');
+      if (lead) p.appendChild(text('b', lead + ' '));
       p.appendChild(document.createTextNode(rest));
       notes.appendChild(p);
     }
@@ -385,81 +592,109 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     }
     if (run.canArm === false) {
       note('warn', 'This is the sandbox copy.',
-        'It can look at the library but is not allowed to change it, so ticking things will report back rather than rename anything.');
+        'It can read the library but is not allowed to change it, so ticking things will report back rather than rename anything.');
     }
     (run.overrideRefusals || []).forEach(function (why) { note('warn', '', why); });
     if (run.unusable > 0) {
-      note('warn', '', run.unusable + ' ' + plural(run.unusable, 'entry', 'entries') + ' could not be matched to a change and ' + plural(run.unusable, 'was', 'were') + ' ignored.');
+      note('warn', '', run.unusable + ' ' + plural(run.unusable, 'entry', 'entries') +
+        ' could not be matched to a change and ' + plural(run.unusable, 'was', 'were') + ' ignored.');
     }
     if (run.beyondModel > 0) {
-      note('', '', run.beyondModel + ' more ' + plural(run.beyondModel, 'document') + ' could be renamed than this run looked at. Run it again afterwards to reach them.');
+      note('', '', run.beyondModel + ' more ' + plural(run.beyondModel, 'document') +
+        ' could be renamed than this run looked at. Look again afterwards to reach them.');
     }
     if (run.readContents === false) {
-      note('', '', 'Names were chosen from file names and folders only — nothing inside a document was read.');
+      note('', '', 'Names were worked out from file names, folders and kinds only — nothing inside a document was read.');
     }
     if ((run.heldBack || []).length > 0) {
-      note('warn', '', run.heldBack.length + ' ' + plural(run.heldBack.length, 'change') + ' did not fit in one run. Look again to carry out the rest.');
+      note('warn', '', run.heldBack.length + ' ' + plural(run.heldBack.length, 'change') +
+        ' did not fit in one run. Look again to carry out the rest.');
     }
   }
 
-  var KIND_WORD = {
-    rename: 'Rename',
-    move: 'File',
-    'rename+move': 'Rename and file',
-    folder: 'New folder',
-    folderRename: 'Rename folder'
-  };
+  /* The list, grouped — a flat run of twenty-four rows is a list nobody reads. */
+  var SECTIONS = [
+    { kinds: ['folder'], title: 'New folders' },
+    { kinds: ['folderRename'], title: 'Folders renamed' },
+    { kinds: ['rename', 'rename+move'], title: 'Documents renamed' },
+    { kinds: ['move'], title: 'Documents filed' }
+  ];
+
+  function rowFor(change) {
+    var li = document.createElement('div');
+    li.className = 'change';
+
+    var label = document.createElement('label');
+    var box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = ticked.has(change.index);
+    box.addEventListener('change', function () {
+      if (box.checked) ticked.add(change.index); else ticked.delete(change.index);
+      drawCount();
+    });
+
+    var body = document.createElement('div');
+
+    if (change.kind === 'folder') {
+      var only = document.createElement('div');
+      only.className = 'path now-name';
+      only.textContent = change.into;
+      body.appendChild(only);
+    } else {
+      var from = document.createElement('div');
+      from.className = 'line';
+      from.appendChild(text('span', '', 'gut'));
+      from.appendChild(text('span', change.from, 'path was'));
+      body.appendChild(from);
+
+      if (change.to || change.kind === 'folderRename') {
+        var to = document.createElement('div');
+        to.className = 'line';
+        to.appendChild(text('span', '→', 'gut'));
+        to.appendChild(text('span', change.to, 'path now-name'));
+        body.appendChild(to);
+      }
+    }
+
+    if (change.into && change.kind !== 'folder') {
+      var note = document.createElement('div');
+      note.className = 'into-note';
+      note.appendChild(document.createTextNode('into '));
+      note.appendChild(text('b', change.into));
+      if (change.createsFolder) note.appendChild(document.createTextNode(' — a folder this run would create'));
+      body.appendChild(note);
+    }
+
+    label.appendChild(box);
+    label.appendChild(body);
+    li.appendChild(label);
+    return li;
+  }
 
   function drawList(run) {
     offered = run.offered || [];
     ticked = new Set(offered.map(function (o) { return o.index; }));
 
-    var list = el('list');
-    list.textContent = '';
+    var host = el('list');
+    host.textContent = '';
 
-    offered.forEach(function (change) {
-      var li = document.createElement('li');
-      li.className = 'change';
+    SECTIONS.forEach(function (section) {
+      var mine = offered.filter(function (o) { return section.kinds.indexOf(o.kind) !== -1; });
+      if (!mine.length) return;
 
-      var label = document.createElement('label');
-      var box = document.createElement('input');
-      box.type = 'checkbox';
-      box.checked = true;
-      box.addEventListener('change', function () {
-        if (box.checked) ticked.add(change.index); else ticked.delete(change.index);
-        drawCount();
-      });
+      var block = document.createElement('div');
+      block.className = 'section';
 
-      var body = document.createElement('div');
-      var kind = text('span', KIND_WORD[change.kind] || change.kind, 'kind');
-      kind.setAttribute('data-kind', change.kind);
-      body.appendChild(kind);
+      var head = document.createElement('div');
+      head.className = 'section-head';
+      var h = document.createElement('h3');
+      h.textContent = section.title;
+      head.appendChild(h);
+      head.appendChild(text('span', mine.length, 'count'));
+      block.appendChild(head);
 
-      var line = document.createElement('div');
-      line.className = 'path';
-      if (change.kind === 'folder') {
-        line.appendChild(text('span', change.into, 'to'));
-      } else if (change.kind === 'folderRename') {
-        line.appendChild(text('span', change.from, 'from'));
-        line.appendChild(text('span', ' → ', 'arrow'));
-        line.appendChild(text('span', change.to, 'to'));
-      } else {
-        line.appendChild(text('span', change.from, 'from'));
-        if (change.to) {
-          line.appendChild(text('span', ' → ', 'arrow'));
-          line.appendChild(text('span', change.to, 'to'));
-        }
-      }
-      body.appendChild(line);
-
-      if (change.into && change.kind !== 'folder') {
-        body.appendChild(text('div', 'into ' + change.into + (change.createsFolder ? ' (a new folder)' : ''), 'into'));
-      }
-
-      label.appendChild(box);
-      label.appendChild(body);
-      li.appendChild(label);
-      list.appendChild(li);
+      mine.forEach(function (change) { block.appendChild(rowFor(change)); });
+      host.appendChild(block);
     });
   }
 
@@ -472,6 +707,7 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
       if (!entries || !entries.length) return;
       any = true;
       var d = document.createElement('details');
+      d.className = 'reasons';
       d.open = true;
       d.appendChild(text('summary', title + ' (' + entries.length + ')'));
       var ul = document.createElement('ul');
@@ -494,6 +730,7 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     if ((run.unreadable || []).length) {
       any = true;
       var d = document.createElement('details');
+      d.className = 'reasons';
       d.appendChild(text('summary', 'Could not be opened (' + run.unreadable.length + ')'));
       var ul = document.createElement('ul');
       run.unreadable.forEach(function (name) { ul.appendChild(text('li', name)); });
@@ -515,11 +752,12 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     if (run.failed.length) {
       var bad = document.createElement('p');
       bad.className = 'note bad';
-      bad.textContent = run.failed.length + ' ' + plural(run.failed.length, 'change') + ' could not be carried out:';
+      bad.appendChild(text('b', run.failed.length + ' ' + plural(run.failed.length, 'change') + ' could not be carried out.'));
       body.appendChild(bad);
       var ul = document.createElement('ul');
       run.failed.forEach(function (f) {
-        ul.appendChild(text('li', typeof f === 'string' ? f : (f.what || f.file || '') + ' — ' + (f.because || f.error || 'no reason given')));
+        ul.appendChild(text('li', typeof f === 'string' ? f
+          : (f.what || f.file || '') + ' — ' + (f.because || f.error || 'no reason given')));
       });
       body.appendChild(ul);
     }
@@ -527,7 +765,7 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     if (run.applied.length) {
       var good = document.createElement('p');
       good.className = 'note good';
-      good.textContent = run.applied.length + ' ' + plural(run.applied.length, 'change') + ' carried out.';
+      good.appendChild(text('b', run.applied.length + ' ' + plural(run.applied.length, 'change') + ' carried out.'));
       body.appendChild(good);
       var done = document.createElement('ul');
       run.applied.forEach(function (a) {
@@ -539,7 +777,7 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
 
   function drawCount() {
     var n = ticked.size;
-    el('count').innerHTML = '';
+    el('count').textContent = '';
     el('count').appendChild(text('b', n));
     el('count').appendChild(document.createTextNode(' of ' + offered.length + ' selected'));
     el('apply').disabled = n === 0;
@@ -550,6 +788,7 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
 
   function afterLook(run) {
     if (!run) return;
+    reconcile(run);
     drawTally(run);
     drawNotes(run);
     drawRefusals(run);
@@ -558,33 +797,30 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     if (!run.offered.length) {
       // Nothing to do is good news, and saying it that way is the difference
       // between a working tool and one that looks like it failed.
-      var notes = el('notes');
       var p = document.createElement('p');
       p.className = 'note good';
-      p.appendChild(text('strong', 'Nothing needs changing. '));
+      p.appendChild(text('b', 'Nothing needs changing.'));
       p.appendChild(document.createTextNode(
-        'All ' + run.scanned + ' documents already follow the naming convention and are where they belong.'));
-      notes.insertBefore(p, notes.firstChild);
+        ' All ' + run.scanned + ' documents already follow the naming convention and are where they belong.'));
+      el('notes').insertBefore(p, el('notes').firstChild);
       show('choose', false);
-      show('results', true);
-      el('again').hidden = false;
       el('apply').hidden = true;
       el('count').textContent = '';
-      show('bar', true);
-      return;
+    } else {
+      drawList(run);
+      drawCount();
+      show('choose', true);
+      el('apply').hidden = false;
     }
 
-    drawList(run);
-    drawCount();
-    show('choose', true);
     show('results', true);
     el('again').hidden = false;
-    el('apply').hidden = false;
     show('bar', true);
   }
 
   function afterApply(run) {
     if (!run) return;
+    reconcile(run);
     drawTally(run);
     drawNotes(run);
     drawOutcome(run);
@@ -600,9 +836,16 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
 
   /* --------------------------------------------------------------- events */
 
-  el('scan').addEventListener('click', function () { ask([], 'Reading the library…').then(afterLook); });
-  el('retry').addEventListener('click', function () { ask([], 'Reading the library…').then(afterLook); });
-  el('again').addEventListener('click', function () { ask([], 'Reading the library…').then(afterLook); });
+  var look = function () { ask([], 'Reading the library…').then(afterLook); };
+  el('scan').addEventListener('click', look);
+  el('retry').addEventListener('click', look);
+  el('again').addEventListener('click', function () {
+    show('results', false);
+    show('bar', false);
+    show('start', true);
+    el('settings').open = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
   el('toggleall').addEventListener('click', function () {
     var all = ticked.size === offered.length;
@@ -616,6 +859,13 @@ button.ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
     if (!chosen.length) return;
     ask(chosen, 'Carrying out ' + chosen.length + ' ' + plural(chosen.length, 'change') + '…').then(afterApply);
   });
+
+  ['set-reports', 'set-contents', 'set-cap'].forEach(function (id) {
+    el(id).addEventListener('change', drawSettingsLine);
+  });
+
+  fillCap(cap);
+  drawSettingsLine();
 })();
 </script>
 </body>
