@@ -12,7 +12,7 @@
     "kind": "rename"
   },
   {
-    "from": "Screenshot 2025-04-06 at 6.42.39\u202fPM.png",
+    "from": "Screenshot 2025-04-06 at 6.42.39 PM.png",
     "to": "Screenshot_2025-04-06_Draft_v0.1.png",
     "assumptions": [
       "no project prefix, the library does not say which project this belongs to",
@@ -24,7 +24,7 @@
     "kind": "rename"
   },
   {
-    "from": "Screenshot 2025-04-14 at 9.06.08\u202fAM.png",
+    "from": "Screenshot 2025-04-14 at 9.06.08 AM.png",
     "to": "Screenshot_2025-04-14_Draft_v0.1.png",
     "assumptions": [
       "no project prefix, the library does not say which project this belongs to",
@@ -163,7 +163,7 @@
   },
   {
     "kind": "rename",
-    "from": "Screenshot 2025-04-06 at 6.34.18\u202fPM.png",
+    "from": "Screenshot 2025-04-06 at 6.34.18 PM.png",
     "to": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
     "assumptions": [
       "no project code was evidenced, so none was added",
@@ -175,7 +175,7 @@
   },
   {
     "kind": "rename",
-    "from": "Screenshot 2025-04-06 at 6.34.50\u202fPM.png",
+    "from": "Screenshot 2025-04-06 at 6.34.50 PM.png",
     "to": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
     "assumptions": [
       "no project code was evidenced, so none was added",
@@ -187,7 +187,7 @@
   },
   {
     "kind": "rename",
-    "from": "Screenshot 2025-04-06 at 6.35.10\u202fPM.png",
+    "from": "Screenshot 2025-04-06 at 6.35.10 PM.png",
     "to": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
     "assumptions": [
       "no project code was evidenced, so none was added",
@@ -212,5 +212,95 @@
     "assumptions": [],
     "applied": "2026-09-03",
     "run": "9845"
+  },
+  {
+    "kind": "rename",
+    "from": "Performance Management System.xlsx",
+    "to": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
+    "assumptions": [
+      "status assumed to be Draft, the document does not say",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "10285"
+  },
+  {
+    "kind": "rename",
+    "from": "Performance Management System.pbix",
+    "to": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
+    "assumptions": [
+      "status assumed to be Draft, the document does not say",
+      "date taken from the file timestamp, not the document",
+      "version assumed to be v0.1"
+    ],
+    "applied": "2026-09-03",
+    "run": "10285"
+  },
+  {
+    "kind": "create folder",
+    "from": "",
+    "to": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards",
+    "fromFolder": "",
+    "assumptions": [
+      "approved on the plan, so the folder is the same one every run"
+    ],
+    "applied": "2026-09-03",
+    "run": "10297"
+  },
+  {
+    "kind": "create folder",
+    "from": "",
+    "to": "/sites/TaskManagement/Shared Documents/Power BI Task Management/PD alignment Excel and Power BI - Karen/Performance Management",
+    "fromFolder": "",
+    "assumptions": [
+      "proposed by the agent: two documents were put in it"
+    ],
+    "applied": "2026-09-03",
+    "run": "10297"
+  },
+  {
+    "kind": "move",
+    "from": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
+    "to": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
+    "fromFolder": "/sites/TaskManagement/Shared Documents/Power BI Task Management/PD alignment Excel and Power BI - Karen",
+    "assumptions": [
+      "grouped with 1 other document into a new Performance Management folder"
+    ],
+    "applied": "2026-09-03",
+    "run": "10297"
+  },
+  {
+    "kind": "move",
+    "from": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
+    "to": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
+    "fromFolder": "/sites/TaskManagement/Shared Documents/Power BI Task Management/PD alignment Excel and Power BI - Karen",
+    "assumptions": [
+      "grouped with 1 other document into a new Performance Management folder"
+    ],
+    "applied": "2026-09-03",
+    "run": "10297"
+  },
+  {
+    "kind": "move",
+    "from": "Electric_Operations_Daily_Review_Dashboard.xlsx",
+    "to": "Electric_Operations_Daily_Review_Dashboard.xlsx",
+    "fromFolder": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References",
+    "assumptions": [
+      "approved on the plan as belonging in Dashboards"
+    ],
+    "applied": "2026-09-03",
+    "run": "10297"
+  },
+  {
+    "kind": "move",
+    "from": "Mooyah_Cleaning_Gantt.xlsx",
+    "to": "Mooyah_Cleaning_Gantt.xlsx",
+    "fromFolder": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References",
+    "assumptions": [
+      "approved on the plan as belonging in Dashboards"
+    ],
+    "applied": "2026-09-03",
+    "run": "10297"
   }
 ]
