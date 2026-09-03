@@ -506,3 +506,19 @@ describe('a name only has to be unique inside its own folder', () => {
     expect(out.every((r) => r.blocked === '')).toBe(true);
   });
 });
+
+describe('the Power BI report switch', () => {
+  const FILES = [{ name: 'NiSource Metric Dashboard.pbix', path: '/lib/NiSource Metric Dashboard.pbix', modified: '2026-04-15T10:00:00Z' }];
+
+  it('refuses a report by default, and says why', () => {
+    const rows = planRenames(FILES, {});
+    expect(rows[0]?.proposed).toBe('');
+    expect(rows[0]?.blocked).toContain('published or set to refresh');
+  });
+
+  it('proposes a name for one once renameReports is on', () => {
+    const rows = planRenames(FILES, { renameReports: true });
+    expect(rows[0]?.blocked).toBe('');
+    expect(rows[0]?.proposed).toContain('.pbix');
+  });
+});

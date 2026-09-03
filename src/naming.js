@@ -37,14 +37,19 @@ const FIRST_DRAFT = { major: 0, minor: 1 };
  *
  * @param {Array<{ current: string, path: string, blocked?: string, compliant?: boolean }>} rows
  * @param {Array<{ name: string, path?: string }>} reports
- * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
+ * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] }, includeReports?: boolean }} [options]
  * @returns {Array<{ current: string, path: string }>}
  */
 export function namingCandidates(rows, reports, options) {
   return (Array.isArray(rows) ? rows : []).filter((row) => {
     const name = String(row.current || '');
     if (!splitExtension(name).extension) return false;
-    if (isReport(name)) return false;
+    // A report is excluded by default. Not because renaming one is unsafe in
+    // the way a workbook is - the reports here read nothing from this library -
+    // but because a .pbix is also referenced from outside it, by whatever
+    // published dataset or refresh schedule was set up from it, and none of
+    // that is visible from here or from inside the file.
+    if (isReport(name) && !(options && options.includeReports)) return false;
     if (reportReading(name, String(row.path || ''), reports || [], options)) return false;
     return true;
   });
@@ -229,7 +234,7 @@ function readDate(value) {
  *
  * @param {any[]} rows plan rows from planRenames
  * @param {any[]} proposals model output
- * @param {{ files?: any[], reports?: any[], assumeStatus?: string, dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
+ * @param {{ files?: any[], reports?: any[], assumeStatus?: string, includeReports?: boolean, dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  */
 export function applyProposals(rows, proposals, options) {
   const opts = options || {};
@@ -387,7 +392,7 @@ export function approvedNotFound(rows, approved) {
  *
  * @param {any[]} rows plan rows, already carrying this run's proposals
  * @param {Array<{ from: string, to: string }>} approved the signed-off plan
- * @param {{ reports?: any[], dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
+ * @param {{ reports?: any[], includeReports?: boolean, dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  */
 export function applyApprovedPlan(rows, approved, options) {
   const opts = options || {};

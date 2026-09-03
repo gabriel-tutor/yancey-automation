@@ -63,6 +63,16 @@ const CONFIG = {
   // and undo by hand.
   maxChangesPerRun: 5,
 
+  // Whether the Power BI reports themselves are renamed.
+  //
+  // The reports in this library read nothing from it - that is established by
+  // opening them, not guessed at. What remains true is that a .pbix is
+  // referenced from *outside* the library, by whatever published dataset or
+  // refresh schedule was set up from it, and neither the library nor the file
+  // can see that. So this is a decision rather than a default, and the undo
+  // list is what makes it reversible.
+  renameReports: true,
+
   // The plan a person has read and signed off, as [{ from, to }].
   //
   // The model is not deterministic, and the difference matters. Two runs an
@@ -204,7 +214,8 @@ for (const it of items) {
 const rows = planRenames(files, {
   assumeStatus: cfg.assumeStatus === '' ? '' : String(cfg.assumeStatus || 'Draft'),
   assumeVersion: cfg.assumeVersion || null,
-  dependencies: dependencies
+  dependencies: dependencies,
+  renameReports: cfg.renameReports === true
 });
 
 // What each document is, and whether it is where it should be. Keyed by path
@@ -254,7 +265,10 @@ const rows = review.rows || [];
 const files = review.files || [];
 
 const reports = reportsIn(files);
-const candidates = namingCandidates(rows, reports, { dependencies: review.dependencies }).slice(0, Number(cfg.maxNamed) || 30);
+const candidates = namingCandidates(rows, reports, {
+  dependencies: review.dependencies,
+  includeReports: cfg.renameReports === true
+}).slice(0, Number(cfg.maxNamed) || 30);
 
 // Always emit something, so the branch below runs even when there is nothing
 // to name and the summary still gets to speak.
@@ -399,6 +413,7 @@ applyProposals(rows, proposals, {
   files: files,
   reports: reports,
   dependencies: dependencies,
+  includeReports: cfg.renameReports === true,
   assumeStatus: cfg.assumeStatus === '' ? '' : String(cfg.assumeStatus || 'Draft')
 });
 
@@ -409,7 +424,11 @@ const approved = Array.isArray(cfg.approvedPlan) ? cfg.approvedPlan : [];
 let planNote = 'this run proposed these names';
 let approvedMissing = [];
 if (approved.length > 0) {
-  applyApprovedPlan(rows, approved, { reports: reports, dependencies: dependencies });
+  applyApprovedPlan(rows, approved, {
+    reports: reports,
+    dependencies: dependencies,
+    includeReports: cfg.renameReports === true
+  });
   // A line whose file is not there any more is skipped, which is right - but
   // silently skipping it is how a plan half-applies without anyone noticing.
   approvedMissing = approvedNotFound(rows, approved);

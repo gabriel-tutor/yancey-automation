@@ -442,6 +442,7 @@ function planRename(file, options) {
  * @param {{ assumeStatus?: string | null,
  *           assumeVersion?: { major: number, minor: number } | null,
  *           project?: string,
+ *           renameReports?: boolean,
  *           dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] } }} [options]
  * @returns {ReturnType<typeof planRename>[]}
  */
@@ -461,7 +462,7 @@ function planRenames(files, options) {
   for (const row of rows) {
     if (row.compliant) continue;
 
-    if (isReport(row.current)) {
+    if (isReport(row.current) && !opts.renameReports) {
       row.blocked =
         'a Power BI report is referenced by path wherever it is published or set to refresh, and none of that is visible from the library \u2014 rename it deliberately, not in a sweep';
       row.proposed = '';

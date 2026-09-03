@@ -120,6 +120,45 @@ describe('turning the model’s words into a name', () => {
   });
 });
 
+describe('renaming the reports themselves', () => {
+  it('never offers a report by default', () => {
+    expect(namingCandidates(freshRows(), REPORTS).map((r) => r.current)).not.toContain('NiSource Metric Dashboard.pbix');
+  });
+
+  /**
+   * The reports in this library read nothing from it — checked by opening them,
+   * not guessed at. What is still true is that a .pbix is referenced from
+   * *outside* the library by whatever published dataset or refresh was set up
+   * from it, and nothing here or inside the file can see that. So it is a
+   * switch a person turns on, not a default.
+   */
+  it('offers one when the caller has decided to rename reports', () => {
+    const names = namingCandidates(freshRows(), REPORTS, { includeReports: true }).map((r) => r.current);
+    expect(names).toContain('NiSource Metric Dashboard.pbix');
+  });
+
+  it('holds an approved report name to the convention like any other', () => {
+    const rows = freshRows();
+    applyApprovedPlan(rows, [{ from: 'NiSource Metric Dashboard.pbix', to: 'not a valid name.pbix' }], {
+      reports: REPORTS,
+      includeReports: true,
+    });
+    const row = rows.find((r) => r.current.endsWith('.pbix'));
+    expect(row?.proposed).toBe('');
+  });
+
+  it('applies an approved report name that does satisfy it', () => {
+    const rows = freshRows();
+    applyApprovedPlan(
+      rows,
+      [{ from: 'NiSource Metric Dashboard.pbix', to: 'NIPSCO_Metric-Dashboard_2026-01-01_Final_v1.0.pbix' }],
+      { reports: REPORTS, includeReports: true },
+    );
+    const row = rows.find((r) => r.current.endsWith('.pbix'));
+    expect(row?.proposed).toBe('NIPSCO_Metric-Dashboard_2026-01-01_Final_v1.0.pbix');
+  });
+});
+
 describe('what the checking refuses', () => {
   it('refuses to rename a Power BI report even if the model answers for one', () => {
     const rows = freshRows();
