@@ -251,6 +251,25 @@ select.pick { min-width: 150px; }
 .into-note { font-size: 12.5px; color: var(--ink-mute); margin-top: 5px; font-weight: 300; }
 .into-note b { font-weight: 500; color: var(--ink-body); }
 
+/* A change that has happened. Same shape as one being offered, minus the
+   checkbox — it is the same information and should not have to be re-read. */
+.done { border-bottom: 1px solid var(--rule); padding: 14px 6px; }
+.done:last-child { border-bottom: 0; }
+.done .kind { background: var(--good-wash); color: var(--good); }
+.done.bad .kind { background: var(--bad-wash); color: var(--bad); }
+.done .why {
+  margin: 7px 0 0; font-size: 13px; font-weight: 400; color: var(--bad);
+  background: var(--bad-wash); border-radius: 6px; padding: 7px 11px;
+}
+.assumed {
+  margin-top: 7px; font-size: 12.5px; font-weight: 300; color: var(--ink-mute); line-height: 1.5;
+}
+.assumed b {
+  font-weight: 500; color: var(--ink-body); font-size: 11px; letter-spacing: .06em;
+  text-transform: uppercase; font-family: "Libre Franklin", Arial, sans-serif;
+  margin-right: 7px;
+}
+
 /* ---- notices ----------------------------------------------------------- */
 .note {
   border-left: 3px solid var(--rule-firm); border-radius: 0 7px 7px 0;
@@ -1062,6 +1081,106 @@ select.cap { justify-self: start; }
     show('left-alone', any);
   }
 
+  /* What a carried-out change is called. These are the apply side's own words
+     for the kinds, which are not the review side's — 'rename and move' there,
+     'rename+move' on the page — so they get their own map rather than a
+     lookup that silently misses and prints a kind nobody wrote. */
+  var DONE_WORD = {
+    'rename and move': 'Renamed and filed',
+    'rename': 'Renamed',
+    'move': 'Filed',
+    'create folder': 'New folder',
+    'rename folder': 'Folder renamed'
+  };
+
+  /** The folder half of a path, which is what a person wants to read. */
+  function folderOf(path) {
+    var at = String(path || '').lastIndexOf('/');
+    return at === -1 ? '' : String(path).slice(0, at);
+  }
+
+  /**
+   * One change that has happened, or failed to.
+   *
+   * The first production run rendered these with JSON.stringify, because the
+   * fallback looked for fields the apply side does not emit. A person who has
+   * just changed their own document library should not be reading a JSON blob
+   * to find out what they changed.
+   *
+   * @param {any} entry @param {boolean} bad
+   */
+  function doneRow(entry, bad) {
+    var row = document.createElement('div');
+    row.className = 'done' + (bad ? ' bad' : '');
+
+    if (typeof entry === 'string') {
+      row.appendChild(text('div', entry, 'path'));
+      return row;
+    }
+
+    var kind = text('span', DONE_WORD[entry.kind] || entry.kind || 'Changed', 'kind');
+    row.appendChild(kind);
+
+    if (entry.kind === 'create folder') {
+      row.appendChild(text('div', entry.newPath || entry.newName, 'path now-name'));
+    } else {
+      if (entry.oldName) {
+        var from = document.createElement('div');
+        from.className = 'line';
+        from.appendChild(text('span', '', 'gut'));
+        from.appendChild(text('span', entry.oldName, 'path was'));
+        row.appendChild(from);
+      }
+      if (entry.newName) {
+        var to = document.createElement('div');
+        to.className = 'line';
+        to.appendChild(text('span', '→', 'gut'));
+        to.appendChild(text('span', entry.newName, 'path now-name'));
+        row.appendChild(to);
+      }
+      var landed = folderOf(entry.newPath);
+      if (landed && (entry.kind === 'rename and move' || entry.kind === 'move')) {
+        var into = document.createElement('div');
+        into.className = 'into-note';
+        into.appendChild(document.createTextNode('now in '));
+        into.appendChild(text('b', landed));
+        row.appendChild(into);
+      }
+    }
+
+    if (bad && entry.why) {
+      row.appendChild(text('p', entry.why, 'why'));
+    }
+
+    // What the tool had to assume to build that name. It is the difference
+    // between a name somebody can trust and one they have to go and check.
+    var assumed = (entry.assumptions || []).filter(Boolean);
+    if (!bad && assumed.length) {
+      var note = document.createElement('div');
+      note.className = 'assumed';
+      note.appendChild(text('b', 'Assumed'));
+      note.appendChild(document.createTextNode(assumed.join(' · ')));
+      row.appendChild(note);
+    }
+
+    return row;
+  }
+
+  /** @param {string} title @param {any[]} entries @param {boolean} bad */
+  function doneSection(title, entries, bad) {
+    var block = document.createElement('div');
+    block.className = 'section';
+    var head = document.createElement('div');
+    head.className = 'section-head';
+    var h = document.createElement('h3');
+    h.textContent = title;
+    head.appendChild(h);
+    head.appendChild(text('span', entries.length, 'count'));
+    block.appendChild(head);
+    entries.forEach(function (entry) { block.appendChild(doneRow(entry, bad)); });
+    return block;
+  }
+
   function drawOutcome(run) {
     el('outcome-head').textContent = run.failed.length
       ? 'Some of it could not be done'
@@ -1070,29 +1189,24 @@ select.cap { justify-self: start; }
     var body = el('outcome-body');
     body.textContent = '';
 
+    // Failures first, always. A page that leads with six successes and buries
+    // one failure is a page somebody hears about from a client.
     if (run.failed.length) {
       var bad = document.createElement('p');
       bad.className = 'note bad';
-      bad.appendChild(text('b', run.failed.length + ' ' + plural(run.failed.length, 'change') + ' could not be carried out.'));
+      bad.appendChild(text('b', run.failed.length + ' ' + plural(run.failed.length, 'change') +
+        ' could not be carried out.'));
       body.appendChild(bad);
-      var ul = document.createElement('ul');
-      run.failed.forEach(function (f) {
-        ul.appendChild(text('li', typeof f === 'string' ? f
-          : (f.what || f.file || '') + ' — ' + (f.because || f.error || 'no reason given')));
-      });
-      body.appendChild(ul);
+      body.appendChild(doneSection('What failed', run.failed, true));
     }
 
     if (run.applied.length) {
       var good = document.createElement('p');
       good.className = 'note good';
-      good.appendChild(text('b', run.applied.length + ' ' + plural(run.applied.length, 'change') + ' carried out.'));
+      good.appendChild(text('b', run.applied.length + ' ' + plural(run.applied.length, 'change') +
+        ' carried out.'));
       body.appendChild(good);
-      var done = document.createElement('ul');
-      run.applied.forEach(function (a) {
-        done.appendChild(text('li', typeof a === 'string' ? a : (a.what || a.file || JSON.stringify(a))));
-      });
-      body.appendChild(done);
+      body.appendChild(doneSection('What changed', run.applied, false));
     }
   }
 
