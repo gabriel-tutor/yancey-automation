@@ -732,11 +732,17 @@ select.cap { justify-self: start; }
    * Where this copy normally points, and how far it may be moved.
    * Filled in from the answer, because only the workflow knows.
    */
-  // `known` is false until a run has told us. Before that the boxes stay
-  // disabled - sending a target to a deployment that turns out to be locked
-  // would earn a refusal on every run - but the page must not claim the copy is
-  // fixed when it has not been told either way.
-  var home = { site: '', library: '', open: false, listed: [], known: false };
+  // Open until a run says otherwise, because the page is not the guard.
+  //
+  // This started the other way round - disabled until a run confirmed the
+  // policy - and it was wrong twice over. A browser that had never run came up
+  // greyed out for no reason, and one holding a remembered run from before any
+  // of this existed came up saying "fixed to one library", which was simply
+  // untrue. Being cautious in the UI bought nothing: mergeOverrides refuses a
+  // target the deployment does not allow whatever the page sends, and the
+  // refusal comes back and is shown. So the box is usable, and the only thing
+  // that greys it out is a run actually saying this copy is locked.
+  var home = { site: '', library: '', open: true, listed: [], known: false };
 
   /**
    * A site path out of whatever somebody pasted.
@@ -793,10 +799,11 @@ select.cap { justify-self: start; }
   /** The line under the boxes, and whether the control is usable at all. */
   function drawWhere() {
     var where = chosenTarget();
-    var locked = !home.open;
+    // Only a run that actually said so locks it.
+    var locked = home.known && !home.open;
     el('set-site').disabled = locked;
     el('set-library').disabled = locked;
-    el('where-locked').hidden = !(locked && home.known);
+    el('where-locked').hidden = !locked;
     el('set-site').placeholder = home.site || '/sites/Something';
     el('set-library').placeholder = home.library || 'Documents';
 
@@ -807,10 +814,7 @@ select.cap { justify-self: start; }
     el('where-reset').hidden = locked || !moved;
 
     var note = el('where-now');
-    if (locked) {
-      note.textContent = home.known ? '' : 'Press Look again to load where this can be pointed.';
-      return;
-    }
+    if (locked) { note.textContent = ''; return; }
     if (where.typedButUnreadable) {
       note.textContent = 'That does not have a site in it. Paste an address like ' +
         'https://…/sites/TaskManagement, or type /sites/TaskManagement.';
@@ -818,6 +822,10 @@ select.cap { justify-self: start; }
     }
     if (home.listed.length > 0) {
       note.textContent = 'This copy allows: ' + home.listed.join(', ');
+      return;
+    }
+    if (!home.site) {
+      note.textContent = 'Press Look again to see which library this is pointed at.';
       return;
     }
     note.textContent = moved
@@ -967,6 +975,14 @@ select.cap { justify-self: start; }
     if (!c) return;
     home.site = String(c.homeSite || c.sitePath || '');
     home.library = String(c.homeLibrary || c.libraryTitle || '');
+
+    // A config remembered from before any of this existed carries neither key.
+    // Not being told is not the same as being told no, and treating it as no is
+    // exactly how the control came up greyed out on a live deployment that
+    // allows it.
+    var says = c.allowAnySiteOnHost !== undefined || Array.isArray(c.allowedSites);
+    if (!says) { drawWhere(); return; }
+
     home.listed = Array.isArray(c.allowedSites) ? c.allowedSites.map(String) : [];
     home.open = c.allowAnySiteOnHost === true || home.listed.length > 0;
     home.known = true;

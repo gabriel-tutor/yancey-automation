@@ -499,7 +499,8 @@ describe('pointing a run at another library', () => {
 
   const OPEN = { site: '/sites/TaskManagement', library: 'Documents', open: true, listed: [], known: true };
   const LOCKED = { site: '/sites/TaskManagement', library: 'Documents', open: false, listed: [], known: true };
-  const UNKNOWN = { site: '', library: '', open: false, listed: [], known: false };
+  // known: true is the point of LOCKED — a run said so. UNKNOWN is the other case.
+  const UNKNOWN = { site: '', library: '', open: true, listed: [], known: false };
 
   describe('getting a site out of what somebody pasted', () => {
     const { api } = panelAt(OPEN);
@@ -607,19 +608,65 @@ describe('pointing a run at another library', () => {
    * be locked earns a refusal every run, and telling somebody their copy is
    * fixed when nobody has said so is simply wrong.
    */
-  it('does not claim the copy is fixed before a run has said so', () => {
+  /**
+   * The harness seeds `home` itself, so none of the tests below can see what the
+   * page actually initialises it to — and flipping that literal back to the old
+   * value passed every one of them. The starting state is read from the source
+   * for exactly that reason.
+   */
+  it('starts usable rather than starting locked', () => {
+    const decl = SCRIPT.match(/var home = \{[^}]*\}/);
+    expect(decl, 'no initial home state to check').toBeTruthy();
+    expect(String(decl?.[0]), 'the box must not start disabled').toContain('open: true');
+    expect(String(decl?.[0]), 'and it must not start claiming to know the policy').toContain('known: false');
+  });
+
+  /**
+   * The control started life disabled until a run confirmed the policy, and it
+   * was wrong twice: a browser that had never run came up greyed out for no
+   * reason, and one holding a run remembered from before any of this existed
+   * came up saying "fixed to one library" on a deployment that allows it.
+   *
+   * Caution in the UI bought nothing. mergeOverrides refuses a target the
+   * deployment does not allow whatever the page sends, and the refusal comes
+   * back and is shown, so the page can afford to be useful.
+   */
+  it('is usable before any run has told it anything', () => {
     const { api, controls } = panelAt(UNKNOWN);
     api.drawWhere();
-    expect(controls['set-site'].disabled, 'safe until it knows').toBe(true);
-    expect(controls['where-locked'].hidden, 'but it must not say "fixed"').toBe(true);
+    expect(controls['set-site'].disabled, 'the workflow is the guard, not the box').toBe(false);
+    expect(controls['where-locked'].hidden, 'and it must not claim to be fixed').toBe(true);
     expect(controls['where-now'].textContent).toContain('Press Look again');
   });
 
-  it('stops saying that once a run has told it', () => {
+  /**
+   * The actual bug behind "why is it disabled": a config remembered from before
+   * the feature shipped carries no policy key at all. Not being told is not the
+   * same as being told no.
+   */
+  it('does not read a config from before the feature as a refusal', () => {
+    const { api, controls } = panelAt(UNKNOWN);
+    api.useWhere({ homeSite: '/sites/TaskManagement', homeLibrary: 'Documents' });
+    expect(controls['set-site'].disabled).toBe(false);
+    expect(controls['where-locked'].hidden).toBe(true);
+  });
+
+  it('greys it out only when a run actually says the copy is locked', () => {
+    const { api, controls } = panelAt(UNKNOWN);
+    api.useWhere({
+      homeSite: '/sites/TaskManagement', homeLibrary: 'Documents',
+      allowAnySiteOnHost: false, allowedSites: [],
+    });
+    expect(controls['set-site'].disabled).toBe(true);
+    expect(controls['where-locked'].hidden).toBe(false);
+  });
+
+  it('says which library it is on once a run has told it', () => {
     const { api, controls } = panelAt(UNKNOWN);
     api.useWhere({ homeSite: '/sites/TaskManagement', homeLibrary: 'Documents', allowAnySiteOnHost: true });
     expect(controls['set-site'].disabled).toBe(false);
     expect(controls['where-now'].textContent).not.toContain('Press Look again');
+    expect(controls['where-now'].textContent).toContain('/sites/TaskManagement');
   });
 
   /** The workflow is the only thing that knows where it may be pointed. */

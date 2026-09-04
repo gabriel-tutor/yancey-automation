@@ -293,6 +293,24 @@ about: `readContents` is on, so pointing at a new library sends *that* library's
 documents to OpenAI. To tighten, replace the flag with an `allowedSites` list —
 `mergeOverrides` prefers the list whenever one is present.
 
+### The box is usable before it knows
+
+The control ships **enabled**, and only a run that actually reports a locked
+deployment greys it out.
+
+It shipped the other way round first and that was wrong twice over: a browser
+that had never run came up greyed out for no reason, and one holding a config
+remembered from before the feature existed came up saying *"This copy is fixed
+to one library"* on a deployment that allows it — because a config with no
+policy key was read as a policy of no.
+
+Caution in the page bought nothing. `mergeOverrides` refuses a target the
+deployment does not allow whatever the page sends, and the refusal comes back
+and is shown on the page. **The page is not the guard**, so it can afford to be
+useful. The starting state is asserted from the page source in
+`src/web-page.test.js`, because the test harness seeds that variable itself and
+every behavioural test passed with the old value still in place.
+
 ### The library title is validated, not escaped
 
 `libraryTitle` is interpolated into `getbytitle('<title>')` in the request URL.
