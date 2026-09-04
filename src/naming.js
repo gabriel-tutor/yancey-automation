@@ -52,7 +52,7 @@ const FIRST_DRAFT = { major: 0, minor: 1 };
  *
  * @param {Array<{ current: string, path: string, blocked?: string, compliant?: boolean }>} rows
  * @param {Array<{ name: string, path?: string }>} reports
- * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] }, includeReports?: boolean, forPlacement?: boolean }} [options]
+ * @param {{ dependencies?: { byFile: Record<string, { report: string, where: string }>, unreadable?: string[] }, includeReports?: boolean, forPlacement?: boolean, skipCompliant?: boolean }} [options]
  * @returns {Array<{ current: string, path: string }>}
  */
 export function namingCandidates(rows, reports, options) {
@@ -66,6 +66,22 @@ export function namingCandidates(rows, reports, options) {
     // that is visible from here or from inside the file.
     if (isReport(name) && !(options && options.includeReports)) return false;
     if (reportReading(name, String(row.path || ''), reports || [], options)) return false;
+    // Already-correct documents are skipped only when the caller asks, because
+    // this function answers two different questions and they want opposite
+    // answers.
+    //
+    // "Which documents should the model be asked to name?" wants them gone: a
+    // live run offered to turn Channel-Process-Guide into Channel-Guide, which
+    // is not wrong, not an improvement anybody asked for, and on a library
+    // somebody relies on is churn that costs a click each to decline. The
+    // convention is the standard; being a better phrase than the standard
+    // requires is not.
+    //
+    // "Which documents may be renamed at all?" wants them kept. A plan that
+    // puts a name back operates on a file that is correct by definition -
+    // that is what a revert is - and dropping it here reported it as guarded
+    // instead, which four tests said out loud the moment this was unconditional.
+    if (options && options.skipCompliant && row.compliant === true) return false;
     return true;
   });
 }
@@ -330,7 +346,13 @@ export function applyProposals(rows, proposals, options) {
   const modified = new Map(
     (opts.files || []).map((f) => [String(f.path), String(f.modified || '').slice(0, 10)]),
   );
-  const nameable = new Set(namingCandidates(rows, reports, opts).map((r) => String(r.current)));
+  // The model still sees an already-correct document, because it can suggest a
+  // folder for one; skipCompliant is what stops it renaming one. The split
+  // between placeable and nameable is exactly where that belongs - a compliant
+  // row keeps its folder suggestion below and never reaches the naming half.
+  const nameable = new Set(
+    namingCandidates(rows, reports, { ...opts, skipCompliant: true }).map((r) => String(r.current))
+  );
   const placeable = new Set(
     namingCandidates(rows, reports, { ...opts, forPlacement: true }).map((r) => String(r.current)),
   );

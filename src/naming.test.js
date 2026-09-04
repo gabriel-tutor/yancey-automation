@@ -807,3 +807,42 @@ describe('where the date comes from', () => {
     expect(only(rows).proposed).toBe('Report_2024-11-02_Draft_v0.1.docx');
   });
 });
+
+describe('leaving a correct name alone', () => {
+  const LIB = '/lib';
+  /** @param {any[]} rows @returns {any} */
+  const only = (rows) => rows[0];
+
+  it('does not rename a document that already satisfies the convention', () => {
+    // A live run offered Channel-Process-Guide → Channel-Guide. Not wrong, not
+    // an improvement anybody asked for, and a click each to decline.
+    const name = 'Channel-Process-Guide_2025-04-07_Draft_v0.1.docx';
+    const rows = [{ current: name, path: LIB + '/' + name, compliant: true, proposed: '', blocked: '', approved: false }];
+    applyProposals(rows, [{ file: name, document: 'Channel-Guide', status: 'Draft', version: 'v0.1', date: '2025-04-07' }], {
+      files: [{ path: only(rows).path, name: name, modified: '2026-09-03T10:00:00Z' }],
+      reports: [],
+    });
+    expect(only(rows).proposed).toBe('');
+    expect(only(rows).compliant).toBe(true);
+  });
+
+  it('still takes a folder for it, because a correct name can be in the wrong place', () => {
+    const name = 'Channel-Process-Guide_2025-04-07_Draft_v0.1.docx';
+    const rows = [{ current: name, path: LIB + '/' + name, compliant: true, proposed: '', blocked: '', approved: false }];
+    applyProposals(rows, [{ file: name, document: 'Channel-Guide', folder: 'Process Guides', status: 'Draft', version: 'v0.1' }], {
+      files: [{ path: only(rows).path, name: name, modified: '2026-09-03T10:00:00Z' }],
+      reports: [],
+    });
+    expect(only(rows).proposed).toBe('');
+    expect(only(rows).folderSuggestion).toBe('Process Guides');
+  });
+
+  it('still renames one that does not satisfy it', () => {
+    const rows = [{ current: 'messy name.xlsx', path: LIB + '/messy name.xlsx', compliant: false, proposed: '', blocked: '', approved: false }];
+    applyProposals(rows, [{ file: 'messy name.xlsx', document: 'Tidy-Name', status: 'Draft', version: 'v0.1', date: '2026-05-19' }], {
+      files: [{ path: only(rows).path, name: 'messy name.xlsx', modified: '2026-05-19T10:00:00Z' }],
+      reports: [],
+    });
+    expect(only(rows).proposed).toBe('Tidy-Name_2026-05-19_Draft_v0.1.xlsx');
+  });
+});
