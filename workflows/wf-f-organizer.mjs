@@ -60,6 +60,16 @@ export const CONFIG = {
   sitePath: TARGET.sharepointSite || '/sites/TaskManagement',
   libraryTitle: 'Documents',
 
+  // How far a caller may move the two lines above.
+  //
+  // Empty list and false is LOCKED, which is what every deployment was until
+  // 2026-09-04 and what any new one is until somebody says otherwise. A list
+  // lets a caller pick from it. allowAnySiteOnHost lets a caller name any
+  // well-formed site path, on this host, which is never negotiable, because
+  // the host is the tenant and no choice of tenant is a narrowing.
+  allowedSites: TARGET.allowedSites || [],
+  allowAnySiteOnHost: TARGET.allowAnySiteOnHost === true,
+
   // How many list items one request asks for, and SharePoint's own ceiling for
   // a single one. A library larger than this is read a page at a time.
   maxItems: 5000,
@@ -953,6 +963,15 @@ return [{ json: {
     libraryTitle: String(settings.libraryTitle || ''),
     canArm: settings.canArm === true,
 
+    // Where this deployment may be pointed, so the page can offer a picker, a
+    // list, or nothing at all, and be right about which. Read from the BUILT
+    // configuration, not this run's: a run that was pointed somewhere must not
+    // report that somewhere as the only place it may go.
+    allowedSites: (built.allowedSites || []).map(function (site) { return String(site); }),
+    allowAnySiteOnHost: built.allowAnySiteOnHost === true,
+    homeSite: String(built.sitePath || ''),
+    homeLibrary: String(built.libraryTitle || ''),
+
     readContents: settings.readContents === true,
     renameReports: settings.renameReports === true,
     maxChangesPerRun: Number(settings.maxChangesPerRun) || 0,
@@ -1050,8 +1069,10 @@ try {
 }
 
 // mergeOverrides is where the decisions are, and it is tested: only settings
-// that belong at the point of use, never the host or the library, the cap only
-// downwards, and no arming at all unless canArm says this copy may write.
+// that belong at the point of use, never the host, the cap only downwards, and
+// no arming at all unless canArm says this copy may write. The site and the
+// library are a choice between what THIS deployment declared, which is why
+// allowedSites and allowAnySiteOnHost travel in the defaults above.
 const merged = mergeOverrides(defaults, asked, {});
 
 return [{ json: Object.assign({}, merged.config, { overrideRefusals: merged.refused }) }];

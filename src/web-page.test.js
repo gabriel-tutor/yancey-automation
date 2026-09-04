@@ -250,6 +250,11 @@ describe('the settings a person chose', () => {
       'set-folders': { value: '6', options: /** @type {number[]} */ ([]) },
       'set-minper': { value: '2', options: /** @type {number[]} */ ([]) },
       'set-status': { value: 'Draft' },
+      'set-site': { value: '', type: 'text' },
+      'set-library': { value: '', type: 'text' },
+      'where-locked': { hidden: false },
+      'where-now': { textContent: '' },
+      'where-reset': { hidden: false },
     };
     for (const control of Object.values(controls)) {
       if (!('options' in control)) continue;
@@ -266,14 +271,20 @@ describe('the settings a person chose', () => {
         "var CHOICES = 'organiser.settings.v1';",
         'var cap = 12;',
         'var bounds = { maxChangesPerRun: 12, maxNewFolders: 6, minPerFolder: 2 };',
+        "var home = { site: '/sites/TaskManagement', library: 'Documents', open: false, listed: [], known: true };",
         source('fillRange'),
         source('fillFloor'),
+        source('parseSitePath'),
+        source('chosenTarget'),
+        source('drawWhere'),
         source('settings'),
         source('saveChoices'),
         source('loadChoices'),
         source('useLimits'),
+        source('useWhere'),
         source('applyChoices'),
-        'return { settings, saveChoices, loadChoices, useLimits, applyChoices };',
+        'return { settings, saveChoices, loadChoices, useLimits, applyChoices,',
+        '         useWhere, parseSitePath, chosenTarget, drawWhere, home };',
       ].join('\n')
     )({ localStorage: store.api }, (/** @type {string} */ id) => controls[id], documentStub);
     return { api, controls, store };
@@ -429,5 +440,205 @@ describe('what the browser is allowed to remember', () => {
     expect(api.recall()).toBeNull();
     expect(() => api.remember(CONFIG)).not.toThrow();
     expect(() => api.forget()).not.toThrow();
+  });
+});
+
+/* ------------------------------------------------- pointing it somewhere else */
+
+/**
+ * Choosing which library a run looks at.
+ *
+ * Yancey asked for this watching a run finish on 4 September: *"what happens if
+ * I want to point it at another folder?"* He will paste a browser address,
+ * because that is what is in front of him when he is looking at the library he
+ * means — so the page has to get a site path out of one, and say so plainly
+ * when there is not one in there.
+ */
+describe('pointing a run at another library', () => {
+  /** @param {{ site: string, library: string, open: boolean, listed: string[] }} where */
+  function panelAt(where) {
+    /** @type {Record<string, any>} */
+    const controls = {
+      'set-reports': { checked: true },
+      'set-contents': { checked: true },
+      'set-cap': { value: '12', options: [] },
+      'set-folders': { value: '6', options: [] },
+      'set-minper': { value: '2', options: [] },
+      'set-status': { value: 'Draft' },
+      'set-site': { value: '', type: 'text' },
+      'set-library': { value: '', type: 'text' },
+      'where-locked': { hidden: false },
+      'where-now': { textContent: '' },
+      'where-reset': { hidden: false },
+    };
+    const store = storage();
+    const api = new Function(
+      'window', 'el', 'document',
+      [
+        "var CHOICES = 'organiser.settings.v1';",
+        'var cap = 12;',
+        'var bounds = { maxChangesPerRun: 12, maxNewFolders: 6, minPerFolder: 2 };',
+        'var home = ' + JSON.stringify(where) + ';',
+        source('fillRange'),
+        source('fillFloor'),
+        source('parseSitePath'),
+        source('chosenTarget'),
+        source('drawWhere'),
+        source('settings'),
+        source('saveChoices'),
+        source('loadChoices'),
+        source('useLimits'),
+        source('useWhere'),
+        source('applyChoices'),
+        'return { settings, saveChoices, loadChoices, applyChoices, useWhere,',
+        '         parseSitePath, drawWhere, home };',
+      ].join('\n')
+    )({ localStorage: store.api }, (/** @type {string} */ id) => controls[id], documentStub);
+    return { api, controls, store };
+  }
+
+  const OPEN = { site: '/sites/TaskManagement', library: 'Documents', open: true, listed: [], known: true };
+  const LOCKED = { site: '/sites/TaskManagement', library: 'Documents', open: false, listed: [], known: true };
+  const UNKNOWN = { site: '', library: '', open: false, listed: [], known: false };
+
+  describe('getting a site out of what somebody pasted', () => {
+    const { api } = panelAt(OPEN);
+    it.each([
+      ['a browser address', 'https://upperformpartners.sharepoint.com/sites/WebExcel/Shared%20Documents/Forms/AllItems.aspx', '/sites/WebExcel'],
+      ['an address with a query on it', 'https://x.sharepoint.com/sites/WebExcel?web=1', '/sites/WebExcel'],
+      ['a bare path', '/sites/WebExcel', '/sites/WebExcel'],
+      ['a path with a library after it', '/sites/WebExcel/Shared Documents', '/sites/WebExcel'],
+      ['a Teams-style site', '/teams/PowerBI', '/teams/PowerBI'],
+      ['an encoded space in the site name', 'https://x.sharepoint.com/sites/Web%20Excel/x', '/sites/Web Excel'],
+    ])('reads %s', (_what, input, want) => {
+      expect(api.parseSitePath(input)).toBe(want);
+    });
+
+    it.each([
+      ['a personal OneDrive', '/personal/yancey_partnersperform_com/Documents'],
+      ['a bare word', 'WebExcel'],
+      ['nothing', '   '],
+      ['a sentence', 'the one Karen uses'],
+    ])('gets nothing out of %s, rather than guessing', (_what, input) => {
+      expect(api.parseSitePath(input)).toBe('');
+    });
+  });
+
+  /**
+   * Sending it every time would make every run on a locked copy report a
+   * refusal for a setting nobody touched.
+   */
+  it('sends nothing about the target while it is the usual one', () => {
+    const { api } = panelAt(OPEN);
+    const sent = api.settings();
+    expect(sent.sitePath).toBeUndefined();
+    expect(sent.libraryTitle).toBeUndefined();
+  });
+
+  it('sends the site once it has been pointed somewhere else', () => {
+    const { api, controls } = panelAt(OPEN);
+    controls['set-site'].value = 'https://upperformpartners.sharepoint.com/sites/WebExcel/Shared Documents';
+    expect(api.settings().sitePath).toBe('/sites/WebExcel');
+  });
+
+  it('sends the library on its own when only that changed', () => {
+    const { api, controls } = panelAt(OPEN);
+    controls['set-library'].value = 'Reports';
+    const sent = api.settings();
+    expect(sent.libraryTitle).toBe('Reports');
+    expect(sent.sitePath).toBeUndefined();
+  });
+
+  it('sends nothing when what was typed has no site in it', () => {
+    const { api, controls } = panelAt(OPEN);
+    controls['set-site'].value = 'the one Karen uses';
+    expect(api.settings().sitePath).toBeUndefined();
+  });
+
+  it('says so on the page rather than sending something unusable', () => {
+    const { api, controls } = panelAt(OPEN);
+    controls['set-site'].value = 'the one Karen uses';
+    api.drawWhere();
+    expect(controls['where-now'].textContent).toContain('does not have a site in it');
+  });
+
+  /* ---- a copy that may not be pointed anywhere ---- */
+
+  it('disables the boxes on a copy that is fixed to one library', () => {
+    const { api, controls } = panelAt(LOCKED);
+    api.drawWhere();
+    expect(controls['set-site'].disabled).toBe(true);
+    expect(controls['set-library'].disabled).toBe(true);
+    expect(controls['where-locked'].hidden).toBe(false);
+  });
+
+  /**
+   * A deployment that has since been locked must not have the page keep asking
+   * for somewhere it will now be refused, every run, silently.
+   */
+  it('does not restore a remembered target onto a copy that is now locked', () => {
+    const { api, controls } = panelAt(LOCKED);
+    api.applyChoices({ sitePath: '/sites/WebExcel', libraryTitle: 'Reports' });
+    expect(controls['set-site'].value).toBe('');
+    expect(controls['set-library'].value).toBe('');
+  });
+
+  it('restores a remembered target while the copy still allows it', () => {
+    const { api, controls } = panelAt(OPEN);
+    api.applyChoices({ sitePath: '/sites/WebExcel', libraryTitle: 'Reports' });
+    expect(controls['set-site'].value).toBe('/sites/WebExcel');
+    expect(controls['set-library'].value).toBe('Reports');
+  });
+
+  it('survives a reload once it has been pointed somewhere', () => {
+    const { api, controls, store } = panelAt(OPEN);
+    controls['set-site'].value = '/sites/WebExcel';
+    api.saveChoices();
+
+    const fresh = panelAt(OPEN);
+    fresh.store.api.setItem('organiser.settings.v1', JSON.parse(store.raw())['organiser.settings.v1']);
+    fresh.api.applyChoices(fresh.api.loadChoices());
+    expect(fresh.controls['set-site'].value).toBe('/sites/WebExcel');
+  });
+
+  /**
+   * A browser that has never seen a run does not know the policy yet. It must
+   * not guess in either direction: sending a target to a copy that turns out to
+   * be locked earns a refusal every run, and telling somebody their copy is
+   * fixed when nobody has said so is simply wrong.
+   */
+  it('does not claim the copy is fixed before a run has said so', () => {
+    const { api, controls } = panelAt(UNKNOWN);
+    api.drawWhere();
+    expect(controls['set-site'].disabled, 'safe until it knows').toBe(true);
+    expect(controls['where-locked'].hidden, 'but it must not say "fixed"').toBe(true);
+    expect(controls['where-now'].textContent).toContain('Press Look again');
+  });
+
+  it('stops saying that once a run has told it', () => {
+    const { api, controls } = panelAt(UNKNOWN);
+    api.useWhere({ homeSite: '/sites/TaskManagement', homeLibrary: 'Documents', allowAnySiteOnHost: true });
+    expect(controls['set-site'].disabled).toBe(false);
+    expect(controls['where-now'].textContent).not.toContain('Press Look again');
+  });
+
+  /** The workflow is the only thing that knows where it may be pointed. */
+  it('learns from the answer whether it may be pointed at all', () => {
+    const { api, controls } = panelAt(LOCKED);
+    api.useWhere({ homeSite: '/sites/TaskManagement', homeLibrary: 'Documents', allowAnySiteOnHost: true });
+    expect(controls['set-site'].disabled).toBe(false);
+
+    api.useWhere({ homeSite: '/sites/TaskManagement', homeLibrary: 'Documents', allowAnySiteOnHost: false, allowedSites: [] });
+    expect(controls['set-site'].disabled).toBe(true);
+  });
+
+  it('names the allowed sites when the copy lists them', () => {
+    const { api, controls } = panelAt(LOCKED);
+    api.useWhere({
+      homeSite: '/sites/TaskManagement', homeLibrary: 'Documents',
+      allowedSites: ['/sites/TaskManagement', '/sites/WebExcel'],
+    });
+    expect(controls['set-site'].disabled).toBe(false);
+    expect(controls['where-now'].textContent).toContain('/sites/WebExcel');
   });
 });

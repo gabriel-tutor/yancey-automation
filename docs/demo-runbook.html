@@ -182,6 +182,7 @@
       he is being shown a finished library and the record of how it got there. Lead with
       the result, then show the tool that keeps it that way.
     </p>
+    <div class="care" id="colliding" hidden></div>
     <div class="care" id="pending-warning" hidden>
       <p><b>Some renames are still pending.</b> The table below lists them. This runbook
       was built when they were, so the four acts assume he <em>will</em> see changes
@@ -386,8 +387,8 @@
 <script type="application/json" id="data">
 {
   "capturedOn": "2026-09-04",
-  "scanned": 29,
-  "compliant": 29,
+  "scanned": 32,
+  "compliant": 30,
   "folders": 13,
   "traced": 27,
   "reconstructed": 7,
@@ -680,7 +681,13 @@
     "Power BI Task Management/PD alignment Excel and Power BI - Karen/Performance Management"
   ],
   "pending": [],
-  "applied": 15,
+  "colliding": [
+    {
+      "from": "PD_Reliability_Preloaded_Final.xlsx",
+      "to": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx"
+    }
+  ],
+  "applied": 13,
   "reverse": [
     {
       "from": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
@@ -793,8 +800,11 @@
   ],
   "approvedFrom": "run 10399 on 2026-09-03T17:39:19.510Z",
   "untouched": [
-    "Reliability-Report-Template_2026-09-04_Draft_v0.1.xlsx",
-    "Reliability-Data-Workbook_2026-09-04_Draft_v0.1.xlsx"
+    "Win-The-Day-Dashboard_2026-09-04_Draft_v0.1.xlsx",
+    "RACI-Workbook_2026-09-04_Draft_v0.1.xlsx",
+    "Guest-Experience-Forms_2026-09-04_Draft_v0.1.xlsx",
+    "Win_The_Day_DashboardV2.xlsx",
+    "PD_Reliability_Preloaded_Final.xlsx"
   ]
 }
 </script>
@@ -834,6 +844,24 @@
   head.appendChild(el('p', '', allDone
     ? 'Nothing is outstanding. ' + data.traced + ' of them trace back to the name they arrived under, so every change is reversible.'
     : 'The review will offer them. ' + data.traced + ' documents already trace back to the name they arrived under.'));
+
+  var clash = data.colliding || [];
+  if (clash.length > 0) {
+    var cb = document.getElementById('colliding');
+    cb.hidden = false;
+    cb.appendChild(el('p', '', clash.length === 1
+      ? 'One approved rename can no longer be applied: both the old name and the new one are now in the library, so the tool would refuse it as a collision rather than overwrite anything.'
+      : clash.length + ' approved renames can no longer be applied: both the old and the new name are in the library, so the tool would refuse them as collisions rather than overwrite anything.'));
+    clash.forEach(function (c) {
+      var line = el('p');
+      line.appendChild(el('code', '', c.from));
+      line.appendChild(document.createTextNode(' and '));
+      line.appendChild(el('code', '', c.to));
+      line.appendChild(document.createTextNode(' both exist.'));
+      cb.appendChild(line);
+    });
+    cb.appendChild(el('p', '', 'This is worth showing rather than hiding: it is the collision guard doing its job, and it answers "what if it gets it wrong" better than any sentence can.'));
+  }
 
   if (!allDone) {
     document.getElementById('pending-warning').hidden = false;

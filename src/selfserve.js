@@ -47,11 +47,20 @@ import { STATUSES } from './filenames.js';
 /**
  * The only settings a form submission may change.
  *
- * Everything absent from this list — the host, the site, the library, the
- * model, how much of a document may be read, how many pages may be fetched —
- * is a property of the deployment and not a choice at the point of use. A form
- * decides *what to do*; it never decides *where* or *how much of the library to
- * look at*.
+ * Everything absent from this list — the host, the model, how much of a
+ * document may be read, how many pages may be fetched — is a property of the
+ * deployment and not a choice at the point of use.
+ *
+ * The site and the library are on it, and they are the exception that proves
+ * the rule. Yancey asked for them on 4 September — *"what happens if I want to
+ * point it at another folder?"* — and pointing a workflow that renames
+ * documents at somewhere new is plainly widening what a run does, not
+ * narrowing it. So they are not a caller's choice either: they are a choice
+ * between options the DEPLOYMENT stated, which is the same shape as
+ * `assumeStatus` picking from the statuses the convention recognises. A
+ * deployment that states nothing stays locked exactly as it was.
+ *
+ * The host is on neither list and never will be. It is the tenant.
  */
 const OVERRIDABLE = [
   'applyRenames',
@@ -67,6 +76,8 @@ const OVERRIDABLE = [
   'maxNewFolders',
   'minPerFolder',
   'assumeStatus',
+  'sitePath',
+  'libraryTitle',
 ];
 
 /**
@@ -123,6 +134,99 @@ function planLine(line) {
   // nothing, and a plan of those would arm the switches to do nothing.
   if (!out.to && !out.into) return null;
   return out;
+}
+
+/**
+ * A SharePoint site collection path, and nothing that is not one.
+ *
+ * Every segment has to start with a letter or a digit, which is what refuses
+ * `..` without having to reason about path climbing separately. A leading slash
+ * is required, so a full URL cannot be smuggled in as a path.
+ */
+const SITE_PATH = /^\/(?:sites|teams)\/[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*)*$/i;
+
+/**
+ * A document library title, held to plain characters.
+ *
+ * This one is not fussiness. The title is interpolated into
+ * `getbytitle('<title>')` in the request URL, and while it was a constant that
+ * was nobody's problem — the moment a caller can set it, an apostrophe closes
+ * the quote and the rest of the string is being read as OData. It is refused
+ * rather than escaped, because a refusal is something a test can check and an
+ * escape is a thing you get wrong once.
+ */
+const LIBRARY_TITLE = /^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$/;
+
+/** Longest site path worth entertaining; SharePoint's own URL limits are lower. */
+const SITE_PATH_MAX = 200;
+
+/**
+ * Has this deployment opened targeting at all?
+ *
+ * Three states, and the first is what every deployment has until somebody says
+ * otherwise: locked to the site it was built with.
+ *
+ * @param {any} base
+ * @returns {{ open: boolean, listed: string[] }}
+ */
+function targeting(base) {
+  const listed = Array.isArray(base && base.allowedSites)
+    ? base.allowedSites.map((/** @type {any} */ s) => String(s)).filter(Boolean)
+    : [];
+  return { open: listed.length > 0 || (base && base.allowAnySiteOnHost === true), listed };
+}
+
+/**
+ * Where a caller asked to point the run, held to what the deployment allows.
+ *
+ * @param {any} base the built configuration
+ * @param {string} key 'sitePath' or 'libraryTitle'
+ * @param {any} value what the caller asked for
+ * @returns {{ value: string } | { why: string }}
+ */
+export function chooseTarget(base, key, value) {
+  const { open, listed } = targeting(base);
+  const current = String((base && base[key]) || '');
+
+  if (!open) {
+    return {
+      why: key + ' cannot be set from outside: this deployment is fixed to ' +
+        String((base && base.sitePath) || '') + ', and opening that is a deployment change',
+    };
+  }
+
+  const wanted = typeof value === 'string' ? value.trim() : '';
+
+  if (key === 'libraryTitle') {
+    if (!LIBRARY_TITLE.test(wanted)) {
+      return {
+        why: 'libraryTitle must be plain letters, digits, spaces, dots, dashes or underscores — ' +
+          JSON.stringify(String(value)) + ' is not, so ' + current + ' was kept',
+      };
+    }
+    return { value: wanted };
+  }
+
+  if (wanted.length > SITE_PATH_MAX || !SITE_PATH.test(wanted)) {
+    return {
+      why: 'sitePath must look like /sites/Something — ' + JSON.stringify(String(value)) +
+        ' does not, so ' + current + ' was kept',
+    };
+  }
+
+  if (listed.length > 0) {
+    // Answer with the spelling the deployment used, not the caller's, so case
+    // is never the thing that decides which library gets written to.
+    const found = listed.find((site) => site.toLowerCase() === wanted.toLowerCase());
+    if (!found) {
+      return {
+        why: 'sitePath ' + wanted + ' is not one this deployment allows: ' + listed.join(', '),
+      };
+    }
+    return { value: found };
+  }
+
+  return { value: wanted };
 }
 
 /**
@@ -241,6 +345,13 @@ export function mergeOverrides(base, incoming, options) {
       } else {
         refused.push('assumeStatus must be one of ' + STATUSES.join(', ') + ', or empty to refuse to guess');
       }
+      continue;
+    }
+
+    if (key === 'sitePath' || key === 'libraryTitle') {
+      const picked = chooseTarget(base, key, value);
+      if ('why' in picked) refused.push(picked.why);
+      else config[key] = picked.value;
       continue;
     }
 

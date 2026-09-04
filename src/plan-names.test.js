@@ -74,15 +74,47 @@ describe('the demo runbook matches the library', () => {
   const html = readFileSync(new URL('../docs/demo-runbook.html', import.meta.url), 'utf8');
   const block = html.match(/<script type="application\/json" id="data">([\s\S]*?)<\/script>/);
   const data = JSON.parse(block?.[1] ?? '{}');
-  const live = new Set(
-    JSON.parse(readFileSync(new URL('../fixtures/sharepoint/library-2026-09-04.json', import.meta.url), 'utf8'))
-      .documents.map((/** @type {any} */ d) => String(d.name)),
+  const library = JSON.parse(
+    readFileSync(new URL('../fixtures/sharepoint/library-2026-09-04.json', import.meta.url), 'utf8'),
   );
+  const live = new Set(library.documents.map((/** @type {any} */ d) => String(d.name)));
 
-  it('calls pending exactly the approved renames the library has not had yet', () => {
+  /**
+   * Pending is the old name present and the new one free. A line whose new name
+   * is ALSO present cannot be applied - the workflow's flags=0 refuses to
+   * overwrite - so calling it pending puts a rename on the page that is about
+   * to be refused, which is the same lie in a subtler form.
+   */
+  it('calls pending only what can actually be applied', () => {
     expect(data.pending.map((/** @type {any} */ p) => p.from)).toEqual(
-      renames.filter((/** @type {any} */ l) => live.has(String(l.from))).map((/** @type {any} */ p) => p.from),
+      renames
+        .filter((/** @type {any} */ l) => live.has(String(l.from)) && !live.has(String(l.to)))
+        .map((/** @type {any} */ p) => p.from),
     );
+  });
+
+  /**
+   * Both names present. It turned up for real on 2026-09-04, when a document
+   * that had already been renamed was copied back under its original name
+   * during a demo.
+   */
+  it('calls colliding the lines where both names are in the library', () => {
+    expect(data.colliding.map((/** @type {any} */ c) => c.from)).toEqual(
+      renames
+        .filter((/** @type {any} */ l) => live.has(String(l.from)) && live.has(String(l.to)))
+        .map((/** @type {any} */ p) => p.from),
+    );
+    for (const clash of data.colliding) {
+      expect(live.has(String(clash.from)), clash.from + ' is not in the library').toBe(true);
+      expect(live.has(String(clash.to)), clash.to + ' is not in the library').toBe(true);
+    }
+  });
+
+  it('never puts one line in two states at once', () => {
+    const pending = new Set(data.pending.map((/** @type {any} */ p) => p.from));
+    for (const clash of data.colliding) {
+      expect(pending.has(String(clash.from)), clash.from + ' is both pending and colliding').toBe(false);
+    }
   });
 
   it('reverses every traced rename for the undo, and none is a no-op', () => {
@@ -113,13 +145,25 @@ describe('the demo runbook matches the library', () => {
    * rather than a page that had gone out of date. What matters is not that
    * there is material — it is that the page says which of the two demos it is.
    */
-  it('says which demo it is, rather than assuming there is material', () => {
-    const nothingLeft = data.pending.length === 0;
-    expect(nothingLeft).toBe(data.compliant === data.scanned);
-    if (nothingLeft) {
-      expect(html, 'with nothing to offer, the page has to say how to create some')
-        .toContain('If you want it to do something live');
-    }
+  /**
+   * The old version of this asserted there was always something left to rename,
+   * which stopped being true and made the failure look like a broken test
+   * rather than a page that had gone out of date. Then it asserted pending and
+   * compliance moved together, which was only ever a coincidence of the moment:
+   * a document that arrives untidy is not a plan line, and a plan line that
+   * collides is not a run's work either.
+   *
+   * What matters is that the page never leaves somebody with nothing to show
+   * and no way to get some.
+   */
+  it('says how to create material, since it cannot assume there is any', () => {
+    expect(html, 'the page has to say how to create some')
+      .toContain('If you want it to do something live');
+  });
+
+  it('agrees with the measurement about how much is left to do', () => {
+    const notCompliant = library.documents.filter((/** @type {any} */ d) => !d.compliant).length;
+    expect(data.scanned - data.compliant).toBe(notCompliant);
   });
 });
 

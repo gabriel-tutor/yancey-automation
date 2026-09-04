@@ -153,6 +153,7 @@ library first.
 | The page's wiring — that every control has a listener, that every element the script reaches for exists | `src/web-page.test.js` |
 | The proxy: the session gate, what it forwards, what it refuses to leak | `src/web-api.test.js` |
 | The session token and cookie | `src/session.test.js` |
+| Which library a run may be pointed at, and the refusals | `src/selfserve.test.js`, `src/web-page.test.js` |
 | The deploy gate itself: node diffs, missing settings, canvas notes, the wrong target | `src/verify-deployed.test.js` |
 | That the undo record reconciles with the library | `src/undo.test.js` |
 | That the demo runbook never promises a rename already applied | `src/demo-runbook.test.js`, read out of the built page |
@@ -243,6 +244,82 @@ Every workflow in both targets was read. Three were wrong:
 All fixed. The diagnostics (WF-T, WF-P, WF-S) were given the same settings even
 though n8n only fires an error workflow for production executions and they are
 hand-run — one uniform rule with one exception is easier to keep than several.
+
+## Choosing which library it looks at
+
+Asked for on 4 September, watching a run finish:
+
+> *"Perfect, perfect. That's what I'm looking for. And what happens if I want to
+> point it at another folder?"*
+
+This is the one setting `mergeOverrides` was written to refuse. Pointing a
+workflow that renames documents at somewhere new is plainly **widening** what a
+run does, and the rule the whole file is built on is that a caller may narrow a
+run and never widen it.
+
+So it does not open on a caller's say-so. It opens under a policy the
+**deployment** states, which makes it the same shape as `assumeStatus` picking
+from the statuses the convention recognises — a choice between options that were
+declared, not a free hand.
+
+| `allowedSites` | `allowAnySiteOnHost` | What a caller may do |
+| --- | --- | --- |
+| empty | `false` | Nothing. Locked to the built site, exactly as before. |
+| a list | either | Pick one of the listed sites, and nothing else. |
+| empty | `true` | Name any well-formed site path — on this host. |
+
+**Locked is the default.** A deployment that says nothing behaves exactly as it
+did before this existed, and the test that proved the site was unreachable still
+passes unchanged.
+
+**The host is on none of those rows and never will be.** It is the tenant. No
+choice of tenant is a narrowing, and the SharePoint credential cannot leave it
+anyway.
+
+### Why production is open
+
+Both targets ship `allowAnySiteOnHost: true`. The reasoning, so it can be argued
+with rather than inherited:
+
+- The credential already holds `AllSites.Write` on this host, so choosing where
+  to look grants no access it did not already have.
+- Nothing is written without a review and explicit ticks, and `canArm` still
+  gates the deployment.
+- Whoever is choosing has already passed the passcode gate and holds the
+  webhook key.
+
+What it does change is **blast radius**, and one thing worth being deliberate
+about: `readContents` is on, so pointing at a new library sends *that* library's
+documents to OpenAI. To tighten, replace the flag with an `allowedSites` list —
+`mergeOverrides` prefers the list whenever one is present.
+
+### The library title is validated, not escaped
+
+`libraryTitle` is interpolated into `getbytitle('<title>')` in the request URL.
+While it was a constant that was nobody's problem; the moment a caller can set
+it, an apostrophe closes the quote and the rest is read as OData.
+
+It is **refused** rather than escaped — plain letters, digits, spaces, dots,
+dashes and underscores only — because a refusal is something a test can check
+and an escape is a thing you get wrong once. `src/selfserve.test.js` sends
+`Docs') or 1 eq 1--` and asserts the deployment's own library survives.
+
+### Proved on the sandbox before production
+
+| Sent | Ran against | Refusal |
+| --- | --- | --- |
+| `/SITES/TaskManagement` | `/SITES/TaskManagement` | none — honoured end to end |
+| `/personal/yancey_…` | `/sites/TaskManagement` | "must look like /sites/Something" |
+| `Docs') or 1 eq 1--` | `Documents` | "must be plain letters…" |
+
+The first is the one that matters: a case variant SharePoint resolves anyway, so
+the run succeeded and the value came back in `configuration.sitePath` — proving
+it travelled into the request rather than being quietly dropped.
+
+The answer reports where the copy **may** be pointed separately from where the
+run **was** pointed (`homeSite`, `homeLibrary`, `allowedSites`,
+`allowAnySiteOnHost`), because a run that was pointed somewhere must not report
+that somewhere as the only place it can go.
 
 ## Sticky notes are checked too
 

@@ -100,7 +100,10 @@
           "wfS": 120,
           "wfT": 120
         }
-      }
+      },
+      "_targetingNote": "Where the organiser may be pointed, asked for by Yancey on 2026-09-04: \"what happens if I want to point it at another folder?\". Three states. State nothing and the deployment stays locked to sharepointSite exactly as it was. List allowedSites and a caller may pick one of those. Set allowAnySiteOnHost and any well-formed site path on sharepointHost is allowed. The HOST is on none of these and never will be - it is the tenant, and no choice of tenant is a narrowing. allowAnySiteOnHost is true here because the SharePoint credential already reaches every site on this host, so choosing where to look grants no access it did not have; what it does change is blast radius, and readContents being on means pointing somewhere new sends THAT library documents to OpenAI. To tighten, replace allowAnySiteOnHost with an allowedSites list: mergeOverrides prefers the list when one is present, and answers in the list spelling so case cannot decide which library gets written to.",
+      "allowAnySiteOnHost": true,
+      "allowedSites": []
     },
     "dev": {
       "label": "gtutor sandbox",
@@ -157,7 +160,10 @@
           "wfS": 120,
           "wfT": 120
         }
-      }
+      },
+      "_targetingNote": "Where the organiser may be pointed, asked for by Yancey on 2026-09-04: \"what happens if I want to point it at another folder?\". Three states. State nothing and the deployment stays locked to sharepointSite exactly as it was. List allowedSites and a caller may pick one of those. Set allowAnySiteOnHost and any well-formed site path on sharepointHost is allowed. The HOST is on none of these and never will be - it is the tenant, and no choice of tenant is a narrowing. allowAnySiteOnHost is true here because the SharePoint credential already reaches every site on this host, so choosing where to look grants no access it did not have; what it does change is blast radius, and readContents being on means pointing somewhere new sends THAT library documents to OpenAI. To tighten, replace allowAnySiteOnHost with an allowedSites list: mergeOverrides prefers the list when one is present, and answers in the list spelling so case cannot decide which library gets written to.",
+      "allowAnySiteOnHost": true,
+      "allowedSites": []
     }
   },
   "_sharepointNote": "Phase 2, resolved 2026-09-02. The earlier 403s came from probing SharePoint with the *Outlook* credential, which proves nothing: the SharePoint node has its own credential type, microsoftSharePointOAuth2Api, targeting the SharePoint resource rather than Microsoft Graph. The permissions that matter live under Office 365 SharePoint Online (00000003-0000-0ff1-ce00-000000000000), not Graph Sites.*, on the same Entra app already used for Outlook. No new app and no admin were needed. Host is upperformpartners.sharepoint.com, not partnersperform. Writing was blocked because AllSites.Write sat unconsented while the credential asked for .default, which means 'whatever is already consented' and so hands back a weaker token in silence rather than an error - reconnecting changes nothing. Naming the scope explicitly forces the consent prompt. Do not press Grant admin consent on that page: it would also grant AllSites.FullControl, which is tenant-wide full control for a workflow that renames files.",

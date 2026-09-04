@@ -416,6 +416,24 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
 select.cap { justify-self: start; }
   .tally div { flex-basis: 50%; }
 }
+
+  /* Where a run points. A text field rather than a switch because the answer is
+     a place, and a place is something you paste. */
+  .wherebox { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .where {
+    flex: 1 1 260px; min-width: 0;
+    font: 500 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px;
+  }
+  .where.lib { flex: 0 1 150px; }
+  .where:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  .where:disabled { opacity: .55; cursor: not-allowed; }
+  .linkish {
+    margin-top: 9px; padding: 0; border: 0; background: none;
+    font: 600 12.5px/1.4 inherit; color: var(--accent); cursor: pointer; text-decoration: underline;
+  }
+  .linkish:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 </style>
 </head>
 <body>
@@ -467,6 +485,27 @@ select.cap { justify-self: start; }
         <span class="now" id="settings-now"></span>
       </summary>
       <div class="body">
+
+        <div class="setting" id="where-setting">
+          <div>
+            <div class="name">Which library to look at</div>
+            <div class="hint">
+              Paste the address of a SharePoint site, or type its path. Everything in that site's
+              library is read; nothing outside it is touched. <b>Look again</b> after changing this.
+              <span id="where-locked" hidden>
+                This copy is fixed to one library and cannot be pointed elsewhere.
+              </span>
+            </div>
+            <div class="wherebox">
+              <input type="text" id="set-site" class="where" spellcheck="false" autocomplete="off"
+                     aria-label="SharePoint site path or address">
+              <input type="text" id="set-library" class="where lib" spellcheck="false" autocomplete="off"
+                     aria-label="Document library name">
+            </div>
+            <div class="hint" id="where-now"></div>
+            <button type="button" class="linkish" id="where-reset" hidden>Put it back to the usual one</button>
+          </div>
+        </div>
 
         <div class="setting">
           <div>
@@ -689,8 +728,52 @@ select.cap { justify-self: start; }
 
   function fillCap(limit) { fillRange('set-cap', limit, limit); }
 
-  function settings() {
+  /**
+   * Where this copy normally points, and how far it may be moved.
+   * Filled in from the answer, because only the workflow knows.
+   */
+  // `known` is false until a run has told us. Before that the boxes stay
+  // disabled - sending a target to a deployment that turns out to be locked
+  // would earn a refusal on every run - but the page must not claim the copy is
+  // fixed when it has not been told either way.
+  var home = { site: '', library: '', open: false, listed: [], known: false };
+
+  /**
+   * A site path out of whatever somebody pasted.
+   *
+   * They will paste a browser address, because that is what is in front of them
+   * when they are looking at the library they mean. Anything after the site
+   * collection is view state and gets dropped; what survives is /sites/Name.
+   * Returns '' when there is no site in it, and the caller shows that as an
+   * error rather than sending it.
+   */
+  function parseSitePath(input) {
+    var text = String(input == null ? '' : input).trim();
+    if (!text) return '';
+    // A full address: keep the path and throw the scheme, host and query away.
+    if (/^https?:\/\//i.test(text)) {
+      var after = text.replace(/^https?:\/\/[^/]*/i, '');
+      text = after.split('?')[0].split('#')[0];
+    }
+    try { text = decodeURIComponent(text); } catch (err) { /* leave it as typed */ }
+    var found = /(\/(?:sites|teams)\/[^/?#]+)/i.exec(text);
+    return found ? found[1] : '';
+  }
+
+  /** What the two boxes hold, normalised; '' for either means "as deployed". */
+  function chosenTarget() {
+    var site = parseSitePath(el('set-site').value);
+    var typed = String(el('set-site').value || '').trim();
+    var library = String(el('set-library').value || '').trim();
     return {
+      site: site,
+      library: library,
+      typedButUnreadable: typed !== '' && site === ''
+    };
+  }
+
+  function settings() {
+    var s = {
       renameReports: el('set-reports').checked,
       readContents: el('set-contents').checked,
       maxChangesPerRun: Number(el('set-cap').value) || cap,
@@ -698,6 +781,49 @@ select.cap { justify-self: start; }
       minPerFolder: Number(el('set-minper').value) || bounds.minPerFolder,
       assumeStatus: el('set-status').value
     };
+    // Only sent when it differs from where this copy already points. Sending it
+    // regardless would make every run on a locked deployment report a refusal
+    // for a setting nobody changed.
+    var where = chosenTarget();
+    if (where.site && where.site.toLowerCase() !== String(home.site).toLowerCase()) s.sitePath = where.site;
+    if (where.library && where.library !== home.library) s.libraryTitle = where.library;
+    return s;
+  }
+
+  /** The line under the boxes, and whether the control is usable at all. */
+  function drawWhere() {
+    var where = chosenTarget();
+    var locked = !home.open;
+    el('set-site').disabled = locked;
+    el('set-library').disabled = locked;
+    el('where-locked').hidden = !(locked && home.known);
+    el('set-site').placeholder = home.site || '/sites/Something';
+    el('set-library').placeholder = home.library || 'Documents';
+
+    var moved = Boolean(
+      (where.site && where.site.toLowerCase() !== String(home.site).toLowerCase()) ||
+      (where.library && where.library !== home.library)
+    );
+    el('where-reset').hidden = locked || !moved;
+
+    var note = el('where-now');
+    if (locked) {
+      note.textContent = home.known ? '' : 'Press Look again to load where this can be pointed.';
+      return;
+    }
+    if (where.typedButUnreadable) {
+      note.textContent = 'That does not have a site in it. Paste an address like ' +
+        'https://…/sites/TaskManagement, or type /sites/TaskManagement.';
+      return;
+    }
+    if (home.listed.length > 0) {
+      note.textContent = 'This copy allows: ' + home.listed.join(', ');
+      return;
+    }
+    note.textContent = moved
+      ? 'The next run will look at ' + (where.site || home.site) + ' · ' + (where.library || home.library) +
+        '. Anything already listed above was found somewhere else.'
+      : 'Looking at the usual one: ' + home.site + ' · ' + home.library + '.';
   }
 
   /** The one-line summary on the closed Settings row. */
@@ -821,6 +947,30 @@ select.cap { justify-self: start; }
     if (n > 0) el('set-folders').value = String(Math.min(n, bounds.maxNewFolders));
     n = Number(chosen.minPerFolder);
     if (n > 0) el('set-minper').value = String(Math.max(n, bounds.minPerFolder));
+
+    // Where it was pointed last time. Only restored while this copy still
+    // allows being pointed anywhere - a deployment that has since been locked
+    // must not have the page keep asking for somewhere it will be refused.
+    if (home.open) {
+      if (typeof chosen.sitePath === 'string' && chosen.sitePath) el('set-site').value = chosen.sitePath;
+      if (typeof chosen.libraryTitle === 'string' && chosen.libraryTitle) el('set-library').value = chosen.libraryTitle;
+    }
+    drawWhere();
+  }
+
+  /**
+   * Where this copy points and how far it may be moved, taken from the answer.
+   * Called before applyChoices, because whether a remembered target may be put
+   * back depends on it.
+   */
+  function useWhere(c) {
+    if (!c) return;
+    home.site = String(c.homeSite || c.sitePath || '');
+    home.library = String(c.homeLibrary || c.libraryTitle || '');
+    home.listed = Array.isArray(c.allowedSites) ? c.allowedSites.map(String) : [];
+    home.open = c.allowAnySiteOnHost === true || home.listed.length > 0;
+    home.known = true;
+    drawWhere();
   }
 
   function remember(c) {
@@ -950,9 +1100,12 @@ select.cap { justify-self: start; }
     // values. Reading both off one object is what had a choice narrowing the
     // choices.
     useLimits(c.limits);
+    useWhere(c);
 
     applyChoices({
       renameReports: typeof s.renameReports === 'boolean' ? s.renameReports : undefined,
+      sitePath: typeof c.sitePath === 'string' ? c.sitePath : undefined,
+      libraryTitle: typeof c.libraryTitle === 'string' ? c.libraryTitle : undefined,
       readContents: typeof s.readContents === 'boolean' ? s.readContents : undefined,
       assumeStatus: typeof c.assumeStatus === 'string' ? c.assumeStatus : undefined,
       maxChangesPerRun: Number(c.maxChangesPerRun) || Number(s.maxChangesPerRun) || 0,
@@ -1443,8 +1596,24 @@ select.cap { justify-self: start; }
   // let three of them go unwired when they were added: the list said three, the
   // panel had six, and the two that noticed — the summary line and the saved
   // choices — were both downstream of the same missing listener.
-  ['set-reports', 'set-contents', 'set-cap', 'set-folders', 'set-minper', 'set-status'].forEach(function (id) {
-    el(id).addEventListener('change', function () {
+  el('where-reset').addEventListener('click', function () {
+    el('set-site').value = '';
+    el('set-library').value = '';
+    drawWhere();
+    saveChoices();
+    drawSettingsLine();
+  });
+
+  // One list, because the bug this guards against was a second one: three
+  // controls were added to the panel and the listener list was left at the
+  // three before them, so they updated nothing and saved nothing.
+  ['set-site', 'set-library', 'set-reports', 'set-contents',
+   'set-cap', 'set-folders', 'set-minper', 'set-status'].forEach(function (id) {
+    var box = el(id);
+    // A text box has something to say while it is being typed into; a switch or
+    // a picker has nothing to say until it changes.
+    box.addEventListener(box.type === 'text' ? 'input' : 'change', function () {
+      drawWhere();
       saveChoices();
       drawSettingsLine();
     });
@@ -1462,6 +1631,7 @@ select.cap { justify-self: start; }
     var held = recall();
     if (held) {
       useLimits(held.config.limits);
+      useWhere(held.config);
       drawConfig(held.config, held.at);
     }
     // Choices are restored whether or not a run has ever been seen, because

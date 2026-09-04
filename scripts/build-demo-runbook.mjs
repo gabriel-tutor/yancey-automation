@@ -32,13 +32,41 @@ const htmlPath = join(root, 'docs/demo-runbook.html');
 const live = listing.documents.map((/** @type {any} */ d) => String(d.name));
 const liveSet = new Set(live);
 
-// What is still pending is what the library still holds under its old name.
-const pending = plan.plan.filter((/** @type {any} */ l) => liveSet.has(String(l.from)));
-const applied = plan.plan.filter((/** @type {any} */ l) => !liveSet.has(String(l.from)));
+/**
+ * Which of four states a plan line is in, decided by the library rather than by
+ * the plan. Three of these were obvious; the fourth was not, and the guard
+ * below found it.
+ *
+ *   pending    the old name is there and the new one is free - it can be applied
+ *   applied    the old name is gone and the new one is there - it has happened
+ *   colliding  BOTH are there - it cannot be applied, and the workflow's own
+ *              flags=0 would refuse it rather than overwrite
+ *   gone       neither is there - the document has left the library
+ *
+ * `colliding` turned up on 2026-09-04, when a document that had already been
+ * renamed was copied back into the library under its original name during a
+ * demo. Calling that pending would put a rename on the page that the workflow
+ * is about to refuse, which is the same lie in a subtler form.
+ *
+ * @param {any} line
+ */
+function stateOf(line) {
+  const from = liveSet.has(String(line.from));
+  const to = liveSet.has(String(line.to));
+  if (from && !to) return 'pending';
+  if (!from && to) return 'applied';
+  if (from && to) return 'colliding';
+  return 'gone';
+}
 
-// The guard. A page promising a rename that has already happened is the exact
-// failure this file was written to prevent, and it fails loudly rather than
-// shipping a page somebody then reads out.
+const pending = plan.plan.filter((/** @type {any} */ l) => stateOf(l) === 'pending');
+const applied = plan.plan.filter((/** @type {any} */ l) => stateOf(l) === 'applied');
+const colliding = plan.plan.filter((/** @type {any} */ l) => stateOf(l) === 'colliding');
+
+// The guard, kept even though the split above makes it unreachable: a page
+// promising a rename that has already happened is the exact failure this file
+// was written to prevent, and an assertion that cannot fire is cheaper than
+// finding out it could.
 const alreadyDone = pending.filter((/** @type {any} */ l) => liveSet.has(String(l.to)));
 if (alreadyDone.length > 0) {
   console.error('refusing to build: the plan claims these are pending, but the new name is already in the library:');
@@ -89,6 +117,7 @@ const data = {
   moves,
   foldersMade,
   pending: pending.map((/** @type {any} */ l) => ({ from: l.from, to: String(l.to), why: l.why })),
+  colliding: colliding.map((/** @type {any} */ l) => ({ from: l.from, to: String(l.to) })),
   applied: applied.length,
   reverse: history.map((h) => ({ from: h.current, to: h.original })),
   approvedFrom: plan.approvedFrom,
@@ -110,5 +139,5 @@ writeFileSync(
 console.log(
   'library ' + data.scanned + ' documents, ' + data.compliant + ' compliant  ·  ' +
   data.traced + ' traced back (' + data.reconstructed + ' reconstructed)  ·  ' +
-  data.pending.length + ' still pending  ->  docs/demo-runbook.html',
+  data.pending.length + ' pending, ' + data.colliding.length + ' colliding  ->  docs/demo-runbook.html',
 );

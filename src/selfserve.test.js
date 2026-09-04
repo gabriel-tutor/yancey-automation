@@ -348,3 +348,130 @@ describe('ticks turned back into a plan', () => {
     expect(config.applyMoves).toBe(true);
   });
 });
+
+/**
+ * Choosing which library to point at.
+ *
+ * Yancey asked for this on 4 September, watching a run finish: *"what happens
+ * if I want to point it at another folder?"* — and it is the one setting the
+ * whole file was written to refuse, because pointing a workflow that renames
+ * documents at somewhere new is the definition of widening what a run does.
+ *
+ * So it opens under a policy the DEPLOYMENT states, never on a caller's say-so:
+ *
+ *   nothing stated          locked, exactly as before
+ *   allowedSites: [...]     the caller may pick one of those
+ *   allowAnySiteOnHost      any well-formed site, on the deployment's own host
+ *
+ * The host is never any of a caller's business under any of them. It is the
+ * tenant, and no choice of tenant is a narrowing.
+ */
+describe('choosing which library a run points at', () => {
+  const OPEN = Object.assign({}, BASE, { allowAnySiteOnHost: true });
+  const LISTED = Object.assign({}, BASE, {
+    allowedSites: ['/sites/TaskManagement', '/sites/WebExcel'],
+  });
+
+  it('stays locked when the deployment has said nothing, as it always was', () => {
+    const { config, refused } = mergeOverrides(BASE, { sitePath: '/sites/Somewhere' });
+    expect(config.sitePath).toBe(BASE.sitePath);
+    expect(refused.join(' ')).toContain('this deployment is fixed to');
+  });
+
+  it('lets a caller pick a site the deployment listed', () => {
+    const { config, refused } = mergeOverrides(LISTED, { sitePath: '/sites/WebExcel' });
+    expect(config.sitePath).toBe('/sites/WebExcel');
+    expect(refused).toEqual([]);
+  });
+
+  it('refuses a site the deployment did not list, and says which are allowed', () => {
+    const { config, refused } = mergeOverrides(LISTED, { sitePath: '/sites/Payroll' });
+    expect(config.sitePath).toBe(BASE.sitePath);
+    expect(refused.join(' ')).toContain('/sites/TaskManagement');
+    expect(refused.join(' ')).toContain('/sites/WebExcel');
+  });
+
+  it('lets any well-formed site through when the deployment opens the host', () => {
+    const { config, refused } = mergeOverrides(OPEN, { sitePath: '/sites/AnythingElse' });
+    expect(config.sitePath).toBe('/sites/AnythingElse');
+    expect(refused).toEqual([]);
+  });
+
+  /**
+   * The host is the tenant. The SharePoint credential cannot leave it, and a
+   * caller naming a different one is either confused or trying something.
+   */
+  it('never takes the host, however open the deployment is', () => {
+    const { config, refused } = mergeOverrides(OPEN, {
+      host: 'https://evil.example.com',
+      sitePath: '/sites/AnythingElse',
+    });
+    expect(config.host).toBe(BASE.host);
+    expect(refused.join(' ')).toContain('host');
+  });
+
+  it.each([
+    ['a full URL', 'https://upperformpartners.sharepoint.com/sites/X'],
+    ['a climb out of the site collection', '/sites/TaskManagement/../../Payroll'],
+    ['somewhere that is not a site', '/personal/yancey_partnersperform_com'],
+    ['a bare word', 'TaskManagement'],
+    ['nothing at all', '   '],
+    ['a double slash', '/sites//TaskManagement'],
+  ])('refuses %s as a site path', (_why, path) => {
+    const { config, refused } = mergeOverrides(OPEN, { sitePath: path });
+    expect(config.sitePath).toBe(BASE.sitePath);
+    expect(refused.join(' ')).toContain('sitePath');
+  });
+
+  /**
+   * The library title is interpolated into `getbytitle('...')` in the request
+   * URL. While it was a constant that was nobody's problem; the moment a caller
+   * can set it, an apostrophe closes the quote. Anything but plain characters
+   * is refused rather than escaped, because refusing is checkable and escaping
+   * is a thing you get wrong once.
+   */
+  it.each([
+    ["an apostrophe, which closes the quote", "Docs') or 1 eq 1--"],
+    ['a slash', 'Shared/Documents'],
+    ['a percent escape', 'Docs%27'],
+    ['empty', ''],
+  ])('refuses a library title containing %s', (_why, title) => {
+    const { config, refused } = mergeOverrides(OPEN, { libraryTitle: title });
+    expect(config.libraryTitle).toBe('Documents');
+    expect(refused.join(' ')).toContain('libraryTitle');
+  });
+
+  it('takes a plain library title', () => {
+    const { config, refused } = mergeOverrides(OPEN, { libraryTitle: 'Shared Documents' });
+    expect(config.libraryTitle).toBe('Shared Documents');
+    expect(refused).toEqual([]);
+  });
+
+  /**
+   * If the caller's spelling won, two spellings of one site would be two
+   * different strings travelling into the request URL, and which library got
+   * written to would depend on how somebody typed it.
+   */
+  it('answers with the deployment spelling of a listed site, not the caller\'s', () => {
+    const { config, refused } = mergeOverrides(LISTED, { sitePath: '/SITES/webexcel' });
+    expect(config.sitePath).toBe('/sites/WebExcel');
+    expect(refused).toEqual([]);
+  });
+
+  it('keeps the deployment library when only the site is changed', () => {
+    const { config } = mergeOverrides(OPEN, { sitePath: '/sites/WebExcel' });
+    expect(config.sitePath).toBe('/sites/WebExcel');
+    expect(config.libraryTitle).toBe('Documents');
+  });
+
+  /**
+   * Changing where a run points must never be the thing that also arms it.
+   * The ticks arm a run and nothing else does.
+   */
+  it('arms nothing by being pointed somewhere new', () => {
+    const { config } = mergeOverrides(OPEN, { sitePath: '/sites/WebExcel', libraryTitle: 'Docs' });
+    for (const key of ['applyRenames', 'applyMoves', 'applyStructure', 'applyFolderRenames', 'applyProposed']) {
+      expect(/** @type {any} */ (config)[key]).toBe(false);
+    }
+  });
+});
