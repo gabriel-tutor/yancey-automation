@@ -477,5 +477,18 @@
     ],
     "applied": "2026-09-04",
     "run": "11885"
+  },
+  {
+    "kind": "rename",
+    "from": "Win_The_Day_DashboardV2.xlsx",
+    "to": "Win_The_Day_Dashboard_2026-09-04_Draft_v2.0.xlsx",
+    "assumptions": [
+      "no project prefix, the library does not say which project this belongs to",
+      "date taken from the file timestamp, not the name",
+      "status assumed to be Draft, the name does not say",
+      "version read as v2.0, from \"V2\" written onto the end of the name"
+    ],
+    "applied": "2026-09-04",
+    "run": "11916"
   }
 ]

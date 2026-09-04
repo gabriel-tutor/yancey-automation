@@ -1,7 +1,7 @@
 {
   "_note": "Measured, not typed. Taken verbatim from a Review The Library output via scripts/pull-library.mjs, so the runbook is built from what the library actually holds rather than from a plan somebody believes is still pending.",
   "capturedOn": "2026-09-04",
-  "run": "11892",
+  "run": "11924",
   "library": "Documents",
   "site": "/sites/TaskManagement",
   "folders": [
@@ -171,9 +171,9 @@
       "compliant": true
     },
     {
-      "name": "Win_The_Day_DashboardV2.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Win_The_Day_DashboardV2.xlsx",
-      "compliant": false
+      "name": "Win_The_Day_Dashboard_2026-09-04_Draft_v2.0.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Win_The_Day_Dashboard_2026-09-04_Draft_v2.0.xlsx",
+      "compliant": true
     },
     {
       "name": "PD_Reliability_Preloaded_2026-09-04_Final_v1.0.xlsx",

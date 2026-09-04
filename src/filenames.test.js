@@ -591,3 +591,79 @@ describe('a proposal has to satisfy the convention it is proposing under', () =>
     expect(diagnose(out.proposed), 'offered ' + out.proposed).toEqual([]);
   });
 });
+
+
+/**
+ * A version welded to the end of a word.
+ *
+ * `Win_The_Day_DashboardV2.xlsx` sat in Yancey's library refusing to be named,
+ * with "the name looks like it already carries a version but not in a form that
+ * can be read". A person reads V2 as version two without pausing. The rules did
+ * not, so the file fell through to the model — which named it in one library
+ * and not in another, on the same run of the same code. The same file getting
+ * two answers depending on the model's mood is exactly what the deterministic
+ * half is for.
+ *
+ * Reading it has to stay narrow. `Rev2Report` is not version two of a report,
+ * and stripping "v2" out of it would leave `ReReport`. The rule is a camel
+ * boundary — a lowercase letter or digit, then an uppercase V, then digits,
+ * then the end of the name or a separator — which is how somebody types a
+ * version onto the end of a word and is not how the letter v turns up inside
+ * one.
+ */
+describe('a version welded onto the end of a word', () => {
+  /** @param {string} current */
+  const propose = (current) =>
+    planRename({ name: current, path: '/x/' + current, modified: '2026-09-04T00:00:00Z' }, {});
+
+  it('reads the one that was sitting in the library refusing to be named', () => {
+    const out = propose('Win_The_Day_DashboardV2.xlsx');
+    expect(out.blocked, 'this is the refusal that made it unnameable').toBe('');
+    expect(out.proposed).toBe('Win_The_Day_Dashboard_2026-09-04_Draft_v2.0.xlsx');
+    expect(diagnose(out.proposed)).toEqual([]);
+  });
+
+  it('says it read the version off the end rather than assuming one', () => {
+    const out = propose('Win_The_Day_DashboardV2.xlsx');
+    expect(out.assumptions.join(' ')).not.toContain('version assumed');
+  });
+
+  it('takes the minor version when the name gives one', () => {
+    expect(propose('ProjectPlanV1.2.docx').proposed).toBe('ProjectPlan_2026-09-04_Draft_v1.2.docx');
+  });
+
+  it('cuts only the version, not the letter in front of it', () => {
+    // Cutting the match whole would leave "Dashboar".
+    expect(propose('Win_The_Day_DashboardV2.xlsx').proposed).toContain('Dashboard_');
+  });
+
+  /**
+   * The narrowness is the point. Each of these contains the letter v followed
+   * by a digit and none of them is a version.
+   */
+  it.each([
+    ['a lowercase v inside a word', 'Rev2Report.xlsx'],
+    ['a word that simply ends in v and a digit', 'Rev2.xlsx'],
+    ['an acronym, where V is not a camel boundary', 'REPORTV2.xlsx'],
+  ])('does not read %s as a version', (_why, name) => {
+    const out = propose(name);
+    expect(out.proposed, name + ' was read as carrying a version').not.toContain('_v2.');
+  });
+
+  it('still reads a version written the ordinary way', () => {
+    expect(propose('Thing_v1.0.xlsx').proposed).toContain('_v1.0.');
+    expect(propose('Thing-v2.3-notes.xlsx').proposed).toContain('_v2.3.');
+  });
+
+  /** Whatever it reads, the name it builds still has to pass the checker. */
+  it.each([
+    'Win_The_Day_DashboardV2.xlsx',
+    'ProjectPlanV1.2.docx',
+    'Rev2Report.xlsx',
+    'REPORTV2.xlsx',
+  ])('offers a name that passes diagnose for %s', (name) => {
+    const out = propose(name);
+    if (!out.proposed) return;
+    expect(diagnose(out.proposed), 'offered ' + out.proposed).toEqual([]);
+  });
+});

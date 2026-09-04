@@ -270,6 +270,23 @@ const UNREADABLE_DATE = /(?:^|[^\d])(\d{8})(?:[^\d]|$)/;
 const UNREADABLE_VERSION = /v\d/i;
 
 /**
+ * A version welded onto the end of a word: `...DashboardV2`.
+ *
+ * `Win_The_Day_DashboardV2.xlsx` sat in the library refusing to be named,
+ * because VERSION_IN_NAME wants a separator before the v and UNREADABLE_VERSION
+ * then called the name unreadable. A person reads V2 without pausing.
+ *
+ * Deliberately narrow, and case-sensitive where the rest of this file is not.
+ * The boundary is a lowercase letter or a digit followed by an uppercase V,
+ * which is how somebody types a version onto the end of a word and is not how
+ * the letter v turns up inside one: `Rev2Report` is not version two of a
+ * report, and reading it as one would leave `ReReport` behind. An acronym like
+ * `REPORTV2` is left alone for the same reason - there is no camel boundary to
+ * tell the V from the rest of the shouting.
+ */
+const VERSION_WELDED = /[a-z0-9](V\d+(?:[._]\d+)?)(?=[_\-. ]|$)/;
+
+/**
  * A time of day carries no meaning about what a document is, so it is cut from
  * the descriptor the same way the date is. Yancey's rule is "keep the document
  * name short but descriptive", and "Screenshot at 6.42.39 PM" is neither.
@@ -351,10 +368,25 @@ function planRename(file, options) {
 
   const timeMatch = TIME_IN_NAME.exec(stem);
   const versionMatch = VERSION_IN_NAME.exec(stem);
+  const weldedMatch = versionMatch ? null : VERSION_WELDED.exec(stem);
   /** @type {{ major: number, minor: number } | null} */
   let version = null;
+  /** Where the version sits on the stem, so it can be cut out and rebuilt.
+   * @type {[number, number] | null} */
+  let versionCut = null;
   if (versionMatch) {
     version = { major: Number(versionMatch[2]), minor: Number(versionMatch[3] || 0) };
+    versionCut = [versionMatch.index, versionMatch.index + versionMatch[0].length];
+  } else if (weldedMatch && weldedMatch[1]) {
+    const digits = weldedMatch[1].slice(1).split(/[._]/);
+    version = { major: Number(digits[0]), minor: Number(digits[1] || 0) };
+    // The match opens with the character BEFORE the version, which is part of
+    // the document's name. Cutting the match whole would take it too and leave
+    // `Win_The_Day_Dashboar`.
+    const at = weldedMatch.index + (weldedMatch[0].length - weldedMatch[1].length);
+    versionCut = [at, at + weldedMatch[1].length];
+    assumptions.push('version read as v' + version.major + '.' + version.minor +
+      ', from "' + weldedMatch[1] + '" written onto the end of the name');
   } else if (assumeVersion) {
     // A version assumed against the status just read from the name has to agree
     // with it. "v1.0 - First approved version" is in his version guide and
@@ -386,7 +418,7 @@ function planRename(file, options) {
     }
   }
 
-  if (!versionMatch && UNREADABLE_VERSION.test(stem)) {
+  if (!versionMatch && !weldedMatch && UNREADABLE_VERSION.test(stem)) {
     return {
       ...base,
       blocked: 'the name looks like it already carries a version but not in a form that can be read — renaming would leave two',
@@ -405,7 +437,7 @@ function planRename(file, options) {
   const cuts = [];
   if (dateMatch) cuts.push([dateMatch.index, dateMatch.index + dateMatch[0].length]);
   if (statusMatch) cuts.push([statusMatch.index, statusMatch.index + statusMatch[0].length]);
-  if (versionMatch) cuts.push([versionMatch.index, versionMatch.index + versionMatch[0].length]);
+  if (versionCut) cuts.push(versionCut);
   if (timeMatch) cuts.push([timeMatch.index, timeMatch.index + timeMatch[0].length]);
 
   // Adjacent parts can share a separator, so overlapping cuts are merged before

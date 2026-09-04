@@ -339,6 +339,49 @@ run **was** pointed (`homeSite`, `homeLibrary`, `allowedSites`,
 `allowAnySiteOnHost`), because a run that was pointed somewhere must not report
 that somewhere as the only place it can go.
 
+## What the rules read, and where the model starts
+
+The division is *the model supplies the words, the code enforces the shape*. Two
+live runs on 4 September showed the seam in the wrong place, both times in
+`planRename`, and both are closed.
+
+**A proposal has to survive its own checker.** A document whose name says
+`Final` and carries no version was offered `..._Final_v0.1.xlsx` — which
+`diagnose` refuses on the next line down, because *"v1.0 — First approved
+version"* is in Yancey's own version guide. The guard held and nothing was
+written, but the *review* had put a change in front of a person, they approved
+it, and the applying run turned it down. A version assumed under a status now
+has to agree with that status.
+
+**Rebuilding to the same name is not compliance.** A name that could not be
+improved was reported as already correct, so a document marked `Final` at `v0.1`
+rebuilt to itself and was counted among the ones that were fine. It is blocked
+now, carrying the reason `diagnose` gave.
+
+**A version welded onto a word is read.** `Win_The_Day_DashboardV2.xlsx` refused
+to be named at all — `VERSION_IN_NAME` wants a separator before the `v`, so
+`UNREADABLE_VERSION` called it unreadable. A person reads `V2` without pausing.
+Because the rules could not, the file fell through to the model, which named it
+in one library and not in another **on the same run of the same code** — the
+kind of coin-flip the deterministic half exists to prevent.
+
+The rule stays narrow, and is case-sensitive where the rest of the file is not:
+a lowercase letter or digit, an uppercase `V`, digits, then the end of the name
+or a separator.
+
+| Name | Read as | Why |
+| --- | --- | --- |
+| `Win_The_Day_DashboardV2` | `v2.0` | camel boundary — `d` then `V` |
+| `ProjectPlanV1.2` | `v1.2` | same, with a minor |
+| `Rev2Report` | *not a version* | lowercase `v`; reading it would leave `ReReport` |
+| `REPORTV2` | *not a version* | no camel boundary to tell the `V` from the shouting |
+
+The cut takes only the version and not the letter in front of it — cutting the
+match whole would have left `Win_The_Day_Dashboar`.
+
+**The result:** Yancey's library is 32 documents and all 32 satisfy the
+convention, with no refusals left in it.
+
 ## Sticky notes are checked too
 
 They are documentation on the canvas rather than behaviour, which is exactly why
