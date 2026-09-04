@@ -1388,7 +1388,11 @@ describe('WF-F Summary node body', () => {
     );
     const applyOut = { rows, library: 'Documents', scanned: rows.length, compliant: 0, proposed: 0, movesProposed: 0, awaiting: 0, blocked: 0, newFolders: [] };
     return run(ORGANISER_SUMMARY, {
-      $: nodeRef({ Config: settings, Defaults: { approvedPlan: [{ from: 'a.xlsx', to: 'B.xlsx' }] } }),
+      $: nodeRef({
+        Config: settings,
+        // Defaults is the built configuration, untouched by any caller.
+        Defaults: { approvedPlan: [{ from: 'a.xlsx', to: 'B.xlsx' }], maxChangesPerRun: 12, maxNewFolders: 6, minPerFolder: 2 },
+      }),
       $input: { first: () => ({ json: applyOut }), all: () => [{ json: applyOut }] },
     })[0].json;
   };
@@ -1417,6 +1421,17 @@ describe('WF-F Summary node body', () => {
       destination: 'Report.xlsx', placementWhy: '', compliant: false, proposed: '',
     }]);
     expect(said.toMove[0].into).toBe('Report.xlsx');
+  });
+
+  it('reports the limits the deployment allows, not the ones this run used', () => {
+    // A run where somebody chose 3 new folders reports 3. A page that reads its
+    // ceiling off that offers 3 next time, then 2, then 1 - a choice narrowing
+    // what may be chosen again. The limits come from Defaults instead.
+    const said = summarise([], { maxChangesPerRun: 5, maxNewFolders: 3, minPerFolder: 4 });
+    expect(said.configuration.maxNewFolders).toBe(3);
+    expect(said.configuration.limits.maxNewFolders).toBe(6);
+    expect(said.configuration.limits.maxChangesPerRun).toBe(12);
+    expect(said.configuration.limits.minPerFolder).toBe(2);
   });
 
   it('reports the plan the deployment pins, not the one the caller sent', () => {

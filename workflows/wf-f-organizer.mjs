@@ -977,6 +977,19 @@ return [{ json: {
       return { from: String(line.from || ''), to: String(line.to || ''), into: String(line.into || '') };
     }),
 
+    // What the DEPLOYMENT allows, as distinct from what this run used.
+    //
+    // The page needs both and they are not the same number: a run where
+    // somebody chose three new folders reports three, and a page that reads its
+    // ceiling off that offers three next time - and then two, and then one.
+    // Limits come from Defaults, which is the built configuration before any
+    // caller touched it, so a choice can never narrow what may be chosen again.
+    limits: {
+      maxChangesPerRun: Number(built.maxChangesPerRun) || 0,
+      maxNewFolders: Number(built.maxNewFolders) || 0,
+      minPerFolder: Number(built.minPerFolder) || 0
+    },
+
     // Plumbing. True, dull, and worth being able to see once.
     maxItems: Number(settings.maxItems) || 0,
     maxPages: Number(settings.maxPages) || 0,

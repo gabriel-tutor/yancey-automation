@@ -754,7 +754,74 @@ select.cap { justify-self: start; }
    * run.
    */
   var REMEMBERED = 'organiser.config.v1';
+  var CHOICES = 'organiser.settings.v1';
   var ARMING = ['applyRenames', 'applyMoves', 'applyStructure', 'applyFolderRenames', 'applyProposed'];
+
+  /**
+   * What a person chose, kept apart from what the deployment allows.
+   *
+   * These are two different things and they were being read off one object,
+   * which had them fighting: a run reports the settings it USED, so a page
+   * taking its ceiling from that offered six new folders, then three once three
+   * were chosen, then one - a choice quietly narrowing what could be chosen
+   * again, with no way back short of clearing the browser.
+   *
+   * The deployment's limits now arrive as `limits` and only ever come from
+   * there. This is the other half: the choices, kept because somebody who turns
+   * a setting off should not have to turn it off again after every reload.
+   * There is nothing of the client's in here - four numbers and two booleans -
+   * so unlike the configuration it outlives signing out.
+   */
+  function saveChoices() {
+    try {
+      window.localStorage.setItem(CHOICES, JSON.stringify(settings()));
+    } catch (err) {
+      // A browser that will not store them is a browser that asks again. Fine.
+    }
+  }
+
+  function loadChoices() {
+    try {
+      var raw = window.localStorage.getItem(CHOICES);
+      var held = raw ? JSON.parse(raw) : null;
+      return held && typeof held === 'object' ? held : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  /** The pickers, rebuilt against what the deployment allows. */
+  function useLimits(limits) {
+    if (limits) {
+      if (Number(limits.maxChangesPerRun) > 0) bounds.maxChangesPerRun = Number(limits.maxChangesPerRun);
+      if (Number(limits.maxNewFolders) > 0) bounds.maxNewFolders = Number(limits.maxNewFolders);
+      if (Number(limits.minPerFolder) > 0) bounds.minPerFolder = Number(limits.minPerFolder);
+    }
+    cap = bounds.maxChangesPerRun;
+    fillRange('set-cap', bounds.maxChangesPerRun, bounds.maxChangesPerRun);
+    fillRange('set-folders', bounds.maxNewFolders, bounds.maxNewFolders);
+    fillFloor('set-minper', bounds.minPerFolder, bounds.minPerFolder);
+  }
+
+  /**
+   * Put the controls back where they were left, inside what is currently
+   * allowed. Clamped rather than trusted: a deployment that lowered its cap
+   * since the choice was made would otherwise have the page ask for something
+   * that gets refused, every time, silently.
+   */
+  function applyChoices(chosen) {
+    if (!chosen) return;
+    if (typeof chosen.renameReports === 'boolean') el('set-reports').checked = chosen.renameReports;
+    if (typeof chosen.readContents === 'boolean') el('set-contents').checked = chosen.readContents;
+    if (typeof chosen.assumeStatus === 'string') el('set-status').value = chosen.assumeStatus;
+
+    var n = Number(chosen.maxChangesPerRun);
+    if (n > 0) el('set-cap').value = String(Math.min(n, bounds.maxChangesPerRun));
+    n = Number(chosen.maxNewFolders);
+    if (n > 0) el('set-folders').value = String(Math.min(n, bounds.maxNewFolders));
+    n = Number(chosen.minPerFolder);
+    if (n > 0) el('set-minper').value = String(Math.max(n, bounds.minPerFolder));
+  }
 
   function remember(c) {
     try {
@@ -879,30 +946,24 @@ select.cap { justify-self: start; }
     var s = run.settings || {};
     var c = run.config || {};
 
-    if (typeof s.renameReports === 'boolean') el('set-reports').checked = s.renameReports;
-    if (typeof s.readContents === 'boolean') el('set-contents').checked = s.readContents;
+    // What the deployment allows sets the pickers; what the run used sets the
+    // values. Reading both off one object is what had a choice narrowing the
+    // choices.
+    useLimits(c.limits);
 
-    // The deployment's own values are the bounds the pickers offer. They are
-    // learned rather than assumed, so a picker never offers what a run would
-    // refuse.
-    if (Number(c.maxChangesPerRun) > 0) {
-      cap = Math.max(cap, Number(c.maxChangesPerRun));
-      bounds.maxChangesPerRun = Number(c.maxChangesPerRun);
-    }
-    if (Number(c.maxNewFolders) > 0) bounds.maxNewFolders = Number(c.maxNewFolders);
-    if (Number(c.minPerFolder) > 0) bounds.minPerFolder = Number(c.minPerFolder);
+    applyChoices({
+      renameReports: typeof s.renameReports === 'boolean' ? s.renameReports : undefined,
+      readContents: typeof s.readContents === 'boolean' ? s.readContents : undefined,
+      assumeStatus: typeof c.assumeStatus === 'string' ? c.assumeStatus : undefined,
+      maxChangesPerRun: Number(c.maxChangesPerRun) || Number(s.maxChangesPerRun) || 0,
+      maxNewFolders: Number(c.maxNewFolders) || 0,
+      minPerFolder: Number(c.minPerFolder) || 0
+    });
 
-    fillRange('set-cap', cap, Number(s.maxChangesPerRun) || cap);
-    if (Number(s.maxChangesPerRun) > 0) el('set-cap').value = String(s.maxChangesPerRun);
-
-    fillRange('set-folders', bounds.maxNewFolders, Number(c.maxNewFolders) || bounds.maxNewFolders);
-    if (Number(c.maxNewFolders) > 0) el('set-folders').value = String(c.maxNewFolders);
-
-    // minPerFolder may only be raised, so the picker runs from the deployment's
-    // floor upward rather than from one.
-    fillFloor('set-minper', bounds.minPerFolder, Number(c.minPerFolder) || bounds.minPerFolder);
-
-    if (typeof c.assumeStatus === 'string') el('set-status').value = c.assumeStatus;
+    // What the run actually used is the new truth, refusals included, so it is
+    // what gets kept. A setting the deployment would not honour stops being
+    // asked for again.
+    saveChoices();
 
     if (c && c.libraryTitle) {
       drawConfig(c);
@@ -1378,8 +1439,15 @@ select.cap { justify-self: start; }
     ask(chosen, 'Carrying out ' + chosen.length + ' ' + plural(chosen.length, 'change') + '…').then(afterApply);
   });
 
-  ['set-reports', 'set-contents', 'set-cap'].forEach(function (id) {
-    el(id).addEventListener('change', drawSettingsLine);
+  // Every control, and every one of them saves. Listing the ids by hand is what
+  // let three of them go unwired when they were added: the list said three, the
+  // panel had six, and the two that noticed — the summary line and the saved
+  // choices — were both downstream of the same missing listener.
+  ['set-reports', 'set-contents', 'set-cap', 'set-folders', 'set-minper', 'set-status'].forEach(function (id) {
+    el(id).addEventListener('change', function () {
+      saveChoices();
+      drawSettingsLine();
+    });
   });
 
   /* ----------------------------------------------------------------- gate */
@@ -1393,22 +1461,13 @@ select.cap { justify-self: start; }
     // blank until somebody has waited a minute for it.
     var held = recall();
     if (held) {
-      var c = held.config;
-      if (Number(c.maxChangesPerRun) > 0) {
-        cap = Math.max(cap, Number(c.maxChangesPerRun));
-        bounds.maxChangesPerRun = Number(c.maxChangesPerRun);
-      }
-      if (Number(c.maxNewFolders) > 0) bounds.maxNewFolders = Number(c.maxNewFolders);
-      if (Number(c.minPerFolder) > 0) bounds.minPerFolder = Number(c.minPerFolder);
-      fillRange('set-cap', cap, cap);
-      fillRange('set-folders', bounds.maxNewFolders, bounds.maxNewFolders);
-      fillFloor('set-minper', bounds.minPerFolder, bounds.minPerFolder);
-      if (typeof c.renameReports === 'boolean') el('set-reports').checked = c.renameReports;
-      if (typeof c.readContents === 'boolean') el('set-contents').checked = c.readContents;
-      if (typeof c.assumeStatus === 'string') el('set-status').value = c.assumeStatus;
-      drawConfig(c, held.at);
-      drawSettingsLine();
+      useLimits(held.config.limits);
+      drawConfig(held.config, held.at);
     }
+    // Choices are restored whether or not a run has ever been seen, because
+    // turning a setting off should survive a reload on its own.
+    applyChoices(loadChoices());
+    drawSettingsLine();
   }
 
   function keepOut(why) {
@@ -1461,8 +1520,9 @@ select.cap { justify-self: start; }
   });
 
   el('signout').addEventListener('click', function () {
-    // Signing out on a shared machine should leave nothing behind, and the
-    // library and site names are the client's, not this browser's.
+    // The configuration carries the client's library and site names, so it goes.
+    // The choices are four numbers and two booleans belonging to whoever uses
+    // this page, and there is no reason to make them set them again.
     forget();
     fetch('/api/session', { method: 'DELETE' })
       .then(function () { window.location.reload(); })
