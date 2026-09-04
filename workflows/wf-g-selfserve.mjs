@@ -128,12 +128,15 @@ return [{ json: {
   unusable: Number(asked.unusable) || 0,
 
   // What the run actually used, so the page can put the toggles back where the
-  // deployment left them rather than where the person moved them.
+  // deployment left them rather than where the person moved them - and the
+  // whole configuration alongside, so the page can show what the tool is
+  // pointed at without anyone opening n8n.
   settings: {
     renameReports: summary.renameReports === true,
     readContents: summary.readContents === true,
     maxChangesPerRun: Number(summary.maxChangesPerRun) || 0
   },
+  config: summary.configuration || {},
 
   // Only meaningful on an applying call.
   applied: summary.applied || [],

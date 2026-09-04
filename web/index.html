@@ -162,10 +162,46 @@ h1 {
 .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 3px; }
 .switch input:disabled + .track { opacity: .45; cursor: not-allowed; }
 
-select.cap {
+/* Read-only configuration: a description list, because that is what it is. */
+.tier { margin-top: 22px; }
+.tier > h4 {
+  margin: 0 0 2px; font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600;
+  font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-mute);
+  padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+}
+.tier > p.why { margin: 10px 0 0; font-size: 13.5px; font-weight: 300; color: var(--ink-mute); }
+.facts { margin: 0; display: grid; grid-template-columns: minmax(150px, auto) 1fr; gap: 0; }
+.facts dt {
+  padding: 9px 16px 9px 0; font-size: 13.5px; color: var(--ink-mute);
+  border-bottom: 1px solid var(--rule); font-weight: 300;
+}
+.facts dd {
+  margin: 0; padding: 9px 0; font-size: 13.5px; color: var(--ink);
+  border-bottom: 1px solid var(--rule); word-break: break-word;
+}
+.facts dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+.facts dt:last-of-type, .facts dd:last-of-type { border-bottom: 0; }
+.pill {
+  display: inline-block; font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600;
+  font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 4px;
+}
+.pill.yes { background: var(--warn-wash); color: var(--warn); }
+.pill.no { background: var(--good-wash); color: var(--good); }
+.pill.off { background: var(--sunken); color: var(--ink-mute); }
+.awaiting { font-size: 13.5px; font-weight: 300; color: var(--ink-mute); padding: 12px 0 2px; }
+.plan-lines { margin-top: 10px; }
+.plan-lines summary { font-size: 13px; }
+.plan-lines ol {
+  margin: 10px 0 0; padding-left: 22px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px; color: var(--ink-mute); line-height: 1.7;
+}
+
+select.cap, select.pick {
   font: 400 14.5px Poppins, sans-serif; color: var(--ink); background: var(--panel);
   border: 1px solid var(--rule-firm); border-radius: 7px; padding: 7px 10px; min-width: 74px;
 }
+select.pick { min-width: 150px; }
 
 /* ---- tally ------------------------------------------------------------- */
 .tally {
@@ -313,7 +349,42 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
 
 @media (max-width: 640px) {
   .setting { grid-template-columns: 1fr; }
-  .setting .switch, .setting select.cap { justify-self: start; }
+  .setting .switch, .setting /* Read-only configuration: a description list, because that is what it is. */
+.tier { margin-top: 22px; }
+.tier > h4 {
+  margin: 0 0 2px; font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600;
+  font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-mute);
+  padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+}
+.tier > p.why { margin: 10px 0 0; font-size: 13.5px; font-weight: 300; color: var(--ink-mute); }
+.facts { margin: 0; display: grid; grid-template-columns: minmax(150px, auto) 1fr; gap: 0; }
+.facts dt {
+  padding: 9px 16px 9px 0; font-size: 13.5px; color: var(--ink-mute);
+  border-bottom: 1px solid var(--rule); font-weight: 300;
+}
+.facts dd {
+  margin: 0; padding: 9px 0; font-size: 13.5px; color: var(--ink);
+  border-bottom: 1px solid var(--rule); word-break: break-word;
+}
+.facts dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+.facts dt:last-of-type, .facts dd:last-of-type { border-bottom: 0; }
+.pill {
+  display: inline-block; font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600;
+  font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 4px;
+}
+.pill.yes { background: var(--warn-wash); color: var(--warn); }
+.pill.no { background: var(--good-wash); color: var(--good); }
+.pill.off { background: var(--sunken); color: var(--ink-mute); }
+.awaiting { font-size: 13.5px; font-weight: 300; color: var(--ink-mute); padding: 12px 0 2px; }
+.plan-lines { margin-top: 10px; }
+.plan-lines summary { font-size: 13px; }
+.plan-lines ol {
+  margin: 10px 0 0; padding-left: 22px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px; color: var(--ink-mute); line-height: 1.7;
+}
+
+select.cap { justify-self: start; }
   .tally div { flex-basis: 50%; }
 }
 </style>
@@ -409,6 +480,74 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
           <select class="cap" id="set-cap"></select>
         </div>
 
+        <div class="setting">
+          <div>
+            <div class="name">At most this many new folders</div>
+            <div class="hint">
+              How much structure one run may invent. Lower it to keep the shape of the library
+              closer to what it already is.
+            </div>
+          </div>
+          <select class="cap" id="set-folders"></select>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="name">A new folder must hold at least</div>
+            <div class="hint">
+              A folder holding one document is the pile it came from with an extra click in front.
+              Raising this makes fewer, fuller folders — it can be raised here but not lowered.
+            </div>
+          </div>
+          <select class="cap" id="set-minper"></select>
+        </div>
+
+        <div class="setting">
+          <div>
+            <div class="name">When a document does not say its status</div>
+            <div class="hint">
+              Every name ends in a status. Draft is the weakest claim, so it under-states rather
+              than over-states. Choosing <em>Do not guess</em> leaves any document that does not
+              say so alone entirely.
+            </div>
+          </div>
+          <select class="pick" id="set-status">
+            <option value="Draft">Assume Draft</option>
+            <option value="Review">Assume Review</option>
+            <option value="Final">Assume Final</option>
+            <option value="Archived">Assume Archived</option>
+            <option value="">Do not guess</option>
+          </select>
+        </div>
+
+        <!-- Read-only from here down: what this copy is, not what you choose. -->
+        <div id="tiers" hidden>
+
+          <div class="tier">
+            <h4>What this copy is pointed at</h4>
+            <dl class="facts" id="facts-where"></dl>
+          </div>
+
+          <div class="tier">
+            <h4>What gets carried out</h4>
+            <dl class="facts" id="facts-arming"></dl>
+            <p class="why">
+              These five are set by what you tick on the review page, never here. A run with
+              nothing ticked has all five off and changes nothing.
+            </p>
+          </div>
+
+          <div class="tier">
+            <h4>Under the bonnet</h4>
+            <dl class="facts" id="facts-tech"></dl>
+            <div id="plan-block"></div>
+          </div>
+
+        </div>
+        <p class="awaiting" id="awaiting-config">
+          What this copy is pointed at, and the rest of its settings, are shown after the first look.
+        </p>
+
       </div>
     </details>
 
@@ -481,6 +620,7 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
   var ticked = new Set();  // the indices chosen
   var timer = null;
   var cap = 12;            // the deployment's ceiling, learned from the first answer
+  var bounds = { maxChangesPerRun: 12, maxNewFolders: 6, minPerFolder: 2 };
 
   function show(id, on) { el(id).hidden = !on; }
   function plural(n, one, many) { return n === 1 ? one : (many || one + 's'); }
@@ -494,9 +634,15 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
 
   /* --------------------------------------------------------- the settings */
 
-  function fillCap(limit) {
-    var box = el('set-cap');
-    var keep = Number(box.value) || limit;
+  /**
+   * Fill a number picker with 1..limit, keeping whatever was already chosen if
+   * it still fits. The deployment's own value is the ceiling, learned from the
+   * first answer — a picker that offered more than the run would honour would
+   * be inviting a refusal.
+   */
+  function fillRange(id, limit, keepAtLeast) {
+    var box = el(id);
+    var had = Number(box.value) || 0;
     box.textContent = '';
     for (var n = 1; n <= limit; n += 1) {
       var opt = document.createElement('option');
@@ -504,14 +650,20 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
       opt.textContent = String(n);
       box.appendChild(opt);
     }
-    box.value = String(Math.min(keep, limit));
+    var want = had || keepAtLeast || limit;
+    box.value = String(Math.min(Math.max(want, 1), limit));
   }
+
+  function fillCap(limit) { fillRange('set-cap', limit, limit); }
 
   function settings() {
     return {
       renameReports: el('set-reports').checked,
       readContents: el('set-contents').checked,
-      maxChangesPerRun: Number(el('set-cap').value) || cap
+      maxChangesPerRun: Number(el('set-cap').value) || cap,
+      maxNewFolders: Number(el('set-folders').value) || bounds.maxNewFolders,
+      minPerFolder: Number(el('set-minper').value) || bounds.minPerFolder,
+      assumeStatus: el('set-status').value
     };
   }
 
@@ -522,7 +674,99 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
     bits.push(s.renameReports ? 'reports included' : 'reports left alone');
     bits.push(s.readContents ? 'reads documents' : 'names only');
     bits.push('up to ' + s.maxChangesPerRun + ' ' + plural(s.maxChangesPerRun, 'change'));
+    bits.push(s.assumeStatus ? 'assumes ' + s.assumeStatus : 'never guesses status');
     el('settings-now').textContent = bits.join(' · ');
+  }
+
+  /* ------------------------------------------- the configuration, read only */
+
+  /** @param {string} hostId @param {[string, any, string][]} rows */
+  function facts(hostId, rows) {
+    var dl = el(hostId);
+    dl.textContent = '';
+    rows.forEach(function (row) {
+      var dt = document.createElement('dt');
+      dt.textContent = row[0];
+      var dd = document.createElement('dd');
+      if (row[2] === 'mono') dd.className = 'mono';
+      if (row[1] && row[1].nodeType) dd.appendChild(row[1]);
+      else dd.textContent = String(row[1]);
+      dl.appendChild(dt);
+      dl.appendChild(dd);
+    });
+  }
+
+  /** @param {boolean} on @param {string} yes @param {string} no @param {string} kind */
+  function pill(on, yes, no, kind) {
+    var span = document.createElement('span');
+    span.className = 'pill ' + (on ? (kind || 'yes') : 'no');
+    span.textContent = on ? yes : no;
+    return span;
+  }
+
+  function bytes(n) {
+    if (!n) return '—';
+    return n >= 1048576 ? (n / 1048576).toFixed(n % 1048576 ? 1 : 0) + ' MB' : Math.round(n / 1024) + ' KB';
+  }
+
+  function drawConfig(c) {
+    if (!c || !c.libraryTitle) return;
+
+    facts('facts-where', [
+      ['Library', c.libraryTitle, ''],
+      ['Site', String(c.host || '').replace(/^https?:\/\//, '') + (c.sitePath || ''), 'mono'],
+      ['May change the library',
+        pill(c.canArm, 'Yes — production', 'No — sandbox', c.canArm ? 'yes' : 'no'), ''],
+      ['Reads inside documents', pill(c.readContents, 'Yes', 'No', c.readContents ? 'yes' : 'no'), ''],
+      ['Power BI reports', pill(c.renameReports, 'In scope', 'Left alone', c.renameReports ? 'yes' : 'no'), ''],
+      ['Most changes per run', c.maxChangesPerRun, ''],
+      ['New folders', 'at most ' + c.maxNewFolders + ', each holding ' + c.minPerFolder + '+ documents', ''],
+      ['Status when unstated', c.assumeStatus || 'not guessed — those documents are left alone', ''],
+      ['Undo mode', pill(c.revert, 'On', 'Off', c.revert ? 'yes' : 'off'), '']
+    ]);
+
+    facts('facts-arming', [
+      ['Rename documents', pill(c.applyRenames, 'Armed', 'Off', c.applyRenames ? 'yes' : 'off'), ''],
+      ['Move documents', pill(c.applyMoves, 'Armed', 'Off', c.applyMoves ? 'yes' : 'off'), ''],
+      ['Create folders', pill(c.applyStructure, 'Armed', 'Off', c.applyStructure ? 'yes' : 'off'), ''],
+      ['Rename folders', pill(c.applyFolderRenames, 'Armed', 'Off', c.applyFolderRenames ? 'yes' : 'off'), ''],
+      ['Apply without ticking', pill(c.applyProposed, 'Armed', 'Off', c.applyProposed ? 'yes' : 'off'), '']
+    ]);
+
+    facts('facts-tech', [
+      ['Naming model', c.modelNaming, 'mono'],
+      ['Documents shown to it', 'at most ' + c.maxNamed + ' per run', ''],
+      ['Text read per document', c.textPerFile + ' characters', ''],
+      ['Largest file opened', bytes(c.maxContentBytes), ''],
+      ['Library read', 'up to ' + c.maxPages + ' pages of ' + c.maxItems + ' items', ''],
+      ['Version when unstated',
+        c.assumeVersion ? 'v' + c.assumeVersion.major + '.' + c.assumeVersion.minor + ' — only where the model did not name the file' : '—', '']
+    ]);
+
+    // The pinned plan. Real, and not used by this page — saying only the first
+    // half of that would be worse than not showing it.
+    var block = el('plan-block');
+    block.textContent = '';
+    if (c.pinnedPlan > 0) {
+      var why = document.createElement('p');
+      why.className = 'why';
+      why.textContent = 'The deployment has ' + c.pinnedPlan + ' renames pinned in its own approved plan. ' +
+        'This page does not use them: what you tick becomes the plan for the run you start.';
+      block.appendChild(why);
+
+      var d = document.createElement('details');
+      d.className = 'reasons plan-lines';
+      d.appendChild(text('summary', 'The ' + c.pinnedPlan + ' pinned renames'));
+      var ol = document.createElement('ol');
+      (c.pinnedPlanLines || []).forEach(function (line) {
+        ol.appendChild(text('li', line.from + '  →  ' + (line.to || '(no new name)') + (line.into ? '  into ' + line.into : '')));
+      });
+      d.appendChild(ol);
+      block.appendChild(d);
+    }
+
+    show('tiers', true);
+    show('awaiting-config', false);
   }
 
   /**
@@ -534,14 +778,48 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
    */
   function reconcile(run) {
     var s = run.settings || {};
+    var c = run.config || {};
+
     if (typeof s.renameReports === 'boolean') el('set-reports').checked = s.renameReports;
     if (typeof s.readContents === 'boolean') el('set-contents').checked = s.readContents;
-    if (Number(s.maxChangesPerRun) > 0) {
-      cap = Math.max(cap, Number(s.maxChangesPerRun));
-      fillCap(cap);
-      el('set-cap').value = String(s.maxChangesPerRun);
+
+    // The deployment's own values are the bounds the pickers offer. They are
+    // learned rather than assumed, so a picker never offers what a run would
+    // refuse.
+    if (Number(c.maxChangesPerRun) > 0) {
+      cap = Math.max(cap, Number(c.maxChangesPerRun));
+      bounds.maxChangesPerRun = Number(c.maxChangesPerRun);
     }
+    if (Number(c.maxNewFolders) > 0) bounds.maxNewFolders = Number(c.maxNewFolders);
+    if (Number(c.minPerFolder) > 0) bounds.minPerFolder = Number(c.minPerFolder);
+
+    fillRange('set-cap', cap, Number(s.maxChangesPerRun) || cap);
+    if (Number(s.maxChangesPerRun) > 0) el('set-cap').value = String(s.maxChangesPerRun);
+
+    fillRange('set-folders', bounds.maxNewFolders, Number(c.maxNewFolders) || bounds.maxNewFolders);
+    if (Number(c.maxNewFolders) > 0) el('set-folders').value = String(c.maxNewFolders);
+
+    // minPerFolder may only be raised, so the picker runs from the deployment's
+    // floor upward rather than from one.
+    fillFloor('set-minper', bounds.minPerFolder, Number(c.minPerFolder) || bounds.minPerFolder);
+
+    if (typeof c.assumeStatus === 'string') el('set-status').value = c.assumeStatus;
+
+    drawConfig(c);
     drawSettingsLine();
+  }
+
+  /** A picker that starts at the deployment's floor, because lower is refused. */
+  function fillFloor(id, floor, chosen) {
+    var box = el(id);
+    box.textContent = '';
+    for (var n = floor; n <= floor + 8; n += 1) {
+      var opt = document.createElement('option');
+      opt.value = String(n);
+      opt.textContent = String(n);
+      box.appendChild(opt);
+    }
+    box.value = String(Math.max(chosen || floor, floor));
   }
 
   /* ------------------------------------------------------------ the call */

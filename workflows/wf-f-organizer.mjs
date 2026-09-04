@@ -847,6 +847,11 @@ return [{ json: Object.assign({}, summary, { applied: done, failedChanges: faile
 export const SUMMARY = `
 const r = $input.first().json || {};
 const settings = $('Config').first().json || {};
+// Defaults is the config as built, before a caller's overrides were folded on.
+// The pinned plan has to come from here: Config's copy is whatever the caller
+// sent, which for the web page is the ticks, so reading it there would report
+// zero and quietly hide that the deployment pins anything at all.
+const built = $('Defaults').first().json || {};
 const applied = r.applied || [];
 const failed = r.failedChanges || [];
 
@@ -884,7 +889,20 @@ for (const row of (r.rows || [])) {
     refused.push({ file: row.current, because: row.blocked });
   }
   if (row.placement === 'move' && row.destination) {
-    toMove.push({ file: row.current, into: row.destination, because: row.placementWhy });
+    // The FOLDER it lands in, not the path it lands at.
+    //
+    // row.destination carries the file name on the end, and every consumer of
+    // "into" means a folder: applyApprovedPlan appends the file name to it, and
+    // config/approved-plan.json has always held folders. Reporting the full
+    // path here sent one back through the web page and built
+    // .../Dashboards/File.xlsx/File.xlsx - a move to nowhere, on a path only
+    // the round trip produces, which is why the manual runs never showed it.
+    const at = String(row.destination).lastIndexOf('/');
+    toMove.push({
+      file: row.current,
+      into: at === -1 ? String(row.destination) : String(row.destination).slice(0, at),
+      because: row.placementWhy
+    });
   }
 }
 
@@ -922,6 +940,52 @@ return [{ json: {
   // deployment allowed is a page that lies to them.
   renameReports: settings.renameReports === true,
   maxChangesPerRun: Number(settings.maxChangesPerRun) || 0,
+
+  // The whole of the configuration, so the page can show it rather than make a
+  // person open n8n to find out what the tool is pointed at.
+  //
+  // Named one by one rather than passed through whole. Nothing secret lives in
+  // Config today - the credentials are held by n8n and never appear here - and
+  // listing the keys is what keeps that true of whatever gets added next.
+  configuration: {
+    host: String(settings.host || ''),
+    sitePath: String(settings.sitePath || ''),
+    libraryTitle: String(settings.libraryTitle || ''),
+    canArm: settings.canArm === true,
+
+    readContents: settings.readContents === true,
+    renameReports: settings.renameReports === true,
+    maxChangesPerRun: Number(settings.maxChangesPerRun) || 0,
+    maxNewFolders: Number(settings.maxNewFolders) || 0,
+    minPerFolder: Number(settings.minPerFolder) || 0,
+    assumeStatus: settings.assumeStatus === '' ? '' : String(settings.assumeStatus || ''),
+    revert: settings.revert === true,
+
+    // What arms a run. Set by what a person ticked, never by a setting - shown
+    // so the page can say that rather than leave it to be guessed at.
+    applyRenames: settings.applyRenames === true,
+    applyMoves: settings.applyMoves === true,
+    applyStructure: settings.applyStructure === true,
+    applyFolderRenames: settings.applyFolderRenames === true,
+    applyProposed: settings.applyProposed === true,
+
+    // The plan baked into the deployment. Inert for a run that came through the
+    // web page, because the page replaces it with whatever was ticked, and
+    // saying so is the difference between informing and misleading.
+    pinnedPlan: (built.approvedPlan || []).length,
+    pinnedPlanLines: (built.approvedPlan || []).map(function (line) {
+      return { from: String(line.from || ''), to: String(line.to || ''), into: String(line.into || '') };
+    }),
+
+    // Plumbing. True, dull, and worth being able to see once.
+    maxItems: Number(settings.maxItems) || 0,
+    maxPages: Number(settings.maxPages) || 0,
+    maxNamed: Number(settings.maxNamed) || 0,
+    maxContentBytes: Number(settings.maxContentBytes) || 0,
+    textPerFile: Number(settings.textPerFile) || 0,
+    modelNaming: String(settings.modelNaming || ''),
+    assumeVersion: settings.assumeVersion || null
+  },
   toRename: toRename,
   awaitingApproval: awaiting,
   toMove: toMove,

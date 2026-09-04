@@ -31,6 +31,8 @@
  * a sentence that matters is a sentence worth testing.
  */
 
+import { STATUSES } from './filenames.js';
+
 /**
  * @typedef {Object} Offered
  * @property {number} index      1-based, and the thing ticks are matched on
@@ -62,7 +64,23 @@ const OVERRIDABLE = [
   'readContents',
   'approvedPlan',
   'maxChangesPerRun',
+  'maxNewFolders',
+  'minPerFolder',
+  'assumeStatus',
 ];
+
+/**
+ * Ceilings. A caller may lower one — that is choosing to do less — and never
+ * raise it past what the deployment allows.
+ */
+const LOWER_ONLY = ['maxChangesPerRun', 'maxNewFolders'];
+
+/**
+ * A floor, and the direction is inverted for exactly that reason: minPerFolder
+ * is how many documents a new folder must hold to be worth making, so RAISING
+ * it means fewer new folders. The conservative end of this one is up.
+ */
+const RAISE_ONLY = ['minPerFolder'];
 
 /**
  * Settings a caller may switch OFF but never ON.
@@ -189,16 +207,39 @@ export function mergeOverrides(base, incoming, options) {
       continue;
     }
 
-    if (key === 'maxChangesPerRun') {
+    if (LOWER_ONLY.indexOf(key) !== -1 || RAISE_ONLY.indexOf(key) !== -1) {
       const wanted = Number(value);
-      const built = Number(base && base.maxChangesPerRun) || 0;
+      const built = Number(base && base[key]) || 0;
       if (!Number.isFinite(wanted) || wanted < 1) {
-        refused.push('maxChangesPerRun was not a number, so the built cap was kept');
-      } else if (built > 0 && wanted > built) {
-        refused.push('maxChangesPerRun can be lowered but not raised past ' + built);
-        config.maxChangesPerRun = built;
+        refused.push(key + ' was not a number, so the built value was kept');
+        continue;
+      }
+      const lower = LOWER_ONLY.indexOf(key) !== -1;
+      if (built > 0 && lower && wanted > built) {
+        refused.push(key + ' can be lowered but not raised past ' + built);
+        config[key] = built;
+      } else if (built > 0 && !lower && wanted < built) {
+        refused.push(key + ' can be raised but not lowered below ' + built);
+        config[key] = built;
       } else {
-        config.maxChangesPerRun = Math.floor(wanted);
+        config[key] = Math.floor(wanted);
+      }
+      continue;
+    }
+
+    if (key === 'assumeStatus') {
+      // The status to give a document that does not say what it is. Empty is
+      // the strictest answer available - it refuses to name anything whose
+      // status is not written down - so it is always allowed. Anything else has
+      // to be a status the convention recognises, or the run would build names
+      // that its own checker then throws away.
+      const wanted = typeof value === 'string' ? value.trim() : null;
+      if (wanted === '') {
+        config.assumeStatus = '';
+      } else if (wanted !== null && STATUSES.indexOf(wanted) !== -1) {
+        config.assumeStatus = wanted;
+      } else {
+        refused.push('assumeStatus must be one of ' + STATUSES.join(', ') + ', or empty to refuse to guess');
       }
       continue;
     }

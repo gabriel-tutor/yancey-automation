@@ -22,6 +22,9 @@ const BASE = {
   libraryTitle: 'Documents',
   maxItems: 5000,
   maxChangesPerRun: 12,
+  maxNewFolders: 6,
+  minPerFolder: 2,
+  assumeStatus: 'Draft',
   applyRenames: false,
   applyMoves: false,
   applyStructure: false,
@@ -115,6 +118,39 @@ describe('what a form submission may change about a run', () => {
     const { config, refused } = mergeOverrides(BASE, { maxChangesPerRun: 'lots' });
     expect(config.maxChangesPerRun).toBe(12);
     expect(refused[0]).toContain('not a number');
+  });
+
+  it('lowers a ceiling but never raises one', () => {
+    expect(mergeOverrides(BASE, { maxNewFolders: 2 }).config.maxNewFolders).toBe(2);
+    const raised = mergeOverrides(BASE, { maxNewFolders: 40 });
+    expect(raised.config.maxNewFolders).toBe(6);
+    expect(raised.refused[0]).toContain('lowered but not raised past 6');
+  });
+
+  it('raises a floor but never lowers one', () => {
+    // minPerFolder runs the other way: a higher floor means fewer new folders,
+    // so up is the conservative direction and down is the one to refuse.
+    expect(mergeOverrides(BASE, { minPerFolder: 5 }).config.minPerFolder).toBe(5);
+    const dropped = mergeOverrides(BASE, { minPerFolder: 1 });
+    expect(dropped.config.minPerFolder).toBe(2);
+    expect(dropped.refused[0]).toContain('raised but not lowered below 2');
+  });
+
+  it('takes a status the convention recognises', () => {
+    expect(mergeOverrides(BASE, { assumeStatus: 'Review' }).config.assumeStatus).toBe('Review');
+    expect(mergeOverrides(BASE, { assumeStatus: 'Final' }).config.assumeStatus).toBe('Final');
+  });
+
+  it('takes an empty status, which refuses to guess at all', () => {
+    const { config, refused } = mergeOverrides(BASE, { assumeStatus: '' });
+    expect(config.assumeStatus).toBe('');
+    expect(refused).toEqual([]);
+  });
+
+  it('refuses a status the convention would then throw away', () => {
+    const { config, refused } = mergeOverrides(BASE, { assumeStatus: 'Werking' });
+    expect(config.assumeStatus).toBe('Draft');
+    expect(refused[0]).toContain('must be one of');
   });
 
   it('replaces the baked plan rather than adding to it', () => {

@@ -3,7 +3,7 @@ import { codeNode } from '../scripts/bundle.mjs';
 import { HELPERS } from '../workflows/helpers-manifest.mjs';
 import { VOICE_GUARD } from '../workflows/wf-b-draft.mjs';
 import { APPLY_CLASSIFICATION } from '../workflows/wf-a-classify.mjs';
-import { APPLY as ORGANISER_APPLY, CONFIG_MERGE, REVIEW as ORGANISER_REVIEW } from '../workflows/wf-f-organizer.mjs';
+import { APPLY as ORGANISER_APPLY, CONFIG_MERGE, REVIEW as ORGANISER_REVIEW, SUMMARY as ORGANISER_SUMMARY } from '../workflows/wf-f-organizer.mjs';
 import { ANSWER, DECIDE } from '../workflows/wf-g-selfserve.mjs';
 
 /**
@@ -1215,6 +1215,14 @@ describe('WF-G web endpoint node bodies', () => {
     expect(sent.maxChangesPerRun).toBe(4);
   });
 
+  it('carries the newer settings through as well', () => {
+    const asked = decide({ chosen: [], settings: { maxNewFolders: 3, minPerFolder: 4, assumeStatus: 'Review' } });
+    const sent = JSON.parse(asked.overrides);
+    expect(sent.maxNewFolders).toBe(3);
+    expect(sent.minPerFolder).toBe(4);
+    expect(sent.assumeStatus).toBe('Review');
+  });
+
   it('will not let settings arm a run behind the ticks', () => {
     // The ticks decide what a run does. A caller hiding applyRenames in its
     // settings has it overwritten, because approvedFrom always writes all five.
@@ -1301,6 +1309,30 @@ describe('WF-G web endpoint node bodies', () => {
     expect(said.beyondModel).toBe(8);
   });
 
+  it('hands the page the whole configuration, so nobody opens n8n to read it', () => {
+    const said = answer(Object.assign({}, review, {
+      configuration: {
+        host: 'https://upperformpartners.sharepoint.com',
+        sitePath: '/sites/TaskManagement',
+        libraryTitle: 'Documents',
+        canArm: false,
+        maxNewFolders: 6,
+        minPerFolder: 2,
+        assumeStatus: 'Draft',
+        modelNaming: 'gpt-5.6-luna',
+        pinnedPlan: 15,
+      },
+    }));
+    expect(said.config.libraryTitle).toBe('Documents');
+    expect(said.config.canArm).toBe(false);
+    expect(said.config.pinnedPlan).toBe(15);
+    expect(said.config.modelNaming).toBe('gpt-5.6-luna');
+  });
+
+  it('answers with an empty configuration rather than undefined', () => {
+    expect(answer({}).config).toEqual({});
+  });
+
   it('reports the settings the run actually used, not the ones asked for', () => {
     const said = answer(Object.assign({}, review, {
       renameReports: false,
@@ -1334,5 +1366,69 @@ describe('WF-G web endpoint node bodies', () => {
     expect(said.ok).toBe(true);
     expect(said.scanned).toBe(0);
     expect(said.offered).toEqual([]);
+  });
+});
+
+
+/**
+ * The Summary node, which is the only thing the web page ever sees of a run.
+ *
+ * Its job is translation, and a translation that is subtly wrong in one field
+ * is invisible until something downstream builds a path out of it.
+ */
+describe('WF-F Summary node body', () => {
+  const LIB = '/sites/TaskManagement/Shared Documents/Power BI Task Management';
+  const DEST = LIB + '/Reliability Reviews';
+
+  /** @param {any[]} rows @param {any} [cfg] */
+  const summarise = (rows, cfg) => {
+    const settings = Object.assign(
+      { canArm: false, readContents: true, renameReports: true, maxChangesPerRun: 12, overrideRefusals: [] },
+      cfg || {}
+    );
+    const applyOut = { rows, library: 'Documents', scanned: rows.length, compliant: 0, proposed: 0, movesProposed: 0, awaiting: 0, blocked: 0, newFolders: [] };
+    return run(ORGANISER_SUMMARY, {
+      $: nodeRef({ Config: settings, Defaults: { approvedPlan: [{ from: 'a.xlsx', to: 'B.xlsx' }] } }),
+      $input: { first: () => ({ json: applyOut }), all: () => [{ json: applyOut }] },
+    })[0].json;
+  };
+
+  it('reports the folder a document lands in, not the path it lands at', () => {
+    // applyApprovedPlan appends the file name to `into`. Reporting the full
+    // destination sent it back through the page and built
+    // .../Reliability Reviews/Report.xlsx/Report.xlsx.
+    const said = summarise([{
+      current: 'Report.xlsx',
+      path: LIB + '/Report.xlsx',
+      placement: 'move',
+      destination: DEST + '/Report.xlsx',
+      placementWhy: 'grouped with others',
+      compliant: false,
+      proposed: '',
+    }]);
+    expect(said.toMove).toHaveLength(1);
+    expect(said.toMove[0].into).toBe(DEST);
+    expect(said.toMove[0].into).not.toContain('Report.xlsx');
+  });
+
+  it('survives a destination with no folder in it at all', () => {
+    const said = summarise([{
+      current: 'Report.xlsx', path: '/Report.xlsx', placement: 'move',
+      destination: 'Report.xlsx', placementWhy: '', compliant: false, proposed: '',
+    }]);
+    expect(said.toMove[0].into).toBe('Report.xlsx');
+  });
+
+  it('reports the plan the deployment pins, not the one the caller sent', () => {
+    const said = summarise([], { approvedPlan: [] });
+    expect(said.configuration.pinnedPlan).toBe(1);
+  });
+
+  it('carries the whole configuration for the page to show', () => {
+    const said = summarise([], { host: 'https://x.sharepoint.com', libraryTitle: 'Documents', modelNaming: 'gpt-5.6-luna', maxNewFolders: 6, minPerFolder: 2, assumeStatus: 'Draft' });
+    expect(said.configuration.libraryTitle).toBe('Documents');
+    expect(said.configuration.modelNaming).toBe('gpt-5.6-luna');
+    expect(said.configuration.minPerFolder).toBe(2);
+    expect(said.configuration.assumeStatus).toBe('Draft');
   });
 });
