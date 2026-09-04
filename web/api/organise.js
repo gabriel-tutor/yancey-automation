@@ -11,6 +11,8 @@
  * where it is tested; this forwards a request and forwards an answer.
  */
 
+import { signedIn } from './_auth.js';
+
 /**
  * A scan reads the whole library, opens what it can and asks a model to name
  * it, which takes about a minute. Vercel's default is far shorter, and a
@@ -29,6 +31,13 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ ok: false, error: 'Use POST.' });
+  }
+
+  // The gate is here and not only on the page. A page that hides a button is a
+  // page, not a guard: the endpoint is what reaches SharePoint, so the endpoint
+  // is what has to ask.
+  if (!signedIn(req)) {
+    return res.status(401).json({ ok: false, signedIn: false, error: 'Sign in first.' });
   }
 
   if (!ORGANISE_URL) {

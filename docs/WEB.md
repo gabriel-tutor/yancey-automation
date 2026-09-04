@@ -61,6 +61,57 @@ unchanged library proposed `Time-Zone-Conversion-Table` and then
 read. Binding the plan is what makes the middle step an approval rather than a
 demonstration.
 
+## Who can use it
+
+One shared passcode, because there is one person. Accounts, an identity
+provider and per-user roles would be machinery for a population that does not
+exist, and machinery nobody exercises is machinery nobody notices breaking.
+
+```
+  browser                     Vercel
+  ────────                    ──────
+  POST /api/session ────────► compares the passcode in constant time
+                              ◄──── httpOnly signed cookie (12 hours)
+
+  POST /api/organise ───────► no valid cookie → 401, and the request
+                              never reaches n8n or SharePoint
+```
+
+What the browser holds is a token saying only when it expires, signed with
+`SESSION_SECRET`. It is not the passcode, it is not readable from page
+JavaScript (`HttpOnly`), it never crosses plain HTTP (`Secure`), and another
+site cannot make the browser spend it (`SameSite=Lax`). Editing the expiry in
+devtools invalidates the signature — `src/session.test.js` proves that rather
+than assuming it.
+
+**The gate is on the endpoint, not only on the page.** A page that hides a
+button is a page, not a guard; `/api/organise` is what reaches SharePoint, so
+`/api/organise` is what asks.
+
+**It fails closed.** A deployment with no `ORGANISE_PASSCODE` set lets nobody
+in and says so. A missing setting is a broken deployment, not an open one.
+
+### What this is not
+
+Sign-in sleeps 600ms on every attempt, right or wrong. That is not a rate
+limiter and should not be mistaken for one — a serverless function keeps no
+state between requests, so there is nowhere to count failures. It buys time;
+the length of the passcode does the rest. If this ever guards something more
+than one person's document library, put a real limiter in front of it.
+
+### Changing the passcode
+
+```sh
+cd web
+vercel env rm ORGANISE_PASSCODE production --yes
+printf 'the-new-passcode' | vercel env add ORGANISE_PASSCODE production
+vercel --prod
+```
+
+Everyone signed in stays signed in until their token expires. To end every
+session at once, rotate `SESSION_SECRET` the same way — every token that was
+issued stops verifying immediately.
+
 ## Environment variables
 
 Set these on the Vercel project (Settings → Environment Variables), not in the
@@ -70,6 +121,8 @@ repo:
 | --- | --- |
 | `N8N_ORGANISE_URL` | `https://n8n-wevu.srv1921545.hstgr.cloud/webhook/<path>` — the WF-G webhook's production URL |
 | `N8N_ORGANISE_SECRET` | Optional today. See hardening below. |
+| `ORGANISE_PASSCODE` | The passcode Yancey types. Required — without it nobody can sign in. |
+| `SESSION_SECRET` | Signs the session cookie. Rotate it to end every session at once. |
 
 The dev sandbox has its own path (`…-dev`) and its own Vercel deployment if you
 want one. Its `canArm` is false, so it will read the library and refuse to change

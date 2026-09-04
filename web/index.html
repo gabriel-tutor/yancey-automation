@@ -285,6 +285,29 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
 .working .what { font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600; color: var(--ink); }
 .elapsed { font-size: 13.5px; color: var(--ink-mute); font-variant-numeric: tabular-nums; }
 
+/* ---- the gate ---------------------------------------------------------- */
+.gate { max-width: 430px; margin: 60px auto 0; }
+.gate .panel { padding: 30px 30px 26px; }
+.gate label {
+  display: block; font-family: "Libre Franklin", Arial, sans-serif; font-weight: 600;
+  font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-mute);
+  margin-bottom: 8px;
+}
+.gate input[type=password] {
+  width: 100%; font: 400 16px Poppins, sans-serif; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--rule-firm); border-radius: 8px; padding: 12px 14px; letter-spacing: .04em;
+}
+.gate input[type=password]:focus { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 1px; }
+.gate .primary { width: 100%; margin-top: 16px; }
+.gate .wrong { margin: 14px 0 0; font-size: 14px; color: var(--bad); font-weight: 400; }
+
+.signout {
+  margin-left: 18px; background: none; border: 0; padding: 0; cursor: pointer;
+  font-family: "Libre Franklin", Arial, sans-serif; font-weight: 500; font-size: 12.5px;
+  letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.62);
+}
+.signout:hover { color: #fff; }
+
 [hidden] { display: none !important; }
 .foot { padding: 8px 0 0; font-size: 12.5px; color: var(--ink-mute); font-weight: 300; }
 
@@ -301,10 +324,26 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
   <div class="wrap">
     <span class="mark">Upperform <span>Partners</span></span>
     <span class="tool">Document Organiser</span>
+    <button class="signout" id="signout" hidden>Sign out</button>
   </div>
 </div>
 
-<div class="wrap">
+<!-- The gate ------------------------------------------------------------- -->
+<div class="wrap gate" id="gate" hidden>
+  <section class="panel">
+    <h2>Sign in</h2>
+    <p>This tool reads and renames documents in the Upperform SharePoint library. It is not public.</p>
+    <form id="signin">
+      <label for="passcode">Passcode</label>
+      <input type="password" id="passcode" autocomplete="current-password" autofocus
+             spellcheck="false" enterkeyhint="go">
+      <button class="primary" type="submit" id="signin-go">Sign in</button>
+      <p class="wrong" id="wrong" hidden></p>
+    </form>
+  </section>
+</div>
+
+<div class="wrap" id="app" hidden>
 
   <header class="masthead">
     <h1>Organise the document library</h1>
@@ -530,6 +569,10 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
       .then(function (answer) {
         clearInterval(timer);
         show('busy', false);
+        if (answer.status === 401) {
+          keepOut('That session has expired. Sign in again.');
+          return null;
+        }
         if (answer.status !== 200 || !answer.body || answer.body.ok === false) {
           var why = (answer.body && answer.body.error) || 'The organiser answered ' + answer.status + '.';
           if (answer.body && answer.body.detail) why += ' ' + answer.body.detail;
@@ -864,8 +907,78 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
     el(id).addEventListener('change', drawSettingsLine);
   });
 
+  /* ----------------------------------------------------------------- gate */
+
+  function letIn() {
+    show('gate', false);
+    show('app', true);
+    el('signout').hidden = false;
+  }
+
+  function keepOut(why) {
+    show('app', false);
+    show('bar', false);
+    show('gate', true);
+    el('signout').hidden = true;
+    if (why) {
+      el('wrong').textContent = why;
+      show('wrong', true);
+    }
+    var box = el('passcode');
+    box.value = '';
+    box.focus();
+  }
+
+  el('signin').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var go = el('signin-go');
+    var passcode = el('passcode').value;
+    if (!passcode) return;
+
+    show('wrong', false);
+    go.disabled = true;
+    go.textContent = 'Checking…';
+
+    fetch('/api/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passcode: passcode })
+    })
+      .then(function (r) { return r.json().then(function (j) { return { status: r.status, body: j }; }); })
+      .then(function (answer) {
+        go.disabled = false;
+        go.textContent = 'Sign in';
+        // Nothing typed is kept around once it has been spent, right or wrong.
+        el('passcode').value = '';
+        if (answer.status === 200 && answer.body && answer.body.signedIn) {
+          show('wrong', false);
+          letIn();
+          return;
+        }
+        keepOut((answer.body && answer.body.error) || 'That did not work.');
+      })
+      .catch(function () {
+        go.disabled = false;
+        go.textContent = 'Sign in';
+        keepOut('The page could not reach the server.');
+      });
+  });
+
+  el('signout').addEventListener('click', function () {
+    fetch('/api/session', { method: 'DELETE' })
+      .then(function () { window.location.reload(); })
+      .catch(function () { window.location.reload(); });
+  });
+
   fillCap(cap);
   drawSettingsLine();
+
+  // Ask the server, never a flag in the page: whether this browser is signed in
+  // is the server's answer, and the gate is drawn from it rather than assumed.
+  fetch('/api/session', { headers: { 'Accept': 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (state) { if (state && state.signedIn) letIn(); else keepOut(''); })
+    .catch(function () { keepOut(''); });
 })();
 </script>
 </body>
