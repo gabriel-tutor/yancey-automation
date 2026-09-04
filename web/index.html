@@ -490,8 +490,9 @@ select.cap { justify-self: start; }
           <div>
             <div class="name">Which library to look at</div>
             <div class="hint">
-              Paste the address of a SharePoint site, or type its path. Everything in that site's
-              library is read; nothing outside it is touched. <b>Look again</b> after changing this.
+              Paste the address straight from your browser — the whole thing, exactly as it
+              appears — and the site and library are read out of it. Everything in that library
+              is read; nothing outside it is touched. <b>Look again</b> after changing this.
               <span id="where-locked" hidden>
                 This copy is fixed to one library and cannot be pointed elsewhere.
               </span>
@@ -513,7 +514,9 @@ select.cap { justify-self: start; }
             <div class="hint">
               A <code>.pbix</code> is referenced from outside the library by whatever dataset or
               refresh schedule was built from it, and neither the library nor the file can see that.
-              Turn this off to leave the reports alone.
+              <b>This covers filing them as well as renaming them</b> — a move changes the path
+              exactly as a rename does. Turn it off to leave the reports, and the workbooks they
+              read, exactly where and as they are.
             </div>
           </div>
           <label class="switch">
@@ -745,25 +748,77 @@ select.cap { justify-self: start; }
   var home = { site: '', library: '', open: true, listed: [], known: false };
 
   /**
-   * A site path out of whatever somebody pasted.
+   * A site and a library out of whatever somebody pasted.
    *
-   * They will paste a browser address, because that is what is in front of them
-   * when they are looking at the library they mean. Anything after the site
-   * collection is view state and gets dropped; what survives is /sites/Name.
-   * Returns '' when there is no site in it, and the caller shows that as an
-   * error rather than sending it.
+   * The whole interaction is meant to be: paste the address you are looking at.
+   * So this takes a browser address, a Copy-link (which carries a `/:x:/r/`
+   * prefix), or a bare path, and reads both halves out of it.
+   *
+   * The one asymmetry worth knowing is SharePoint's default library: its URL
+   * segment is `Shared Documents` and its title — which is what `getbytitle`
+   * asks for — is `Documents`. Reading only the site left a trap: paste a link
+   * to a library that is not the default and the site would change while the
+   * library silently stayed behind.
+   *
+   * Either half comes back '' when it is not in there, and the page shows what
+   * it read rather than applying it quietly.
    */
-  function parseSitePath(input) {
+  function readLink(input) {
+    // Segments that follow a site but are not a document library. Guessing a
+    // library from one of these sends the run somewhere real and empty, and an
+    // empty library reads on the page as "everything here is already fine",
+    // which is the worst wrong answer available.
+    var notALibrary = ['_layouts', '_api', '_forms', '_catalogs', 'forms', 'lists', 'sitepages'];
+    var none = { site: '', library: '' };
     var text = String(input == null ? '' : input).trim();
-    if (!text) return '';
-    // A full address: keep the path and throw the scheme, host and query away.
-    if (/^https?:\/\//i.test(text)) {
-      var after = text.replace(/^https?:\/\/[^/]*/i, '');
-      text = after.split('?')[0].split('#')[0];
-    }
+    if (!text) return none;
+    // A full address: keep the path, drop the scheme, host, query and fragment.
+    if (/^https?:\/\//i.test(text)) text = text.replace(/^https?:\/\/[^/]*/i, '');
+    text = text.split('?')[0].split('#')[0];
     try { text = decodeURIComponent(text); } catch (err) { /* leave it as typed */ }
+
     var found = /(\/(?:sites|teams)\/[^/?#]+)/i.exec(text);
-    return found ? found[1] : '';
+    if (!found) return none;
+    var site = found[1];
+
+    var rest = text.slice(text.indexOf(site) + site.length).replace(/^\/+/, '');
+    var segment = rest.split('/')[0] || '';
+    if (!segment || notALibrary.indexOf(segment.toLowerCase()) !== -1) return { site: site, library: '' };
+    // The default library is called Documents however its URL spells it.
+    if (segment.toLowerCase() === 'shared documents') return { site: site, library: 'Documents' };
+    return { site: site, library: segment };
+  }
+
+  /** Just the site, which is what the payload is built from. */
+  function parseSitePath(input) {
+    return readLink(input).site;
+  }
+
+  /**
+   * The library the last pasted link put in the box, so a hand-typed one is
+   * never quietly overwritten by the next paste.
+   */
+  var derivedLibrary = '';
+
+  /**
+   * Fill in the library from the link, when the link carries one.
+   *
+   * The point of the whole control is that pasting the address you are looking
+   * at is enough. Reading only the site out of it meant a link to a library
+   * that is not the default changed the site and left the library behind, and
+   * the run then looked in the wrong place without saying so.
+   *
+   * It will not overwrite a library somebody typed. Only an empty box, or one
+   * still holding what the previous link put there, gets filled.
+   */
+  function fillLibraryFromLink() {
+    var read = readLink(el('set-site').value);
+    if (!read.library) return;
+    var box = el('set-library');
+    var current = String(box.value || '').trim();
+    if (current && current !== derivedLibrary) return;
+    box.value = read.library;
+    derivedLibrary = read.library;
   }
 
   /** What the two boxes hold, normalised; '' for either means "as deployed". */
@@ -1615,6 +1670,7 @@ select.cap { justify-self: start; }
   el('where-reset').addEventListener('click', function () {
     el('set-site').value = '';
     el('set-library').value = '';
+    derivedLibrary = '';
     drawWhere();
     saveChoices();
     drawSettingsLine();
@@ -1629,6 +1685,7 @@ select.cap { justify-self: start; }
     // A text box has something to say while it is being typed into; a switch or
     // a picker has nothing to say until it changes.
     box.addEventListener(box.type === 'text' ? 'input' : 'change', function () {
+      if (id === 'set-site') fillLibraryFromLink();
       drawWhere();
       saveChoices();
       drawSettingsLine();

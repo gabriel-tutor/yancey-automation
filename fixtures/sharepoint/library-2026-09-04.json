@@ -1,7 +1,7 @@
 {
   "_note": "Measured, not typed. Taken verbatim from a Review The Library output via scripts/pull-library.mjs, so the runbook is built from what the library actually holds rather than from a plan somebody believes is still pending.",
   "capturedOn": "2026-09-04",
-  "run": "11821",
+  "run": "11892",
   "library": "Documents",
   "site": "/sites/TaskManagement",
   "folders": [
@@ -176,9 +176,9 @@
       "compliant": false
     },
     {
-      "name": "PD_Reliability_Preloaded_Final.xlsx",
-      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/PD_Reliability_Preloaded_Final.xlsx",
-      "compliant": false
+      "name": "PD_Reliability_Preloaded_2026-09-04_Final_v1.0.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/PD_Reliability_Preloaded_2026-09-04_Final_v1.0.xlsx",
+      "compliant": true
     }
   ]
 }

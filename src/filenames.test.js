@@ -522,3 +522,72 @@ describe('the Power BI report switch', () => {
     expect(rows[0]?.proposed).toContain('.pbix');
   });
 });
+
+/**
+ * A proposal its own checker then refuses.
+ *
+ * Found on a live production run of 2026-09-04. `PD_Reliability_Preloaded_Final.xlsx`
+ * carries a status in its name and no version, so proposeFileName took `Final`
+ * from the name and `v0.1` from assumeVersion, and offered
+ * `PD_Reliability_Preloaded_2026-09-04_Final_v0.1.xlsx` — which diagnose refuses
+ * on the next line down, because "v1.0 — First approved version" is in Yancey's
+ * own version guide and a document marked Final while numbered v0.x contradicts
+ * itself.
+ *
+ * Nothing was written, so the guard held. What broke is the review: it put a
+ * change in front of a person, they approved it, and the run then refused it.
+ * A page that offers something it will not do is worse than one that offers
+ * nothing, because somebody has already made a decision about it.
+ */
+describe('a proposal has to satisfy the convention it is proposing under', () => {
+  /** @param {string} current */
+  const propose = (current) =>
+    planRename({ name: current, path: '/x/' + current, modified: '2026-09-04T00:00:00Z' }, {});
+
+  it('does not offer Final at v0.1, which its own diagnose refuses', () => {
+    const out = propose('PD_Reliability_Preloaded_Final.xlsx');
+    expect(out.proposed, 'nothing to check').toBeTruthy();
+    expect(diagnose(out.proposed).length, 'offered ' + out.proposed + ', which diagnose refuses')
+      .toBe(0);
+  });
+
+  it('assumes the first approved version when the name says Final', () => {
+    const out = propose('PD_Reliability_Preloaded_Final.xlsx');
+    expect(out.proposed).toContain('_Final_v1.0.');
+    expect(out.assumptions.join(' ')).toContain('v1.0');
+  });
+
+  it('still assumes v0.1 when the name does not claim to be approved', () => {
+    const out = propose('Some_Working_Draft.xlsx');
+    expect(out.proposed).toContain('_v0.1.');
+  });
+
+  /**
+   * The rule is about a version the name did not state. A name that says v0.1
+   * AND says Final is a document contradicting itself, and that is a problem to
+   * report rather than one to paper over.
+   */
+  it('does not quietly promote a version the name actually states', () => {
+    const out = propose('Thing_2026-09-04_Final_v0.1.xlsx');
+    expect(out.compliant, 'this name is wrong and should be reported as wrong').toBe(false);
+    expect(out.problems.join(' ')).toContain('an approved version starts at v1.0');
+    expect(out.blocked, 'and the reason has to reach the page').toContain('an approved version starts at v1.0');
+  });
+
+  /**
+   * Whatever a proposal is built from, it has to survive the check. This is the
+   * general form of the bug rather than the one case that found it.
+   */
+  it.each([
+    'PD_Reliability_Preloaded_Final.xlsx',
+    'Board_Pack_FINAL.docx',
+    'Rates_Case_final.xlsx',
+    'Notes_Draft.docx',
+    'Filing_Review.pdf',
+    'Old_Thing_Archived.xlsx',
+  ])('offers a name that passes diagnose for %s', (current) => {
+    const out = propose(current);
+    if (!out.proposed) return;
+    expect(diagnose(out.proposed), 'offered ' + out.proposed).toEqual([]);
+  });
+});

@@ -274,6 +274,9 @@ describe('the settings a person chose', () => {
         "var home = { site: '/sites/TaskManagement', library: 'Documents', open: false, listed: [], known: true };",
         source('fillRange'),
         source('fillFloor'),
+        source('readLink'),
+        "var derivedLibrary = '';",
+        source('fillLibraryFromLink'),
         source('parseSitePath'),
         source('chosenTarget'),
         source('drawWhere'),
@@ -284,7 +287,7 @@ describe('the settings a person chose', () => {
         source('useWhere'),
         source('applyChoices'),
         'return { settings, saveChoices, loadChoices, useLimits, applyChoices,',
-        '         useWhere, parseSitePath, chosenTarget, drawWhere, home };',
+        '         useWhere, readLink, fillLibraryFromLink, parseSitePath, chosenTarget, drawWhere, home };',
       ].join('\n')
     )({ localStorage: store.api }, (/** @type {string} */ id) => controls[id], documentStub);
     return { api, controls, store };
@@ -481,6 +484,9 @@ describe('pointing a run at another library', () => {
         'var home = ' + JSON.stringify(where) + ';',
         source('fillRange'),
         source('fillFloor'),
+        source('readLink'),
+        "var derivedLibrary = '';",
+        source('fillLibraryFromLink'),
         source('parseSitePath'),
         source('chosenTarget'),
         source('drawWhere'),
@@ -491,7 +497,7 @@ describe('pointing a run at another library', () => {
         source('useWhere'),
         source('applyChoices'),
         'return { settings, saveChoices, loadChoices, applyChoices, useWhere,',
-        '         parseSitePath, drawWhere, home };',
+        '         readLink, fillLibraryFromLink, parseSitePath, drawWhere, home };',
       ].join('\n')
     )({ localStorage: store.api }, (/** @type {string} */ id) => controls[id], documentStub);
     return { api, controls, store };
@@ -522,6 +528,118 @@ describe('pointing a run at another library', () => {
       ['a sentence', 'the one Karen uses'],
     ])('gets nothing out of %s, rather than guessing', (_what, input) => {
       expect(api.parseSitePath(input)).toBe('');
+    });
+  });
+
+  /**
+   * Reading the library out of the link too.
+   *
+   * "he is not techy person" - so the whole interaction should be paste the
+   * address you are looking at. Reading only the SITE out of it left a trap:
+   * paste a link to a library that is not the default and the site would change
+   * while the library silently stayed Documents, and the run would look in the
+   * wrong place without saying so.
+   *
+   * SharePoint's default library is the one asymmetry worth knowing. Its URL
+   * segment is "Shared Documents" and its title - which is what getbytitle asks
+   * for - is "Documents".
+   */
+  describe('reading the library out of the link as well', () => {
+    const { api } = panelAt(OPEN);
+
+    it.each([
+      [
+        'the address Yancey would actually paste',
+        'https://upperformpartners.sharepoint.com/sites/TaskManagement-WebExcel/Shared%20Documents/Forms/AllItems.aspx',
+        '/sites/TaskManagement-WebExcel', 'Documents',
+      ],
+      [
+        'a Copy-link, which carries a /:x:/r/ prefix',
+        'https://upperformpartners.sharepoint.com/:x:/r/sites/TaskManagement/Shared%20Documents/thing.xlsx?d=w1&csf=1',
+        '/sites/TaskManagement', 'Documents',
+      ],
+      [
+        'a library that is not the default one',
+        'https://host/sites/X/ProjectDocs/Forms/AllItems.aspx',
+        '/sites/X', 'ProjectDocs',
+      ],
+      [
+        'a decoded space in the library name',
+        'https://host/sites/X/Rate%20Cases/Forms/AllItems.aspx',
+        '/sites/X', 'Rate Cases',
+      ],
+    ])('reads %s', (_what, link, site, library) => {
+      expect(api.readLink(link)).toEqual({ site, library });
+    });
+
+    /**
+     * A link that is not pointing at a document library must not guess one.
+     * Naming the wrong library sends the run somewhere real and empty, which
+     * reads as "your library is fine" - the worst possible wrong answer.
+     */
+    it.each([
+      ['the site root, with no library in it', 'https://host/sites/X'],
+      ['a site page rather than a library', 'https://host/sites/X/_layouts/15/start.aspx'],
+      ['a list, which is not a document library', 'https://host/sites/X/Lists/Tasks/AllItems.aspx'],
+      ['the site pages library', 'https://host/sites/X/SitePages/Home.aspx'],
+    ])('takes the site but no library from %s', (_what, link) => {
+      const read = api.readLink(link);
+      expect(read.site).toBe('/sites/X');
+      expect(read.library, 'guessing here would search a real, empty library').toBe('');
+    });
+
+    it('gets nothing at all out of something that is not a link', () => {
+      expect(api.readLink('the one Karen uses')).toEqual({ site: '', library: '' });
+    });
+  });
+
+  /**
+   * Pasting a link fills both boxes.
+   *
+   * "he is not techy person like to input only the link" — so the paste has to
+   * be the whole interaction, and the library it read has to be visible in its
+   * own box rather than applied invisibly.
+   */
+  describe('what pasting a link fills in', () => {
+    it('fills the library from the link when the link names one', () => {
+      const { api, controls } = panelAt(OPEN);
+      controls['set-site'].value = 'https://host/sites/X/ProjectDocs/Forms/AllItems.aspx';
+      api.fillLibraryFromLink();
+      expect(controls['set-library'].value).toBe('ProjectDocs');
+    });
+
+    it('calls the default library by the name getbytitle asks for', () => {
+      const { api, controls } = panelAt(OPEN);
+      controls['set-site'].value =
+        'https://upperformpartners.sharepoint.com/sites/TaskManagement-WebExcel/Shared%20Documents/Forms/AllItems.aspx';
+      api.fillLibraryFromLink();
+      expect(controls['set-library'].value).toBe('Documents');
+    });
+
+    /** Somebody who typed a library meant it. */
+    it('never overwrites a library somebody typed by hand', () => {
+      const { api, controls } = panelAt(OPEN);
+      controls['set-library'].value = 'Rate Cases';
+      controls['set-site'].value = 'https://host/sites/X/ProjectDocs/Forms/AllItems.aspx';
+      api.fillLibraryFromLink();
+      expect(controls['set-library'].value).toBe('Rate Cases');
+    });
+
+    it('does replace what the previous link put there', () => {
+      const { api, controls } = panelAt(OPEN);
+      controls['set-site'].value = 'https://host/sites/X/ProjectDocs/Forms/AllItems.aspx';
+      api.fillLibraryFromLink();
+      controls['set-site'].value = 'https://host/sites/Y/Rate%20Cases/Forms/AllItems.aspx';
+      api.fillLibraryFromLink();
+      expect(controls['set-library'].value).toBe('Rate Cases');
+    });
+
+    it('leaves the library alone when the link does not name one', () => {
+      const { api, controls } = panelAt(OPEN);
+      controls['set-library'].value = '';
+      controls['set-site'].value = 'https://host/sites/X';
+      api.fillLibraryFromLink();
+      expect(controls['set-library'].value).toBe('');
     });
   });
 

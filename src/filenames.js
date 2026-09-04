@@ -356,8 +356,23 @@ function planRename(file, options) {
   if (versionMatch) {
     version = { major: Number(versionMatch[2]), minor: Number(versionMatch[3] || 0) };
   } else if (assumeVersion) {
-    version = assumeVersion;
-    assumptions.push('version assumed to be v' + assumeVersion.major + '.' + assumeVersion.minor);
+    // A version assumed against the status just read from the name has to agree
+    // with it. "v1.0 - First approved version" is in his version guide and
+    // diagnose enforces it, so assuming v0.1 under a status of Final builds a
+    // name this file's own checker then refuses.
+    //
+    // That is worse than proposing nothing. It reached a person on the review
+    // as a change to approve, they approved it, and the applying run turned it
+    // down - found on a live production run of 2026-09-04 against
+    // PD_Reliability_Preloaded_Final.xlsx.
+    const contradicts = status === 'Final' && assumeVersion.major < FIRST_APPROVED_MAJOR;
+    version = contradicts ? { major: FIRST_APPROVED_MAJOR, minor: 0 } : assumeVersion;
+    assumptions.push(
+      contradicts
+        ? 'version assumed to be v' + version.major + '.' + version.minor +
+          ', because a name that says Final cannot be a v0.x'
+        : 'version assumed to be v' + version.major + '.' + version.minor,
+    );
   }
 
   if (!dateMatch) {
@@ -426,7 +441,11 @@ function planRename(file, options) {
     return { ...base, blocked: reason.slice(0, 160) };
   }
 
-  if (proposed === current) return { ...base, compliant: true };
+  // Rebuilding to the name it already has does not make that name right. It
+  // means there is nothing better to offer, and calling it compliant hides a
+  // problem diagnose has already found - a document marked Final at v0.1
+  // rebuilt to itself and was counted among the ones that were already correct.
+  if (proposed === current) return { ...base, blocked: problems.join('; ') };
 
   return { ...base, proposed };
 }

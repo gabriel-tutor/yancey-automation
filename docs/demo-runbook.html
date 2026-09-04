@@ -388,9 +388,9 @@
 {
   "capturedOn": "2026-09-04",
   "scanned": 32,
-  "compliant": 30,
+  "compliant": 31,
   "folders": 13,
-  "traced": 27,
+  "traced": 28,
   "reconstructed": 7,
   "history": [
     {
@@ -545,6 +545,17 @@
       "reconstructed": true
     },
     {
+      "original": "PD_Reliability_Preloaded_Final.xlsx",
+      "current": "PD_Reliability_Preloaded_2026-09-04_Final_v1.0.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
+        "date taken from the file timestamp, not the name",
+        "version assumed to be v1.0, because a name that says Final cannot be a v0.x"
+      ],
+      "reconstructed": false
+    },
+    {
       "original": "Performance Management System.pbix",
       "current": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
       "hops": 1,
@@ -582,9 +593,9 @@
       "current": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
       "hops": 1,
       "assumptions": [
-        "no project code was evidenced, so none was added",
-        "date taken from the file timestamp, not the document",
-        "version assumed to be v1.0"
+        "no project prefix, the library does not say which project this belongs to",
+        "date taken from the file timestamp, not the name",
+        "version assumed to be v1.0, because a name that says Final cannot be a v0.x"
       ],
       "reconstructed": false
     },
@@ -681,13 +692,8 @@
     "Power BI Task Management/PD alignment Excel and Power BI - Karen/Performance Management"
   ],
   "pending": [],
-  "colliding": [
-    {
-      "from": "PD_Reliability_Preloaded_Final.xlsx",
-      "to": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx"
-    }
-  ],
-  "applied": 13,
+  "colliding": [],
+  "applied": 14,
   "reverse": [
     {
       "from": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
@@ -750,6 +756,10 @@
       "to": "NIPSCO_Master Roster_2025.xlsx"
     },
     {
+      "from": "PD_Reliability_Preloaded_2026-09-04_Final_v1.0.xlsx",
+      "to": "PD_Reliability_Preloaded_Final.xlsx"
+    },
+    {
       "from": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
       "to": "Performance Management System.pbix"
     },
@@ -803,8 +813,7 @@
     "Win-The-Day-Dashboard_2026-09-04_Draft_v0.1.xlsx",
     "RACI-Workbook_2026-09-04_Draft_v0.1.xlsx",
     "Guest-Experience-Forms_2026-09-04_Draft_v0.1.xlsx",
-    "Win_The_Day_DashboardV2.xlsx",
-    "PD_Reliability_Preloaded_Final.xlsx"
+    "Win_The_Day_DashboardV2.xlsx"
   ]
 }
 </script>

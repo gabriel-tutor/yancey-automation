@@ -465,5 +465,17 @@
     "reconstructed": true,
     "evidence": "Reconstructed on 2026-09-04. Applied to the library but never written down at the time. The old name is gone, and exactly one live document shares its stem, so this is the only name it can now be under. The date differs from the pinned plan because the run that applied it took the date from the file timestamp.",
     "why": ""
+  },
+  {
+    "kind": "rename",
+    "from": "PD_Reliability_Preloaded_Final.xlsx",
+    "to": "PD_Reliability_Preloaded_2026-09-04_Final_v1.0.xlsx",
+    "assumptions": [
+      "no project prefix, the library does not say which project this belongs to",
+      "date taken from the file timestamp, not the name",
+      "version assumed to be v1.0, because a name that says Final cannot be a v0.x"
+    ],
+    "applied": "2026-09-04",
+    "run": "11885"
   }
 ]
