@@ -118,6 +118,35 @@ describe('the deployment map', () => {
     expect(deploy.targets.dev.workflows.wfP).toBeUndefined();
   });
 
+  /**
+   * Settings the generators cannot produce.
+   *
+   * `workflow(id, name)` is the whole SDK surface for a workflow, so where a
+   * failure is routed and how long a run may take exist only in the n8n editor.
+   * The repo cannot build them; what it can do is say what they must be, and
+   * fail here when they say something else. Without this the rule lives in one
+   * person's memory, which is how production kept a line in Read Reports that
+   * the repo had never produced.
+   */
+  it.each(targets)('%s says what its deployed workflows must be set to', (target) => {
+    const settings = deploy.targets[target].workflowSettings;
+    expect(settings, target + ' records no workflow settings').toBeDefined();
+    expect(settings.executionTimeout).toBeGreaterThan(0);
+    expect(settings.saveDataErrorExecution).toBe('all');
+  });
+
+  /**
+   * A sandbox that routes its failures to the production error handler writes
+   * dev noise into the client's error log and alerts a client about it. Every
+   * target must handle its own failures, and the only id that can be right is
+   * that target's own WF-E.
+   */
+  it.each(targets)('%s routes its failures to its own error handler', (target) => {
+    const settings = deploy.targets[target].workflowSettings;
+    expect(settings.errorWorkflow, target + ' names no error workflow').toBeTruthy();
+    expect(settings.errorWorkflow).toBe(deploy.targets[target].workflows.wfE);
+  });
+
   it('writes the conventions down rather than leaving them to memory', () => {
     expect(deploy._conventions).toBeDefined();
     for (const key of ['naming', 'tags', 'archiving', 'everything_is_generated', 'guards']) {

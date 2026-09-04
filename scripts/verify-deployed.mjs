@@ -18,8 +18,17 @@
  * Normalise before comparing, or every run is a false alarm: esbuild emits
  * \uXXXX escapes where a paste round-trips to the character itself. Same string
  * at runtime, different bytes. Decode on BOTH sides, then compare exactly.
+ *
+ * Node bodies are not the whole deployment. Where a failure is routed and how
+ * long a run may take are workflow SETTINGS, and the SDK builder cannot express
+ * them — `workflow(id, name)` takes an id and a name. So no generator produces
+ * them, the n8n editor is the only place they exist, and nothing would notice
+ * them being lost. config/deploy.json records what they must be per target and
+ * this checks the deployment against that, under the same TARGET convention as
+ * the build: `TARGET=dev npm run verify -- ...`.
  */
 import { readFileSync } from 'node:fs';
+import { TARGET } from '../workflows/shared.mjs';
 
 /** @param {string} value */
 const decodeEscapes = (value) =>
@@ -83,10 +92,38 @@ for (const [name, want] of Object.entries(expected)) {
   }
 }
 
+// Verifying a dev deployment with TARGET unset would hold it to production's
+// error handler and report a difference that is really a mistake in the
+// command. The name carries the suffix, so say so rather than failing oddly.
+const suffix = TARGET.nameSuffix || '';
+const named = String(workflow.name || '');
+if (suffix ? !named.endsWith(suffix) : named.includes(' \u00b7 dev')) {
+  console.log('');
+  console.log('WRONG TARGET  ' + JSON.stringify(named) + ' is not a ' + TARGET.name + ' workflow');
+  // The fix is always the OTHER target, so read it off the file, not off TARGET.
+  console.log('              re-run with ' + (suffix ? 'TARGET unset' : 'TARGET=dev'));
+  process.exit(2);
+}
+
+// Settings the generators cannot build, so the repo asserts them instead.
+const wantSettings = TARGET.workflowSettings || {};
+const haveSettings = workflow.settings || {};
+for (const [key, want] of Object.entries(wantSettings)) {
+  if (key.startsWith('_')) continue;
+  const have = haveSettings[key];
+  if (have === want) {
+    console.log('MATCH    setting ' + key.padEnd(30) + JSON.stringify(want));
+    continue;
+  }
+  wrong += 1;
+  console.log('DIFFER   setting ' + key.padEnd(30) +
+    'deployed=' + JSON.stringify(have === undefined ? null : have) + ' required=' + JSON.stringify(want));
+}
+
 console.log('');
 console.log(workflow.name + '  ·  ' + (workflow.nodeCount || (workflow.nodes || []).length) + ' nodes  ·  ' +
-  (workflow.active ? 'published' : 'NOT published'));
+  (workflow.active ? 'published' : 'NOT published') + '  ·  checked against ' + TARGET.name);
 console.log(wrong === 0
-  ? 'every node matches the build'
-  : wrong + ' node(s) differ from the build');
+  ? 'every node and setting matches what the repo requires'
+  : wrong + ' difference(s) from what the repo requires');
 process.exit(wrong === 0 ? 0 : 1);

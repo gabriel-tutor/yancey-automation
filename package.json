@@ -13,7 +13,8 @@
     "verify": "node scripts/verify-deployed.mjs",
     "gate2": "node scripts/gate2.mjs",
     "gate2:artifact": "node scripts/build-gate2-artifact.mjs",
-    "emit": "node scripts/emit-nodes.mjs"
+    "emit": "node scripts/emit-nodes.mjs",
+    "pull": "node scripts/pull-deployed.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

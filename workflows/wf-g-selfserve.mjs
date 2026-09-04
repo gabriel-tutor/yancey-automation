@@ -150,13 +150,10 @@ export const NAME = 'WF-G · Organise Documents (web)' + SUFFIX;
 /**
  * The webhook path.
  *
- * Long and unguessable on purpose: it is the only thing standing between the
- * open internet and a workflow that renames a client's documents. It never
- * reaches a browser — the page talks to a Vercel function and the function
- * talks to this — so nothing is lost by it being ugly.
- *
- * It is a first line, not the last one. Adding Header Auth is a two-minute step
- * in the n8n UI; docs/WEB.md says how, and why it is worth doing.
+ * Long and unguessable, and no longer load-bearing: the webhook requires an
+ * X-Organise-Key header, so the path is a route rather than a secret. It never
+ * reaches a browser either — the page talks to a Vercel function and the
+ * function talks to this — so nothing is lost by it being ugly.
  */
 export const PATH = 'organise-documents-a7f3c19e4b2d';
 
@@ -188,13 +185,25 @@ const SAFETY_NOTE = [
   '',
   'A hostile payload can at worst ask for something that gets refused.',
   '',
-  '**The path is unguessable but not authenticated.** The page never sees it — a',
-  'Vercel function proxies — but Header Auth is worth two minutes. See `docs/WEB.md`.',
+  '**The webhook requires Header Auth.** `X-Organise-Key`, held by the Vercel',
+  'function and never by a browser. Without it this answers 403 before running',
+  'anything. The path is a route, not a secret.',
 ].join('\n');
 
 export async function build() {
   const wfF = (TARGET.workflows && TARGET.workflows.wfF) || '';
   if (!wfF) throw new Error('no WF-F workflow id for target ' + TARGET.name + '; deploy the organiser first');
+
+  // No credential, no build. An endpoint that renames a client's documents is
+  // not something to ship open by omission, and a missing setting is the most
+  // ordinary way that happens.
+  const webhookAuth = TARGET.webhookAuthCredential;
+  if (!webhookAuth) {
+    throw new Error(
+      'refusing to build the web endpoint for ' + TARGET.name +
+      ' with no webhookAuthCredential: the webhook would accept anything that found the path'
+    );
+  }
 
   const decideCode = await codeNode(HELPERS['wf-g/Decide'], DECIDE);
   const answerCode = await codeNode(HELPERS['wf-g/Answer'], ANSWER);
@@ -210,9 +219,15 @@ const hook = trigger({
     parameters: {
       httpMethod: 'POST',
       path: ${S(path)},
+      // The header is the guard; the path is only a route. Declared here so a
+      // rebuild cannot quietly hand back an open endpoint - the deployment had
+      // this before the repo did, which is the shape of drift that ends with
+      // somebody redeploying the protection away and nobody noticing.
+      authentication: 'headerAuth',
       responseMode: 'responseNode',
       options: {}
     },
+    credentials: { httpHeaderAuth: newCredential(${S(webhookAuth)}) },
     position: [0, 0]
   },
   output: [{ body: { chosen: [] } }]

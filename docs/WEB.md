@@ -137,7 +137,7 @@ for the `-dev` path and redeploy; nothing else changes.
 | Endpoint | WF-G `IoEjcbqG0OBu6yc6`, published |
 | Organiser | WF-F `CC8jik1RGti4JXZk`, published, `canArm: true` |
 | Failures | routed to WF-E, logged to `agent_error_log` and alerted |
-| Sandbox | WF-G `spVTAZQWeL9PONgW` → WF-F `6r1FMIaY7nZBnGWl`, `canArm: false` |
+| Sandbox | WF-G `spVTAZQWeL9PONgW` → WF-F `6r1FMIaY7nZBnGWl`, `canArm: false`, both published |
 
 Every node body in both production workflows was byte-compared against the build
 before publishing, and every change was proved on the sandbox against this same
@@ -153,36 +153,70 @@ library first.
 | The page's wiring — that every control has a listener, that every element the script reaches for exists | `src/web-page.test.js` |
 | The proxy: the session gate, what it forwards, what it refuses to leak | `src/web-api.test.js` |
 | The session token and cookie | `src/session.test.js` |
+| The deploy gate itself: node diffs, missing settings, the wrong target | `src/verify-deployed.test.js` |
+| That each target routes failures to its own error handler | `src/deployment.test.js` |
 
 The wiring tests exist because two of the three bugs the page produced were
 invisible to unit tests of the functions involved: the functions were right and
 nothing connected them. Each of those tests has been checked by putting the bug
 back and confirming the test fails.
 
-## The one step left: Header Auth on the webhook
+## The webhook requires Header Auth
 
-**This is the last thing standing between production and being properly closed,
-and it needs two minutes in the n8n UI that no API can do for you.**
+Both deployments answer `403` to a request that does not carry the right
+`X-Organise-Key` header, before running anything. The key is held by the Vercel
+function and never by a browser.
 
-Today the webhook is guarded by an unguessable path and by never being shown to
-a browser. That was proportionate for a sandbox. It is thinner in production for
-two reasons: the path is committed to this repo, and production's `canArm` is
-true, so anyone who reached the webhook with a well-formed payload could rename
-a client's documents.
+| | |
+| --- | --- |
+| Header | `X-Organise-Key` |
+| Credential | `Header Auth account`, `oHVC3A1NTFlDgDb8`, shared by both targets |
+| Set on | WF-G production and WF-G sandbox, both published |
+| Sent by | `web/api/organise.js`, whenever `N8N_ORGANISE_SECRET` is set |
 
-Vercel already sends the header. Only the n8n half is missing:
+Measured rather than assumed: no header → 403 in 0.67s; a wrong key → 403; the
+right key → 200; the page end to end → 200, 29 scanned, 29 already correct, 0
+written.
 
-1. **Credentials → New → Header Auth.** Name it `Organise webhook key`.
-   - Header name: `X-Organise-Key`
-   - Value: the key printed when `N8N_ORGANISE_SECRET` was set. Read it back with
-     `cd web && vercel env pull` if you no longer have it.
-2. **WF-G → the `Asked` node → Authentication → Header Auth**, pick that
-   credential, save, publish.
-3. Nothing to do on the Vercel side — `web/api/organise.js` sends the header
-   whenever `N8N_ORGANISE_SECRET` is set, which it is.
+**The path is a route, not a secret.** It is committed to this repo, and that is
+now fine — before the header it was the only thing guarding a workflow that
+renames a client's documents, and production's `canArm` is true.
 
-Until step 2 is done, treat the webhook path as a secret: it is in this
-repository, so anyone with read access to the repo can reach production.
+The generator declares the authentication too, and **refuses to build** for a
+target with no `webhookAuthCredential`:
+
+```
+SKIP wf-g-selfserve -> refusing to build the web endpoint for prod with no
+webhookAuthCredential: the webhook would accept anything that found the path
+```
+
+That refusal exists because the deployment had this protection before the repo
+did, which is how somebody redeploys it away without noticing.
+
+## What the repo cannot build, and checks instead
+
+The SDK builder is `workflow(id, name)` — an id and a name. It cannot express
+workflow **settings**, so where a failure is routed, whether error runs are kept
+and how long a run may take exist only in the n8n editor. No generator produces
+them and, until this, nothing looked at them. That is exactly the shape of drift
+that left a line in production's `Read Reports` the repo had never built.
+
+`config/deploy.json` records what they must be, per target:
+
+| Setting | Production | Sandbox |
+| --- | --- | --- |
+| `errorWorkflow` | `XSKk6eHTFGqftrUM` (WF-E) | `E302rNL5D7NuBy5c` (WF-E · dev) |
+| `saveDataErrorExecution` | `all` | `all` |
+| `executionTimeout` | 900s | 900s |
+
+Two things hold them there: `src/deployment.test.js` fails if a target's
+`errorWorkflow` is not that target's own WF-E, and `npm run verify` compares the
+recorded settings against the deployment alongside the node bodies.
+
+A sandbox routing its failures to the production handler would write dev noise
+into the client's `agent_error_log` and alert a client about it. The sandbox had
+no error workflow at all until 2026-09-04, so a run that failed there failed
+silently.
 
 ## Proving the deployment is the repo
 
@@ -198,16 +232,65 @@ None of those would have failed a behaviour test.
 npm run emit wf-f dist/expected.json          # or: TARGET=dev npm run emit ...
 npm run emit wf-g dist/expected-web.json
 
-# what is actually deployed: the n8n MCP's get_workflow_details writes this
-# file when the answer is too large to return inline
-npm run verify -- <deployed.json> dist/expected.json
+# what is actually deployed
+npm run verify -- <deployed.json> dist/expected.json      # TARGET=dev for the sandbox
 ```
 
 It exits non-zero on any difference and says which node and which character, so
 it can gate a deploy. Normalisation matters and it does it for you: esbuild
 emits `\uXXXX` escapes where a paste round-trips to the character itself — the
 same string at runtime, different bytes — so both sides are decoded before
-comparing.
+comparing. It checks the recorded settings in the same pass, and refuses
+outright if the file is a sandbox workflow being checked against production's
+settings, or the reverse — that difference is a mistake in the command, not in
+the deployment, and reporting it as drift would train people to ignore it.
+
+### Getting the deployed file
+
+The n8n MCP writes `get_workflow_details` to a file when the answer is large and
+returns it inline when it is small. WF-F arrives as a file; WF-G does not.
+
+**Do not copy an inline answer into a file by hand.** That makes the comparison
+circular — it proves the build matches somebody's typing, which is the exact
+failure the byte check exists to catch. The session transcript holds every tool
+result verbatim, so take it from there:
+
+```sh
+T=~/.claude/projects/<project>/<session>.jsonl
+
+# whole workflow, from one get_workflow_details
+npm run pull -- $T IoEjcbqG0OBu6yc6 dist/deployed-wf-g.json
+
+# nodes from the PUBLISHED version, name and settings from the live read
+npm run pull -- $T spVTAZQWeL9PONgW dist/deployed-wf-g-dev.json --version <versionId>
+```
+
+The second form exists because a workflow's draft can be ahead of what is
+published, and `get_workflow_version` returns the version that is actually
+running but carries no settings. It refuses to join the two halves if the live
+read is not at that same version.
+
+**An n8n API key would make all of this unnecessary** — the repo could fetch a
+workflow directly, and `npm run deploy` could replace pasting node bodies into
+the editor. That is the single largest remaining piece of manual handling here.
+
+### Verified on 2026-09-04
+
+| | Nodes | Settings |
+| --- | --- | --- |
+| WF-F production | 11 of 11 match | match |
+| WF-F sandbox | 11 of 11 match | match |
+| WF-G production | 2 of 2 match | match |
+| WF-G sandbox | 2 of 2 match | match |
+
+### What is not byte-checked
+
+Sticky-note text. The generator builds it, but n8n names sticky nodes by a
+generated hash that differs between the two deployments, so there is no stable
+key to compare them on. It is documentation on the canvas, and it can go stale:
+the sandbox's note claimed the webhook was "unguessable but not authenticated"
+for a day after it was authenticated. If a note here starts carrying a load-
+bearing claim, give the stickies stable names in the generator first.
 
 ## Running it locally
 
