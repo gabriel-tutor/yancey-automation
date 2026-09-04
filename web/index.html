@@ -170,6 +170,10 @@ h1 {
   padding-bottom: 8px; border-bottom: 1px solid var(--rule);
 }
 .tier > p.why { margin: 10px 0 0; font-size: 13.5px; font-weight: 300; color: var(--ink-mute); }
+.tier > p.rule {
+  margin: 14px 0 0; font-family: "Libre Franklin", Arial, sans-serif;
+  font-weight: 600; font-size: 15.5px; color: var(--ink);
+}
 .facts { margin: 0; display: grid; grid-template-columns: minmax(150px, auto) 1fr; gap: 0; }
 .facts dt {
   padding: 9px 16px 9px 0; font-size: 13.5px; color: var(--ink-mute);
@@ -377,6 +381,10 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
   padding-bottom: 8px; border-bottom: 1px solid var(--rule);
 }
 .tier > p.why { margin: 10px 0 0; font-size: 13.5px; font-weight: 300; color: var(--ink-mute); }
+.tier > p.rule {
+  margin: 14px 0 0; font-family: "Libre Franklin", Arial, sans-serif;
+  font-weight: 600; font-size: 15.5px; color: var(--ink);
+}
 .facts { margin: 0; display: grid; grid-template-columns: minmax(150px, auto) 1fr; gap: 0; }
 .facts dt {
   padding: 9px 16px 9px 0; font-size: 13.5px; color: var(--ink-mute);
@@ -552,10 +560,12 @@ select.cap { justify-self: start; }
 
           <div class="tier">
             <h4>What gets carried out</h4>
-            <dl class="facts" id="facts-arming"></dl>
+            <p class="rule">Nothing, until you tick it.</p>
             <p class="why">
-              These five are set by what you tick on the review page, never here. A run with
-              nothing ticked has all five off and changes nothing.
+              Renaming a document, moving one, creating a folder and renaming a folder are four
+              separate permissions. Each is granted by what you select on the review page, for
+              that run alone — never by a setting here, and never carried into the next run.
+              It is why looking at the library is always safe.
             </p>
           </div>
 
@@ -744,11 +754,19 @@ select.cap { justify-self: start; }
    * run.
    */
   var REMEMBERED = 'organiser.config.v1';
+  var ARMING = ['applyRenames', 'applyMoves', 'applyStructure', 'applyFolderRenames', 'applyProposed'];
 
   function remember(c) {
     try {
       var keep = Object.assign({}, c);
       delete keep.pinnedPlanLines;
+      // The five arming switches are per-RUN state, not configuration: they say
+      // what a particular run was allowed to do, which is decided by what was
+      // ticked for it. Keeping them would mean showing the last run's state as
+      // though it described the tool - all off after a look, which reads as
+      // "this cannot do anything", and worse, all on after an apply, which
+      // reads as "this is armed right now". Neither is true of the deployment.
+      ARMING.forEach(function (key) { delete keep[key]; });
       window.localStorage.setItem(REMEMBERED, JSON.stringify({ at: Date.now(), config: keep }));
     } catch (err) {
       // Private windows, blocked storage, a full quota. None of it is worth a
@@ -795,14 +813,6 @@ select.cap { justify-self: start; }
       ['New folders', 'at most ' + c.maxNewFolders + ', each holding ' + c.minPerFolder + '+ documents', ''],
       ['Status when unstated', c.assumeStatus || 'not guessed — those documents are left alone', ''],
       ['Undo mode', pill(c.revert, 'On', 'Off', c.revert ? 'yes' : 'off'), '']
-    ]);
-
-    facts('facts-arming', [
-      ['Rename documents', pill(c.applyRenames, 'Armed', 'Off', c.applyRenames ? 'yes' : 'off'), ''],
-      ['Move documents', pill(c.applyMoves, 'Armed', 'Off', c.applyMoves ? 'yes' : 'off'), ''],
-      ['Create folders', pill(c.applyStructure, 'Armed', 'Off', c.applyStructure ? 'yes' : 'off'), ''],
-      ['Rename folders', pill(c.applyFolderRenames, 'Armed', 'Off', c.applyFolderRenames ? 'yes' : 'off'), ''],
-      ['Apply without ticking', pill(c.applyProposed, 'Armed', 'Off', c.applyProposed ? 'yes' : 'off'), '']
     ]);
 
     facts('facts-tech', [
