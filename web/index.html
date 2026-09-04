@@ -190,6 +190,7 @@ h1 {
 .pill.no { background: var(--good-wash); color: var(--good); }
 .pill.off { background: var(--sunken); color: var(--ink-mute); }
 .awaiting { font-size: 13.5px; font-weight: 300; color: var(--ink-mute); padding: 12px 0 2px; }
+.asof { margin: 8px 0 0; font-size: 12.5px; font-weight: 300; color: var(--ink-mute); font-style: italic; }
 .plan-lines { margin-top: 10px; }
 .plan-lines summary { font-size: 13px; }
 .plan-lines ol {
@@ -396,6 +397,7 @@ button { font-family: "Libre Franklin", Arial, sans-serif; }
 .pill.no { background: var(--good-wash); color: var(--good); }
 .pill.off { background: var(--sunken); color: var(--ink-mute); }
 .awaiting { font-size: 13.5px; font-weight: 300; color: var(--ink-mute); padding: 12px 0 2px; }
+.asof { margin: 8px 0 0; font-size: 12.5px; font-weight: 300; color: var(--ink-mute); font-style: italic; }
 .plan-lines { margin-top: 10px; }
 .plan-lines summary { font-size: 13px; }
 .plan-lines ol {
@@ -541,6 +543,7 @@ select.cap { justify-self: start; }
 
         <!-- Read-only from here down: what this copy is, not what you choose. -->
         <div id="tiers" hidden>
+          <p class="asof" id="config-asof" hidden></p>
 
           <div class="tier">
             <h4>What this copy is pointed at</h4>
@@ -564,7 +567,8 @@ select.cap { justify-self: start; }
 
         </div>
         <p class="awaiting" id="awaiting-config">
-          What this copy is pointed at, and the rest of its settings, are shown after the first look.
+          What this copy is pointed at, and the rest of its settings, appear here once it has
+          looked at the library — and stay on this browser afterwards.
         </p>
 
       </div>
@@ -728,7 +732,56 @@ select.cap { justify-self: start; }
     return n >= 1048576 ? (n / 1048576).toFixed(n % 1048576 ? 1 : 0) + ' MB' : Math.round(n / 1024) + ' KB';
   }
 
-  function drawConfig(c) {
+  /**
+   * The configuration comes back from a run, and a run takes a minute — so on a
+   * fresh page the read-only half of Settings had nothing to show and read as
+   * broken. It is a slow-changing fact about the deployment, so the last one is
+   * kept and shown straight away, dated, and replaced by every run.
+   *
+   * The pinned plan's LINES are deliberately not kept: they are client file
+   * names, and there is no reason for them to outlive the tab. The count is
+   * enough to explain what the plan is, and the list comes back with the next
+   * run.
+   */
+  var REMEMBERED = 'organiser.config.v1';
+
+  function remember(c) {
+    try {
+      var keep = Object.assign({}, c);
+      delete keep.pinnedPlanLines;
+      window.localStorage.setItem(REMEMBERED, JSON.stringify({ at: Date.now(), config: keep }));
+    } catch (err) {
+      // Private windows, blocked storage, a full quota. None of it is worth a
+      // broken page: the tiers simply wait for the run, as they did before.
+    }
+  }
+
+  function recall() {
+    try {
+      var raw = window.localStorage.getItem(REMEMBERED);
+      if (!raw) return null;
+      var held = JSON.parse(raw);
+      return held && held.config && held.config.libraryTitle ? held : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function forget() {
+    try { window.localStorage.removeItem(REMEMBERED); } catch (err) { /* nothing to undo */ }
+  }
+
+  /** @param {number} at */
+  function whenRead(at) {
+    var d = new Date(at);
+    var today = new Date();
+    var sameDay = d.toDateString() === today.toDateString();
+    var time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return sameDay ? 'today at ' + time : d.toLocaleDateString([], { day: 'numeric', month: 'long' }) + ' at ' + time;
+  }
+
+  /** @param {any} c @param {number} [at] when it was read, if from memory */
+  function drawConfig(c, at) {
     if (!c || !c.libraryTitle) return;
 
     facts('facts-where', [
@@ -773,15 +826,32 @@ select.cap { justify-self: start; }
         'This page does not use them: what you tick becomes the plan for the run you start.';
       block.appendChild(why);
 
-      var d = document.createElement('details');
-      d.className = 'reasons plan-lines';
-      d.appendChild(text('summary', 'The ' + c.pinnedPlan + ' pinned renames'));
-      var ol = document.createElement('ol');
-      (c.pinnedPlanLines || []).forEach(function (line) {
-        ol.appendChild(text('li', line.from + '  →  ' + (line.to || '(no new name)') + (line.into ? '  into ' + line.into : '')));
-      });
-      d.appendChild(ol);
-      block.appendChild(d);
+      // Only when the lines are actually to hand. Remembered configuration
+      // keeps the count and drops the file names, so an empty list here would
+      // be a disclosure that opens onto nothing.
+      var lines = c.pinnedPlanLines || [];
+      if (lines.length) {
+        var d = document.createElement('details');
+        d.className = 'reasons plan-lines';
+        d.appendChild(text('summary', 'The ' + lines.length + ' pinned renames'));
+        var ol = document.createElement('ol');
+        lines.forEach(function (line) {
+          ol.appendChild(text('li', line.from + '  →  ' + (line.to || '(no new name)') + (line.into ? '  into ' + line.into : '')));
+        });
+        d.appendChild(ol);
+        block.appendChild(d);
+      }
+    }
+
+    // Say when this was read, but only when it is not from the run just done.
+    // A page that shows a fact without saying how old it is is a page inviting
+    // somebody to trust it further than it deserves.
+    var stamp = el('config-asof');
+    if (at) {
+      stamp.textContent = 'Read from the organiser ' + whenRead(at) + '. Refreshed every time you look at the library.';
+      show('config-asof', true);
+    } else {
+      show('config-asof', false);
     }
 
     show('tiers', true);
@@ -824,7 +894,10 @@ select.cap { justify-self: start; }
 
     if (typeof c.assumeStatus === 'string') el('set-status').value = c.assumeStatus;
 
-    drawConfig(c);
+    if (c && c.libraryTitle) {
+      drawConfig(c);
+      remember(c);
+    }
     drawSettingsLine();
   }
 
@@ -1305,6 +1378,27 @@ select.cap { justify-self: start; }
     show('gate', false);
     show('app', true);
     el('signout').hidden = false;
+
+    // What the last run said, so a refresh does not leave half of Settings
+    // blank until somebody has waited a minute for it.
+    var held = recall();
+    if (held) {
+      var c = held.config;
+      if (Number(c.maxChangesPerRun) > 0) {
+        cap = Math.max(cap, Number(c.maxChangesPerRun));
+        bounds.maxChangesPerRun = Number(c.maxChangesPerRun);
+      }
+      if (Number(c.maxNewFolders) > 0) bounds.maxNewFolders = Number(c.maxNewFolders);
+      if (Number(c.minPerFolder) > 0) bounds.minPerFolder = Number(c.minPerFolder);
+      fillRange('set-cap', cap, cap);
+      fillRange('set-folders', bounds.maxNewFolders, bounds.maxNewFolders);
+      fillFloor('set-minper', bounds.minPerFolder, bounds.minPerFolder);
+      if (typeof c.renameReports === 'boolean') el('set-reports').checked = c.renameReports;
+      if (typeof c.readContents === 'boolean') el('set-contents').checked = c.readContents;
+      if (typeof c.assumeStatus === 'string') el('set-status').value = c.assumeStatus;
+      drawConfig(c, held.at);
+      drawSettingsLine();
+    }
   }
 
   function keepOut(why) {
@@ -1357,6 +1451,9 @@ select.cap { justify-self: start; }
   });
 
   el('signout').addEventListener('click', function () {
+    // Signing out on a shared machine should leave nothing behind, and the
+    // library and site names are the client's, not this browser's.
+    forget();
     fetch('/api/session', { method: 'DELETE' })
       .then(function () { window.location.reload(); })
       .catch(function () { window.location.reload(); });
