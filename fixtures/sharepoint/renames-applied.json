@@ -377,5 +377,93 @@
     "applied": "2026-09-03",
     "run": "10420",
     "fromFolder": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References"
+  },
+  {
+    "kind": "rename",
+    "from": "TCO Pilot Program Oversight Dashboard Data.xlsx",
+    "to": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "unrecorded",
+    "reconstructed": true,
+    "evidence": "Reconstructed on 2026-09-04. Applied to the library but never written down at the time. The pinned plan names this rename, the old name is gone from the library, and the pinned new name is present.",
+    "why": "The filename identifies TCO and the workbook contains active-project and dropdown data for an oversight dashboard."
+  },
+  {
+    "kind": "rename",
+    "from": "TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix",
+    "to": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "unrecorded",
+    "reconstructed": true,
+    "evidence": "Reconstructed on 2026-09-04. Applied to the library but never written down at the time. The pinned plan names this rename, the old name is gone from the library, and the pinned new name is present.",
+    "why": "The filename identifies the TCO pilot oversight dashboard and explicitly marks it Review."
+  },
+  {
+    "kind": "rename",
+    "from": "NiSource Metric Dashboard.pbix",
+    "to": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "unrecorded",
+    "reconstructed": true,
+    "evidence": "Reconstructed on 2026-09-04. Applied to the library but never written down at the time. The pinned plan names this rename, the old name is gone from the library, and the pinned new name is present.",
+    "why": "The filename identifies a metric dashboard, but the folder and available evidence do not establish a project code."
+  },
+  {
+    "kind": "rename",
+    "from": "DIMP E-1.xlsx",
+    "to": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "unrecorded",
+    "reconstructed": true,
+    "evidence": "Reconstructed on 2026-09-04. Applied to the library but never written down at the time. The pinned plan names this rename, the old name is gone from the library, and the pinned new name is present.",
+    "why": "The filename identifies DIMP E-1 and the workbook contains raw and original performance-measure data."
+  },
+  {
+    "kind": "rename",
+    "from": "DIMP E-1 Performance Measures.pbix",
+    "to": "DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "unrecorded",
+    "reconstructed": true,
+    "evidence": "Reconstructed on 2026-09-04. Applied to the library but never written down at the time. The pinned plan names this rename, the old name is gone from the library, and the pinned new name is present.",
+    "why": "The filename identifies DIMP E-1 performance measures and the file is a Power BI report."
+  },
+  {
+    "kind": "rename",
+    "from": "DIMP E-1 Proposed Data.xlsx",
+    "to": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "unrecorded",
+    "reconstructed": true,
+    "evidence": "Reconstructed on 2026-09-04. Applied to the library but never written down at the time. The pinned plan names this rename, the old name is gone from the library, and the pinned new name is present.",
+    "why": "The filename identifies DIMP E-1 and the workbook contains proposed performance-measure records and values."
+  },
+  {
+    "kind": "rename",
+    "from": "NIPSCO_Master Roster_2025.xlsx",
+    "to": "NIPSCO_Master-Roster_2026-09-03_Draft_v0.1.xlsx",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "unrecorded",
+    "reconstructed": true,
+    "evidence": "Reconstructed on 2026-09-04. Applied to the library but never written down at the time. The old name is gone, and exactly one live document shares its stem, so this is the only name it can now be under. The date differs from the pinned plan because the run that applied it took the date from the file timestamp.",
+    "why": "The filename identifies NIPSCO and the workbook contains department, work-function, and responsibility lists."
+  },
+  {
+    "kind": "rename",
+    "from": "DIMP_Performance-Measures-Table_2025-06-17_Draft_v0.1.xlsx",
+    "to": "DIMP_Performance-Measures-Table_2026-09-03_Draft_v0.1.xlsx",
+    "assumptions": [],
+    "applied": "2026-09-03",
+    "run": "unrecorded",
+    "reconstructed": true,
+    "evidence": "Reconstructed on 2026-09-04. Applied to the library but never written down at the time. The old name is gone, and exactly one live document shares its stem, so this is the only name it can now be under. The date differs from the pinned plan because the run that applied it took the date from the file timestamp.",
+    "why": ""
   }
 ]

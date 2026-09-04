@@ -1159,6 +1159,32 @@ export const SAFETY_NOTE = [
   '**Never invents.** The model is told an invented project code is worse than none, and an empty answer falls back to a disclosed assumption. Status defaults to the weakest claim, Draft, and says so. An eight-digit run like `04042025` is resolved only if the document states the date unambiguously; otherwise the date comes from the file timestamp and the proposal says so.',
 ].join('\n');
 
+/**
+ * The sandbox says so on its own canvas.
+ *
+ * The dev copy was created with a hand-written note because the generator had no
+ * way to say "this is the sandbox", and a hand-written note is one nobody
+ * rebuilds. Generating it means the next rebuild corrects it, and it can carry
+ * the thing that is easy to get wrong here.
+ */
+const SANDBOX_NOTE = [
+  '## Sandbox — not the one Yancey runs',
+  '',
+  'A separate workflow so that deploying half-finished node code cannot disturb',
+  'the one Yancey runs. `canArm` is **false** here, which forces every arming',
+  'switch off however a caller asks — a run reads the library and refuses to',
+  'change it.',
+  '',
+  'It reads the **same library through the same credential**: there is only one,',
+  'and the real edge cases are in the real library. That makes it isolated for',
+  'DEPLOYMENT and not for WRITES. Treat a run here as read-only and arm nothing.',
+  '',
+  '**This workflow is published, and that matters when you test.** WF-G · dev',
+  'calls it with Execute Workflow, and n8n runs the *published* version of a',
+  'called workflow — so a draft you saved but did not publish is not what the',
+  'dev page exercises. Publish, then test.',
+].join('\n');
+
 export async function build() {
   // The mirror of the seeder's refusal to build for production. A target with
   // no SharePoint credential cannot reach the library, and a build that quietly
@@ -1620,7 +1646,13 @@ const noteSafety = sticky(
   [shouldApply, applyChange, confirm, both, summary],
   { color: 5, width: 1300, height: 600 },
 );
-
+${TARGET.name === 'prod' ? '' : `
+const noteSandbox = sticky(
+  ${S(SANDBOX_NOTE)},
+  [run, defaults],
+  { color: 7, width: 760, height: 420 },
+);
+`}
 export default workflow(${S('upperform-wf-f-organizer' + (TARGET.name === 'prod' ? '' : '-' + TARGET.name))}, ${S(NAME)})
   .add(run)
   .to(defaults)
@@ -1653,6 +1685,6 @@ export default workflow(${S('upperform-wf-f-organizer' + (TARGET.name === 'prod'
   .add(noteHeader)
   .add(noteReading)
   .add(noteStructure)
-  .add(noteSafety);
+  .add(noteSafety)${TARGET.name === 'prod' ? '' : '\n  .add(noteSandbox)'};
 `;
 }

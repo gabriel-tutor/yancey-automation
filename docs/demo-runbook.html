@@ -1,390 +1,706 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Organiser Demo Runbook</title>
 <style>
   :root {
-    --ground:      #F5F6F7;
-    --panel:       #FFFFFF;
-    --ink:         #141D26;
-    --ink-soft:    #5A6672;
-    --ink-faint:   #8A94A0;
-    --rule:        #D9DEE3;
-    --rule-soft:   #E8EBEE;
-    --live:        #B5610C;
-    --live-wash:   #FBF2E7;
-    --cat-grey:    #7C8794;
-    --cat-red:     #B3261E;
-    --cat-red-wash:#FBECEA;
-    --cat-green:   #2E7D4F;
-    --shadow:      0 1px 2px rgba(20,29,38,.05), 0 8px 24px -18px rgba(20,29,38,.35);
+    --ink: #1e1e3d;
+    --ink-soft: #3d3d55;
+    --ink-faint: #6b6b7d;
+    --rule: #ddddE4;
+    --rule-soft: #eceCf1;
+    --paper: #fdfdfb;
+    --card: #ffffff;
+    --accent: #086bb5;
+    --accent-soft: #eaf2fa;
+    --good: #1c7a4a;
+    --good-soft: #e9f5ee;
+    --warn: #8a5a00;
+    --warn-soft: #fdf3e2;
+    --stop: #a32020;
+    --stop-soft: #fbecec;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --ground:    #0F151B;
-      --panel:     #161E26;
-      --ink:       #E4E9ED;
-      --ink-soft:  #9AA6B2;
-      --ink-faint: #6C7885;
-      --rule:      #2A343E;
-      --rule-soft: #202932;
-      --live:      #E39B4E;
-      --live-wash: #221A10;
-      --cat-grey:  #8A94A0;
-      --cat-red:   #E8776E;
-      --cat-red-wash:#2A1512;
-      --cat-green: #6BBF8E;
-      --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
-    }
-  }
-  :root[data-theme="dark"] {
-    --ground:    #0F151B;
-    --panel:     #161E26;
-    --ink:       #E4E9ED;
-    --ink-soft:  #9AA6B2;
-    --ink-faint: #6C7885;
-    --rule:      #2A343E;
-    --rule-soft: #202932;
-    --live:      #E39B4E;
-    --live-wash: #221A10;
-    --cat-grey:  #8A94A0;
-    --cat-red:   #E8776E;
-    --cat-red-wash:#2A1512;
-    --cat-green: #6BBF8E;
-    --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
-  }
-
   * { box-sizing: border-box; }
-
   body {
     margin: 0;
-    background: var(--ground);
+    background: var(--paper);
     color: var(--ink);
-    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 15px;
+    line-height: 1.62;
   }
+  .page { max-width: 940px; margin: 0 auto; padding: 40px 26px 80px; }
 
-  .page { max-width: 940px; margin: 0 auto; padding: 56px 28px 96px; }
-  .prose { max-width: 66ch; }
-
+  header.top { border-bottom: 2px solid var(--ink); padding-bottom: 18px; margin-bottom: 8px; }
   .eyebrow {
-    font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 11px; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700;
   }
+  h1 { font-size: 32px; line-height: 1.16; margin: 8px 0 10px; letter-spacing: -.012em; }
+  .standfirst { font-size: 17px; color: var(--ink-soft); margin: 0; max-width: 62ch; }
 
-  h1 {
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(30px, 4.6vw, 46px);
-    line-height: 1.08; font-weight: 400; letter-spacing: -.01em;
-    text-wrap: balance; margin: 14px 0 0;
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 34px; }
+  .meta div {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 11.5px; padding: 5px 11px; border: 1px solid var(--rule);
+    border-radius: 999px; background: var(--card); color: var(--ink-faint);
   }
-  .standfirst { font-size: 19px; line-height: 1.55; color: var(--ink-soft); margin: 16px 0 0; max-width: 60ch; }
+  .meta div b { color: var(--ink); font-weight: 700; }
 
+  section { margin: 0 0 40px; }
   h2 {
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 25px; font-weight: 400; line-height: 1.2;
-    text-wrap: balance; margin: 0;
+    font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink-faint); border-bottom: 1px solid var(--rule);
+    padding-bottom: 7px; margin: 0 0 18px; font-weight: 700;
   }
-  h3 { font-size: 15px; font-weight: 650; margin: 0 0 6px; letter-spacing: -.005em; }
-  p { margin: 0 0 14px; }
-  p:last-child { margin-bottom: 0; }
-  strong { font-weight: 650; }
-  em { font-style: italic; }
-
+  h3 { font-size: 18px; margin: 28px 0 10px; }
+  p { margin: 0 0 13px; max-width: 68ch; }
+  ul, ol { margin: 0 0 13px; padding-left: 22px; max-width: 68ch; }
+  li { margin-bottom: 7px; }
+  em { color: var(--ink-soft); }
   code, .mono {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: .86em; letter-spacing: -.01em;
+    font-size: 12.5px;
   }
-  code { background: var(--rule-soft); padding: .12em .38em; border-radius: 2px; }
+  code { background: var(--rule-soft); padding: 1px 5px; border-radius: 3px; }
 
-  section { margin-top: 52px; }
-  .sec-head { display: flex; flex-direction: column; gap: 8px; padding-top: 22px; border-top: 1px solid var(--rule); margin-bottom: 24px; }
-  .sec-head p { color: var(--ink-soft); margin: 0; max-width: 62ch; }
+  .headline {
+    background: var(--good-soft); border: 1px solid #bfe0cd; border-left: 4px solid var(--good);
+    border-radius: 4px; padding: 18px 20px; margin-bottom: 26px;
+  }
+  .headline .big {
+    font-size: 26px; font-weight: 700; color: var(--good); line-height: 1.2; margin-bottom: 6px;
+  }
+  .headline p { margin: 0; color: var(--ink-soft); }
 
-  /* An act of the demo: what you do, what he sees, what to say. */
-  .act {
-    background: var(--panel); border: 1px solid var(--rule); border-radius: 3px;
-    box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden;
+  .note { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 13px 16px; border-radius: 0 4px 4px 0; margin: 16px 0; }
+  .care { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 13px 16px; border-radius: 0 4px 4px 0; margin: 16px 0; }
+  .stop { background: var(--stop-soft); border-left: 3px solid var(--stop); padding: 13px 16px; border-radius: 0 4px 4px 0; margin: 16px 0; }
+  .note p:last-child, .care p:last-child, .stop p:last-child { margin-bottom: 0; }
+
+  .checks { list-style: none; padding-left: 0; }
+  .checks li { position: relative; padding-left: 30px; margin-bottom: 11px; }
+  .checks li::before {
+    content: ""; position: absolute; left: 0; top: 4px;
+    width: 15px; height: 15px; border: 1.5px solid var(--ink-faint); border-radius: 3px;
   }
-  .act > header {
-    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-    padding: 14px 18px; border-bottom: 1px solid var(--rule-soft);
-  }
+
+  .act { border: 1px solid var(--rule); border-radius: 5px; margin-bottom: 14px; background: var(--card); overflow: hidden; }
+  .act > header { display: flex; align-items: baseline; gap: 12px; padding: 11px 16px; background: #f7f7f4; border-bottom: 1px solid var(--rule); }
   .act .n {
-    font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-    letter-spacing: .1em; color: var(--live); border: 1px solid currentColor;
-    border-radius: 2px; padding: 5px 7px;
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 700;
+    background: var(--ink); color: #fff; width: 21px; height: 21px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
   }
-  .act .title { font-weight: 650; font-size: 15.5px; }
-  .act .clock { margin-left: auto; font: 500 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-faint); }
-  .act .body { padding: 16px 18px; display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
-  @media (max-width: 720px) { .act .body { grid-template-columns: 1fr; } }
-  .act .lab {
-    font: 600 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
-    margin-bottom: 6px;
+  .act .title { font-weight: 700; font-size: 16px; flex: 1; }
+  .act .clock { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 11.5px; color: var(--ink-faint); }
+  .act .body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .act .body > div { padding: 14px 16px; }
+  .act .body > div + div { border-left: 1px solid var(--rule-soft); }
+  .lab {
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin-bottom: 7px;
   }
-  .act .do, .act .say { font-size: 14.5px; color: var(--ink-soft); }
-  .act .say { font-style: italic; }
-  .act .do b { color: var(--ink); font-weight: 650; font-style: normal; }
+  .do { font-size: 14px; }
+  .do div { margin-bottom: 6px; padding-left: 15px; text-indent: -15px; }
+  .do div::before { content: "→ "; color: var(--accent); }
+  .say { font-size: 14.5px; color: var(--ink-soft); font-style: italic; }
 
-  .callout { background: var(--live-wash); border: 1px solid var(--rule); border-left: 3px solid var(--live); border-radius: 3px; padding: 18px 20px; }
-  .callout p { font-size: 15px; }
-  .callout p:first-child { font-weight: 650; color: var(--ink); }
-
-  .stop { background: var(--cat-red-wash); border: 1px solid var(--cat-red); border-left: 3px solid var(--cat-red); border-radius: 3px; padding: 18px 20px; }
-  .stop p:first-child { font-weight: 650; color: var(--cat-red); }
-  .stop p { font-size: 15px; }
-
-  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
-  table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
-  tr:last-child td { border-bottom: 0; }
+  .wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 5px; background: var(--card); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
   th {
-    font: 600 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
-    border-bottom: 1px solid var(--rule);
+    text-align: left; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 10px;
+    letter-spacing: .09em; text-transform: uppercase; color: var(--ink-faint);
+    padding: 9px 12px; border-bottom: 1px solid var(--rule); background: #f7f7f4; font-weight: 700;
+    white-space: nowrap;
   }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
   td.was { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--ink-faint); word-break: break-word; }
-  td.now { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--cat-green); word-break: break-word; }
+  td.now { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--good); word-break: break-word; }
+  td.why { color: var(--ink-soft); font-size: 12.5px; min-width: 190px; }
+  .tag {
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: 9.5px; letter-spacing: .06em;
+    text-transform: uppercase; padding: 2px 6px; border-radius: 3px; font-weight: 700;
+    background: var(--warn-soft); color: var(--warn); white-space: nowrap;
+  }
+  .assume { display: block; color: var(--ink-faint); font-size: 11.5px; font-style: italic; margin-top: 3px; }
 
-  ul.asks { list-style: none; padding: 0; margin: 0; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
-  ul.asks li { padding: 14px 18px; border-bottom: 1px solid var(--rule-soft); font-size: 14.5px; color: var(--ink-soft); }
-  ul.asks li:last-child { border-bottom: 0; }
-  ul.asks b { color: var(--ink); font-weight: 650; display: block; margin-bottom: 2px; }
+  .qa { border-top: 1px solid var(--rule-soft); padding: 14px 0; }
+  .qa:first-of-type { border-top: 0; }
+  .qa .q { font-weight: 700; margin-bottom: 5px; }
+  .qa .a { color: var(--ink-soft); margin: 0; }
 
-  .settings { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-  .setting { background: var(--panel); border: 1px solid var(--rule); border-radius: 3px; padding: 13px 15px; }
-  .setting code { background: none; padding: 0; color: var(--ink); font-weight: 650; }
-  .setting .v { font: 500 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--live); margin-top: 4px; }
-  .setting p { font-size: 13.5px; color: var(--ink-soft); margin: 6px 0 0; }
-
-  .meta {
-    display: flex; flex-wrap: wrap; gap: 4px 18px;
-    font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    color: var(--ink-faint);
-    margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--rule);
+  footer {
+    margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--rule);
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: 11.5px; color: var(--ink-faint);
   }
 
-  .lede { color: var(--ink-soft); font-size: 14.5px; }
-
-  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-faint); }
-
-  @media (max-width: 560px) { .page { padding: 36px 18px 64px; } }
+  @media (max-width: 720px) {
+    .act .body { grid-template-columns: 1fr; }
+    .act .body > div + div { border-left: 0; border-top: 1px solid var(--rule-soft); }
+    h1 { font-size: 26px; }
+  }
+  @media print {
+    body { background: #fff; }
+    .page { max-width: none; padding: 0; }
+    section { break-inside: avoid; }
+  }
 </style>
-
+</head>
+<body>
 <div class="page">
 
-  <header class="prose">
-    <div class="eyebrow">Upperform Partners &middot; WF-F &middot; live demo</div>
+  <header class="top">
+    <div class="eyebrow">Upperform Partners &middot; document organiser</div>
     <h1>Showing Yancey the organiser</h1>
-    <p class="standfirst">Nine real documents in his own library are held back, unrenamed, on purpose. They are the demo. This is the order to run it in, what he sees at each step, and what to do if something goes sideways.</p>
-    <div class="meta" id="meta"></div>
+    <p class="standfirst">
+      The library is already organised. That is the demo — not a rename you stage,
+      but a result you can stand behind, with every change traceable back to the
+      name it arrived under.
+    </p>
   </header>
 
+  <div class="meta" id="meta"></div>
+
   <section>
-    <div class="sec-head">
-      <h2>Before he arrives</h2>
-      <p>Five minutes. Everything here is reversible, and the last item is the one that makes it so.</p>
+    <h2>Where things stand</h2>
+    <div class="headline" id="headline"></div>
+    <p>
+      This changes what the meeting is. An earlier version of this runbook was written
+      for a demo where nine documents were held back so he could watch them be renamed
+      live. Those were applied on 3 September, so there is nothing left to hold back —
+      a run today reports <em>all documents already follow the convention</em> and offers
+      no changes.
+    </p>
+    <p>
+      That is the stronger position. He is not being asked to imagine the tool working;
+      he is being shown a finished library and the record of how it got there. Lead with
+      the result, then show the tool that keeps it that way.
+    </p>
+    <div class="care" id="pending-warning" hidden>
+      <p><b>Some renames are still pending.</b> The table below lists them. This runbook
+      was built when they were, so the four acts assume he <em>will</em> see changes
+      offered. Read the pending table before the meeting.</p>
     </div>
-    <ul class="asks">
-      <li><b>Open two tabs</b> WF-F in n8n, and the Task Management library in SharePoint, sorted by Name. He needs to watch the second one change.</li>
-      <li><b>Check the Config node reads <code>applyRenames: false</code>, and the same for <code>applyMoves</code>, <code>applyStructure</code> and <code>applyFolderRenames</code></b> Four switches, four separate promises &mdash; and all four off is the resting state Act 1 depends on: the first run must change nothing.</li>
-      <li><b>Do not run it armed beforehand</b> The nine unrenamed files are the whole demo. Spending them in rehearsal leaves you with a run that says <em>0 to rename</em>, which shows nothing.</li>
-      <li><b>Rehearse with the undo</b> If you want a dry run, do the full thing and then revert it &mdash; see <em>Rehearsing safely</em> at the bottom. It puts every name back.</li>
+  </section>
+
+  <section>
+    <h2>Before he arrives</h2>
+    <ul class="checks">
+      <li>Open the page and sign in, so the passcode is not being typed in front of him.</li>
+      <li>Press <b>Look again</b> once and let it finish. It takes about a minute, and
+        doing it now means the first thing he sees is not a spinner.</li>
+      <li>Decide which demo you are giving — <b>the finished library</b> (nothing to prepare)
+        or <b>live action</b> (see below; it needs five minutes of setup first).</li>
+      <li>Have this page open on a second screen or a phone.</li>
+      <li>Check the settings panel is showing the values you expect, and that
+        <b>Carried out</b> reads <em>off</em>. It should. That is the point.</li>
     </ul>
   </section>
 
   <section>
-    <div class="sec-head">
-      <h2>The demo, in four acts</h2>
-      <p>About eight minutes. Each act does one thing and answers one question.</p>
-    </div>
+    <h2>The demo, in four acts</h2>
     <div id="acts"></div>
   </section>
 
-  <section>
-    <div class="sec-head">
-      <h2>What he will see rename</h2>
-      <p>Generated from the plan that is actually pinned in the Config node &mdash; not typed out here. If this table and the workflow ever disagree, the build is broken.</p>
-    </div>
-    <div class="tablewrap">
+  <section id="pending-section" hidden>
+    <h2>What he will see it offer</h2>
+    <div class="wrap">
       <table>
-        <thead><tr><th style="width:46%">Now</th><th>Becomes</th></tr></thead>
-        <tbody id="plan"></tbody>
-      </table>
-    </div>
-    <p class="prose" style="margin-top:16px;color:var(--ink-soft)">Four of these are Power BI reports. That is worth pointing at, because it is the part he will assume is unsafe &mdash; and the answer is that the organiser opened all four and confirmed none of them reads a single document in this library.</p>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <h2>The move</h2>
-      <p>Renaming and moving are separate switches. There is exactly one move to show, and its restraint is the point.</p>
-    </div>
-    <div id="moves"></div>
-    <p class="prose" style="margin-top:16px;color:var(--ink-soft)">Say the second half out loud: it will <em>not</em> move anything between <code>1. Assigned Tasks</code> and <code>4. Completed Tasks</code>, because that would be asserting how far a piece of work has got &mdash; which no file records and only he knows. A tool that moves one file and explains why it left twenty alone is more convincing than one that reorganises everything.</p>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <h2>The questions he will ask</h2>
-      <p>Short answers. Each one is true and each one is checkable in front of him.</p>
-    </div>
-    <ul class="asks">
-      <li><b>&ldquo;Is it reading my documents?&rdquo;</b> Yes, and that is how it can name them. Word, Excel and PowerPoint are unzipped on our own server and only the text is sent; a PDF or screenshot goes as itself because there is nothing to extract. One setting, <code>readContents</code>, turns it off &mdash; the naming gets worse and nothing breaks.</li>
-      <li><b>&ldquo;What if it renames something a dashboard needs?&rdquo;</b> It opened all four of your Power BI reports and read what they reference. None of them reads anything in this library. That is checked, not assumed &mdash; and if a report had named a file, that file would be refused with the query quoted.</li>
-      <li><b>&ldquo;Will it do this on its own?&rdquo;</b> No. There is no schedule. Somebody presses a button, and even then two separate switches decide whether anything is written.</li>
-      <li><b>&ldquo;What if it gets a name wrong?&rdquo;</b> You see every name before anything happens, and what you approve is what gets applied &mdash; arming the switch does not re-ask the model. Every change keeps the old name, so any of it goes back in seconds.</li>
-      <li><b>&ldquo;Can it do the rest of the site?&rdquo;</b> Yes &mdash; the library and site path are two settings in the same Config node. This library was the one to prove it on because it has the Power BI files in it, which are the hard case.</li>
-    </ul>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <h2>If something goes wrong</h2>
-      <p>The three failures worth recognising mid-demo, and what each actually means.</p>
-    </div>
-    <ul class="asks">
-      <li><b>A node goes red</b> The run failed, which is different from finding nothing. Say so, open the Summary of the <em>previous</em> successful run, and carry on from the review page &mdash; the story does not depend on the live run succeeding.</li>
-      <li><b>&ldquo;the model call failed, so the rules named what they could&rdquo;</b> OpenAI did not answer. The run still finishes. Press Execute again; it is usually a one-off.</li>
-      <li><b>A rename comes back failed</b> Almost always something already sitting on that name. The call refuses rather than overwrite, which is the guarantee working. The reason is on that line in the Summary.</li>
-    </ul>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <h2>Rehearsing safely, and putting it back</h2>
-      <p>The record of what changed is executable. That is what makes a full rehearsal &mdash; or a change of mind a week later &mdash; a two-minute job.</p>
-    </div>
-    <div class="settings">
-      <div class="setting"><code>revert</code><div class="v">false &rarr; true</div><p>Reads the approved plan as <em>put these names back</em>. The convention is not applied to the restored name, because that name is the messy one.</p></div>
-      <div class="setting"><code>approvedPlan</code><div class="v">from &harr; to</div><p>Swap each pair round. The reversed list is printed below, ready to paste.</p></div>
-      <div class="setting"><code>applyRenames</code><div class="v">true</div><p>Arm it, run once, then set both this and <code>revert</code> back to <code>false</code>.</p></div>
-    </div>
-    <p class="prose" style="margin-top:18px;color:var(--ink-soft)">Every other guard still holds during a revert: the file has to be there, it cannot change extension, and two files cannot land on one name. Only the convention check is lifted, and only for the name being restored.</p>
-
-    <h3 style="margin-top:26px">The reversed plan</h3>
-    <div class="tablewrap" style="margin-top:10px">
-      <table>
-        <thead><tr><th style="width:46%">From</th><th>Back to</th></tr></thead>
-        <tbody id="reverse"></tbody>
+        <thead><tr><th>Now</th><th>Becomes</th><th>Because</th></tr></thead>
+        <tbody id="pending"></tbody>
       </table>
     </div>
   </section>
 
   <section>
-    <div class="sec-head">
-      <h2>What not to say</h2>
-      <p>Three claims that are close to true and would be wrong.</p>
+    <h2>What it already renamed</h2>
+    <p>
+      Every document below traces from the name it arrived under to the name it has now.
+      This is the evidence, and it is also the answer to the only question that really
+      matters to him — <em>can you put it back</em>.
+    </p>
+    <div class="care" id="reconstructed-note" hidden></div>
+    <div class="wrap">
+      <table>
+        <thead><tr><th>Arrived as</th><th>Is now</th><th>What was assumed</th></tr></thead>
+        <tbody id="history"></tbody>
+      </table>
+    </div>
+    <div id="untouched-box"></div>
+  </section>
+
+  <section id="filing-section">
+    <h2>What it filed, and the folders it made</h2>
+    <p>
+      Renaming was the ask. Filing was the answer to a second question he raised on
+      3 September — <em>can it think and come up with its own folder structure?</em>
+    </p>
+    <div id="folders-made"></div>
+    <div class="wrap" id="moves-wrap">
+      <table>
+        <thead><tr><th>Document</th><th>Was in</th><th>Moved to</th></tr></thead>
+        <tbody id="moves"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>If you want it to do something live</h2>
+    <p>
+      A finished library has nothing to offer, so if he wants to watch it work you have
+      to give it something to work on. There are two ways, and only one of them is a
+      good idea.
+    </p>
+
+    <h3>Add a few documents — do this</h3>
+    <p>
+      Drop two or three files with ordinary, untidy names into the library shortly before
+      the meeting. This is not a trick; it is the actual use case. Documents arrive named
+      badly, and the tool's job is ongoing hygiene rather than a single clean-up.
+    </p>
+    <ul>
+      <li>Use real working documents if you have them, or copies with names of the kind
+        the library used to be full of — a bare description, no project, no date, no status.</li>
+      <li>Put them in <code>Resources and References</code>, where an unfiled document
+        would normally land.</li>
+      <li>Press <b>Look again</b>. They will be the only things offered, so the review
+        stays short enough to read aloud.</li>
+      <li>Tick them, carry them out, and the library is tidy again by the end of the call.</li>
+    </ul>
+    <div class="note">
+      <p><b>It shows more this way, not less.</b> A run against a clean library that finds
+      two new arrivals and names them is the tool doing its actual job. A staged
+      before-and-after is a screenshot he could have been sent.</p>
+    </div>
+
+    <h3>Rename the finished ones back — do not do this</h3>
+    <p>
+      The record below is complete enough to reverse every change, and the workflow has a
+      <code>revert</code> setting that lifts the convention check so an untidy name can be
+      restored. It is written down because it exists, not because you should use it.
+    </p>
+    <div class="stop">
+      <p><b>Four of these are Power BI reports.</b> A <code>.pbix</code> is referenced by
+      path wherever it is published or set to refresh, and nothing inside the library shows
+      that. Renaming them back and forward again means two more breakages of live
+      references, for the sake of theatre. Add new documents instead.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>The questions he will ask</h2>
+
+    <div class="qa">
+      <div class="q">Can you undo it?</div>
+      <p class="a">Yes, and completely — every document in the library traces back to the
+      name it arrived under. Say the number out loud; it is the most convincing thing in
+      this document. Do not say the undo is automatic: it is a recorded list that is
+      replayed deliberately, which is the point.</p>
+    </div>
+
+    <div class="qa">
+      <div class="q">What if it renames something it should not?</div>
+      <p class="a">It cannot rename a Power BI report, or a workbook a report actually
+      reads — it opens each <code>.pbix</code>, reads the Power Query text inside, and
+      refuses anything the report names, quoting the query. And nothing is applied at all
+      until somebody ticks it.</p>
+    </div>
+
+    <div class="qa">
+      <div class="q">Does it read my documents?</div>
+      <p class="a">Yes, when <b>Read the documents</b> is on, and that is a switch he
+      controls from the page. Word, PowerPoint and Excel are unzipped on the server and
+      only the extracted text is sent; PDFs and images go whole, because a scan has no
+      text to extract. With it off, it names from the file name, folder and kind alone.</p>
+    </div>
+
+    <div class="qa">
+      <div class="q">Who else can get to this page?</div>
+      <p class="a">Nobody without the passcode, and the webhook behind it needs a header
+      key the browser never holds. A request without it is refused before anything runs.</p>
+    </div>
+
+    <div class="qa">
+      <div class="q">Can it decide the folder structure itself?</div>
+      <p class="a">It already has — the folders listed above were its proposal. It is
+      bounded on purpose: a new folder has to hold at least two documents, no more than
+      six new folders in a run, and it will never move anything in or out of a numbered
+      stage folder, because those record how far the work has got and nothing about a
+      document says which stage it belongs in.</p>
+    </div>
+
+    <div class="qa">
+      <div class="q">What did it get wrong?</div>
+      <p class="a">Be straight about this one. Where a document did not state its own date,
+      the date came from the file timestamp, and where it did not state a status it was
+      recorded as Draft. Both are disclosed on every proposal. The assumptions column above
+      is the honest version of this answer.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>If something goes wrong</h2>
+    <ul>
+      <li><b>The page sits there.</b> A run takes about a minute. Say so before you press
+        it, and it stops being a silence.</li>
+      <li><b>It says the run may still be going.</b> It probably is. The workflow does not
+        stop because the page stopped listening — wait, then press <b>Look again</b>.
+        Do not press it twice.</li>
+      <li><b>It asks you to sign in again.</b> The session lasts twelve hours. Type the
+        passcode; nothing is lost.</li>
+      <li><b>Something is refused and he asks why.</b> The refusal says why, in his words,
+        on the page. Read it out rather than explaining around it.</li>
+      <li><b>Anything else.</b> Failures are logged and alerted automatically. Say you will
+        look at it after the call rather than debugging in front of him.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What not to say</h2>
+    <div class="stop">
+      <p>Do not promise it finds every Power BI dependency.</p>
+      <p>It reads what is inside the file. A report published to the Power BI service, or
+      set to refresh from a path, is referenced from <em>outside</em> the library, and
+      nothing in the file or the folder shows that. Renaming the four reports was a
+      decision, and the record above is what covers it.</p>
     </div>
     <div class="stop">
-      <p>Do not say it cannot rename the wrong thing.</p>
-      <p>It can &mdash; the credential writes to that library, which is what makes it useful. What stops a surprise is that the switch rests off, the plan is read first, and the old names are kept. That is a process guarantee, not a technical one, and he will respect the difference. The mail assistant&rsquo;s <em>cannot send</em> is a missing permission; this is not, and conflating them costs you the credibility the first one earns.</p>
-    </div>
-    <div class="stop" style="margin-top:12px">
-      <p>Do not say it never gets a name wrong.</p>
-      <p>It is a language model reading a document. What is guaranteed is the <em>shape</em> &mdash; the code assembles and validates every name, so a malformed one is not something it can produce, and a name that fails the check is dropped rather than applied.</p>
-    </div>
-    <div class="stop" style="margin-top:12px">
-      <p>Do not promise it will find every Power BI dependency.</p>
-      <p>It reads what is inside the file. A report published to the Power BI service, or set to refresh from a path, is referenced from <em>outside</em> the library, and nothing in the file or the folder shows that. Renaming the four reports was a decision, and the undo list is what covers it.</p>
+      <p>Do not call it automatic.</p>
+      <p>Nothing is applied without a tick. That is the feature, and describing it as
+      hands-off gives away the only guarantee he actually cares about.</p>
     </div>
   </section>
 
   <footer>
     Upperform Partners document organiser &middot; demo runbook &middot; prepared by Gabriel O. Tutor
+    &middot; <span id="built"></span>
   </footer>
 </div>
 
 <script type="application/json" id="data">
 {
-  "plan": [
+  "capturedOn": "2026-09-04",
+  "scanned": 29,
+  "compliant": 29,
+  "folders": 13,
+  "traced": 27,
+  "reconstructed": 7,
+  "history": [
     {
-      "from": "TCO Pilot Program Oversight Dashboard Data.xlsx",
-      "to": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
-      "why": "The filename identifies TCO and the workbook contains active-project and dropdown data for an oversight dashboard."
+      "original": "Task Management Channel Guide_YD_04042025.docx",
+      "current": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix",
-      "to": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
-      "why": "The filename identifies the TCO pilot oversight dashboard and explicitly marks it Review."
+      "original": "Mooyah_Cleaning_Gantt.xlsx",
+      "current": "Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "NiSource Metric Dashboard.pbix",
-      "to": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
-      "why": "The filename identifies a metric dashboard, but the folder and available evidence do not establish a project code."
+      "original": "Latest_ActionTracker_YD.xlsx",
+      "current": "Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "DIMP E-1.xlsx",
-      "to": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
-      "why": "The filename identifies DIMP E-1 and the workbook contains raw and original performance-measure data."
+      "original": "DEL - asme.b31.8s.2004.pdf",
+      "current": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
+      "hops": 2,
+      "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "DIMP E-1 Performance Measures.pbix",
-      "to": "DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
-      "why": "The filename identifies DIMP E-1 performance measures and the file is a Power BI report."
+      "original": "DIMP_Dashboard.xlsx",
+      "current": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "DIMP E-1 Proposed Data.xlsx",
-      "to": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
-      "why": "The filename identifies DIMP E-1 and the workbook contains proposed performance-measure records and values."
+      "original": "DIMP E-1.xlsx",
+      "current": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [],
+      "reconstructed": true
     },
     {
-      "from": "NIPSCO_Master Roster_2025.xlsx",
-      "to": "NIPSCO_Master-Roster_2025-07-31_Draft_v0.1.xlsx",
-      "why": "The filename identifies NIPSCO and the workbook contains department, work-function, and responsibility lists."
+      "original": "DIMP E-1 Performance Measures.pbix",
+      "current": "DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
+      "hops": 1,
+      "assumptions": [],
+      "reconstructed": true
     },
     {
-      "from": "Performance Management System.xlsx",
-      "to": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
-      "why": "The instructions describe an Excel performance-management system with initiative, action, sub-action, and metrics registers."
+      "original": "ALL STATES E-1 Table - 2025 Draft.xlsx",
+      "current": "DIMP_Performance-Measures-Table_2026-09-03_Draft_v0.1.xlsx",
+      "hops": 3,
+      "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
+        "date taken from the file timestamp, not the name",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "Performance Management System.pbix",
-      "to": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
-      "why": "The filename and file type identify a Power BI report for the performance-management system."
+      "original": "DIMP E-1 Proposed Data.xlsx",
+      "current": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [],
+      "reconstructed": true
     },
     {
-      "from": "Electric_Operations_Daily_Review_Dashboard.xlsx",
-      "to": "Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
-      "why": "The workbook is headed Electric Operations Executive Dashboard and contains daily gate and LOA scorecards."
+      "original": "Electric_Operations_Daily_Review_Dashboard.xlsx",
+      "current": "Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "Mooyah_Cleaning_Gantt.xlsx",
-      "to": "Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
-      "why": "The workbook is a MOOYAH cleaning performance summary with daily cleaning scores and pass or fail results."
+      "original": "Daily_Employee_Project_Time_Trackingv1.xlsx",
+      "current": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "Draft_Assessment Tool_6 Walkthru_26-Jan-2026_YD.xlsx",
-      "to": "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
-      "why": "The instructions describe a structured Wiring for Success assessment tool with triage, ratings, evidence, and actions."
+      "original": "Screenshot 2025-04-14 at 9.06.08 AM.png",
+      "current": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
+      "hops": 2,
+      "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "DIMP_Dashboard.xlsx",
-      "to": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
-      "why": "The instructions explicitly identify a DIMP Leak Repair Capacity scoring dashboard and cost optimizer."
+      "original": "NiSource Metric Dashboard.pbix",
+      "current": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
+      "hops": 1,
+      "assumptions": [],
+      "reconstructed": true
     },
     {
-      "from": "Latest_ActionTracker_YD.xlsx",
-      "to": "Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
-      "why": "The sheet is headed Damage Prevention Wiring Action Tracker and tracks action status, ratings, evidence, and impact."
+      "original": "Screenshot 2025-04-06 at 6.34.50 PM.png",
+      "current": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     },
     {
-      "from": "PD_Reliability_Preloaded_Final.xlsx",
-      "to": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
-      "why": "The filename identifies a preloaded power-delivery reliability workbook and explicitly marks it Final."
+      "original": "NIPSCO_Master Roster_2025.xlsx",
+      "current": "NIPSCO_Master-Roster_2026-09-03_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [],
+      "reconstructed": true
+    },
+    {
+      "original": "Performance Management System.pbix",
+      "current": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
+      "hops": 1,
+      "assumptions": [
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
+    },
+    {
+      "original": "Performance Management System.xlsx",
+      "current": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
+    },
+    {
+      "original": "Screenshot 2025-04-06 at 6.42.39 PM.png",
+      "current": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
+      "hops": 2,
+      "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
+    },
+    {
+      "original": "PD_Reliability_Preloaded_Final.xlsx",
+      "current": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v1.0"
+      ],
+      "reconstructed": false
+    },
+    {
+      "original": "Screenshot 2025-04-06 at 6.34.18 PM.png",
+      "current": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
+    },
+    {
+      "original": "TCO Pilot Program Oversight Dashboard Data.xlsx",
+      "current": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [],
+      "reconstructed": true
+    },
+    {
+      "original": "TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix",
+      "current": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
+      "hops": 1,
+      "assumptions": [],
+      "reconstructed": true
+    },
+    {
+      "original": "Power BI TCO Pilot_YD_04072025.xlsx",
+      "current": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "status assumed to be Draft, the document does not say",
+        "date taken from the file timestamp, not the document",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
+    },
+    {
+      "original": "Working TimesKV.xlsx",
+      "current": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
+      "hops": 2,
+      "assumptions": [
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
+    },
+    {
+      "original": "Screenshot 2025-04-06 at 6.35.10 PM.png",
+      "current": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "status assumed to be Draft, the document does not say",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
+    },
+    {
+      "original": "Metrics .xlsx",
+      "current": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
+      "hops": 2,
+      "assumptions": [
+        "no project prefix, the library does not say which project this belongs to",
+        "date taken from the file timestamp, not the name",
+        "status assumed to be Draft, the name does not say",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
+    },
+    {
+      "original": "Draft_Assessment Tool_6 Walkthru_26-Jan-2026_YD.xlsx",
+      "current": "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
+      "hops": 1,
+      "assumptions": [
+        "no project code was evidenced, so none was added",
+        "version assumed to be v0.1"
+      ],
+      "reconstructed": false
     }
   ],
+  "moves": [
+    {
+      "file": "Daily_Employee_Project_Time_Trackingv1.xlsx",
+      "from": "Power BI Task Management",
+      "into": "Power BI Task Management/Resources and References"
+    }
+  ],
+  "foldersMade": [
+    "Power BI Task Management/Resources and References/Dashboards",
+    "Power BI Task Management/PD alignment Excel and Power BI - Karen/Performance Management"
+  ],
+  "pending": [],
+  "applied": 15,
   "reverse": [
     {
-      "from": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
-      "to": "TCO Pilot Program Oversight Dashboard Data.xlsx"
+      "from": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
+      "to": "Task Management Channel Guide_YD_04042025.docx"
     },
     {
-      "from": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
-      "to": "TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix"
+      "from": "Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
+      "to": "Mooyah_Cleaning_Gantt.xlsx"
     },
     {
-      "from": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
-      "to": "NiSource Metric Dashboard.pbix"
+      "from": "Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
+      "to": "Latest_ActionTracker_YD.xlsx"
+    },
+    {
+      "from": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
+      "to": "DEL - asme.b31.8s.2004.pdf"
+    },
+    {
+      "from": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+      "to": "DIMP_Dashboard.xlsx"
     },
     {
       "from": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
@@ -395,182 +711,270 @@
       "to": "DIMP E-1 Performance Measures.pbix"
     },
     {
+      "from": "DIMP_Performance-Measures-Table_2026-09-03_Draft_v0.1.xlsx",
+      "to": "ALL STATES E-1 Table - 2025 Draft.xlsx"
+    },
+    {
       "from": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
       "to": "DIMP E-1 Proposed Data.xlsx"
-    },
-    {
-      "from": "NIPSCO_Master-Roster_2025-07-31_Draft_v0.1.xlsx",
-      "to": "NIPSCO_Master Roster_2025.xlsx"
-    },
-    {
-      "from": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
-      "to": "Performance Management System.xlsx"
-    },
-    {
-      "from": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
-      "to": "Performance Management System.pbix"
     },
     {
       "from": "Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
       "to": "Electric_Operations_Daily_Review_Dashboard.xlsx"
     },
     {
-      "from": "Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
-      "to": "Mooyah_Cleaning_Gantt.xlsx"
+      "from": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
+      "to": "Daily_Employee_Project_Time_Trackingv1.xlsx"
     },
     {
-      "from": "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
-      "to": "Draft_Assessment Tool_6 Walkthru_26-Jan-2026_YD.xlsx"
+      "from": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
+      "to": "Screenshot 2025-04-14 at 9.06.08 AM.png"
     },
     {
-      "from": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
-      "to": "DIMP_Dashboard.xlsx"
+      "from": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
+      "to": "NiSource Metric Dashboard.pbix"
     },
     {
-      "from": "Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
-      "to": "Latest_ActionTracker_YD.xlsx"
+      "from": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
+      "to": "Screenshot 2025-04-06 at 6.34.50 PM.png"
+    },
+    {
+      "from": "NIPSCO_Master-Roster_2026-09-03_Draft_v0.1.xlsx",
+      "to": "NIPSCO_Master Roster_2025.xlsx"
+    },
+    {
+      "from": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
+      "to": "Performance Management System.pbix"
+    },
+    {
+      "from": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
+      "to": "Performance Management System.xlsx"
+    },
+    {
+      "from": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
+      "to": "Screenshot 2025-04-06 at 6.42.39 PM.png"
     },
     {
       "from": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
       "to": "PD_Reliability_Preloaded_Final.xlsx"
+    },
+    {
+      "from": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
+      "to": "Screenshot 2025-04-06 at 6.34.18 PM.png"
+    },
+    {
+      "from": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
+      "to": "TCO Pilot Program Oversight Dashboard Data.xlsx"
+    },
+    {
+      "from": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
+      "to": "TCO Pilot Program Oversight Dashboard_Review_KV_14042025.pbix"
+    },
+    {
+      "from": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
+      "to": "Power BI TCO Pilot_YD_04072025.xlsx"
+    },
+    {
+      "from": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
+      "to": "Working TimesKV.xlsx"
+    },
+    {
+      "from": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
+      "to": "Screenshot 2025-04-06 at 6.35.10 PM.png"
+    },
+    {
+      "from": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
+      "to": "Metrics .xlsx"
+    },
+    {
+      "from": "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
+      "to": "Draft_Assessment Tool_6 Walkthru_26-Jan-2026_YD.xlsx"
     }
   ],
-  "filing": [],
-  "moves": [],
-  "scanned": 27,
-  "compliant": 21,
-  "reportsRead": 4,
-  "approvedFrom": "run 10399 on 2026-09-03T17:39:19.510Z"
+  "approvedFrom": "run 10399 on 2026-09-03T17:39:19.510Z",
+  "untouched": [
+    "Reliability-Report-Template_2026-09-04_Draft_v0.1.xlsx",
+    "Reliability-Data-Workbook_2026-09-04_Draft_v0.1.xlsx"
+  ]
 }
 </script>
-
 <script>
-  (function () {
-    var data = JSON.parse(document.getElementById('data').textContent);
+(function () {
+  var data = JSON.parse(document.getElementById('data').textContent);
 
-    function el(tag, cls, text) {
-      var n = document.createElement(tag);
-      if (cls) n.className = cls;
-      if (text !== undefined) n.textContent = text;
-      return n;
-    }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined && text !== null) n.textContent = String(text);
+    return n;
+  }
+  function put(id, node) { var t = document.getElementById(id); if (t) t.appendChild(node); }
 
-    var meta = document.getElementById('meta');
-    [
-      data.scanned + ' documents',
-      data.plan.length + ' held back for the demo',
-      data.reportsRead + ' Power BI reports read',
-      data.approvedFrom
-    ].forEach(function (m) { meta.appendChild(el('div', '', m)); });
+  document.getElementById('built').textContent = 'library measured ' + data.capturedOn;
 
-    var ACTS = [
-      {
-        n: '1',
-        title: 'It reviews, and changes nothing',
-        clock: '~40 sec',
-        do: 'Open WF-F and press <b>Execute workflow</b>. Let him watch the nodes go green. When it finishes, click <b>Summary</b> and open the output.',
-        say: '“Nothing has changed yet. It just read all ' + data.scanned + ' documents in your library — opened them, worked out what each one is, and wrote a name for it. Both switches are off, so this run touched nothing.”'
-      },
-      {
-        n: '2',
-        title: 'It explains itself',
-        clock: '~2 min',
-        do: 'Switch to the review page. Scroll the “Still to rename” list. Pick one screenshot and read its reason aloud, then point at the assumptions underneath it.',
-        say: '“Three of these screenshots were taken thirty seconds apart. Nothing outside them tells them apart — it had to look at the pictures. And where it assumed something, it says so on the line: this date came off the file timestamp, not out of the document.”'
-      },
-      {
-        n: '3',
-        title: 'It came up with a folder structure',
-        clock: '~2 min',
-        do: 'On the review page, scroll to <b>The folder structure it came up with</b>. Read one new folder and the documents going into it. Then scroll to <b>What it suggested and did not get</b> and read one refusal aloud.',
-        say: '“This is the part you asked for on Wednesday — it works out the folders itself, there is no template. What stops it going silly is underneath: a new folder has to hold at least two documents, because a folder with one file in it is the same pile with an extra click in front. And it will not touch your numbered stage folders at all, because nothing about a document says how far the work has got.”'
-      },
-      {
-        n: '4',
-        title: 'It shows you what it has not been allowed to do',
-        clock: '~1 min',
-        do: 'Scroll to <b>Waiting for you to approve</b>. Point out that these names were written on this run and none of them has been applied.',
-        say: '“Anything you drop into the library gets read and named on the next run — but it lands here, not in the library. Nothing is applied until you move it onto the approved list. That is the difference between a review and a demonstration.”'
-      },
-      {
-        n: '5',
-        title: 'He approves, and it happens',
-        clock: '~1 min',
-        do: 'Back in n8n: Config node, set <b>applyRenames</b> to <b>true</b>, and <b>applyStructure</b> and <b>applyMoves</b> if he wants the folder created too. Execute. Then switch to the SharePoint tab and refresh.',
-        say: '“What you just approved is exactly what gets applied — arming it does not re-ask the model, it carries out the list you read. It creates the folders first, then moves the files, so nothing ever moves somewhere that is not there yet. Watch the library.”'
-      },
-      {
-        n: '6',
-        title: 'And it is reversible',
-        clock: '~1 min',
-        do: 'Open the Summary again and show the <b>applied</b> list — every line carries the old name beside the new one. Then set every switch back to <b>false</b>.',
-        say: '“Every one of those keeps what it was called before. If any of it is wrong, it goes back in a couple of minutes. And it is switched off again now.”'
-      }
-    ];
+  var meta = document.getElementById('meta');
+  [
+    ['Documents', data.scanned],
+    ['Already correct', data.compliant],
+    ['Traced to an original name', data.traced],
+    ['Folders', data.folders],
+    ['Still pending', data.pending.length]
+  ].forEach(function (m) {
+    var d = el('div');
+    d.appendChild(document.createTextNode(m[0] + ' '));
+    d.appendChild(el('b', '', m[1]));
+    meta.appendChild(d);
+  });
 
-    var actBox = document.getElementById('acts');
-    ACTS.forEach(function (a) {
-      var card = el('div', 'act');
-      var head = el('header');
-      head.appendChild(el('span', 'n', a.n));
-      head.appendChild(el('span', 'title', a.title));
-      head.appendChild(el('span', 'clock', a.clock));
-      card.appendChild(head);
+  var head = document.getElementById('headline');
+  var allDone = data.compliant === data.scanned && data.pending.length === 0;
+  head.appendChild(el('div', 'big', allDone
+    ? 'All ' + data.scanned + ' documents already follow the convention'
+    : data.pending.length + ' of ' + data.scanned + ' documents still to rename'));
+  head.appendChild(el('p', '', allDone
+    ? 'Nothing is outstanding. ' + data.traced + ' of them trace back to the name they arrived under, so every change is reversible.'
+    : 'The review will offer them. ' + data.traced + ' documents already trace back to the name they arrived under.'));
 
-      var body = el('div', 'body');
-      var left = el('div');
-      left.appendChild(el('div', 'lab', 'You do'));
-      var doIt = el('div', 'do');
-      doIt.innerHTML = a.do;
-      left.appendChild(doIt);
-
-      var right = el('div');
-      right.appendChild(el('div', 'lab', 'You say'));
-      right.appendChild(el('div', 'say', a.say));
-
-      body.appendChild(left);
-      body.appendChild(right);
-      card.appendChild(body);
-      actBox.appendChild(card);
-    });
-
-    var planBox = document.getElementById('plan');
-    data.plan.forEach(function (p) {
+  if (!allDone) {
+    document.getElementById('pending-warning').hidden = false;
+    document.getElementById('pending-section').hidden = false;
+    data.pending.forEach(function (p) {
       var tr = el('tr');
       tr.appendChild(el('td', 'was', p.from));
       tr.appendChild(el('td', 'now', p.to));
-      planBox.appendChild(tr);
+      tr.appendChild(el('td', 'why', p.why));
+      put('pending', tr);
     });
+  }
 
-    var reverseBox = document.getElementById('reverse');
-    data.reverse.forEach(function (p) {
-      var tr = el('tr');
-      tr.appendChild(el('td', 'was', p.from));
-      tr.appendChild(el('td', 'now', p.to));
-      reverseBox.appendChild(tr);
-    });
-
-    var moveBox = document.getElementById('moves');
-    if (!data.moves.length) {
-      moveBox.appendChild(el('p', 'lede', 'No move is currently proposed. Skip this act.'));
+  var acts = allDone ? [
+    {
+      n: 1, clock: '2 min', title: 'The result, before the tool',
+      say: 'Your Task Management library has ' + data.scanned + ' documents in it. Every one of them now follows the convention you asked for. Here is what it looked like before.',
+      does: ['Show this page, or the table of what it renamed', 'Name two or three of the worst old names out loud', 'Do not open n8n']
+    },
+    {
+      n: 2, clock: '3 min', title: 'The page he would use',
+      say: 'This is the whole tool. You open it, you press one button, and it tells you what it wants to do. Nothing happens until you tick it.',
+      does: ['Open the page, already signed in', 'Press Look again and talk while it runs', 'Land on: all ' + data.scanned + ' already correct']
+    },
+    {
+      n: 3, clock: '3 min', title: 'The controls',
+      say: 'These are yours. Whether it reads inside documents, whether it touches Power BI files, how many changes it will make in one go.',
+      does: ['Open the settings panel', 'Point at Read the documents and at the change cap', 'Point at Carried out being off, and say why']
+    },
+    {
+      n: 4, clock: '2 min', title: 'Undo, and what next',
+      say: 'Every rename is written down. If you want any of it back, it goes back. What would you like it to watch from here?',
+      does: ['Show the traced list', 'Ask what other libraries look like this one did', 'Stop talking']
     }
+  ] : [
+    {
+      n: 1, clock: '2 min', title: 'The library as it is',
+      say: 'This is your Task Management library. Some of these names tell you nothing about what is inside them.',
+      does: ['Read two or three of the worst names out loud', 'Do not open n8n']
+    },
+    {
+      n: 2, clock: '3 min', title: 'Ask it what it would do',
+      say: 'One button. It reads the library, opens the documents, and comes back with what it would change. It changes nothing yet.',
+      does: ['Press Look again', 'Talk while it runs — about a minute', 'Read the first proposal and its reason']
+    },
+    {
+      n: 3, clock: '3 min', title: 'He chooses',
+      say: 'Nothing happens until you tick it. Tick the ones you agree with and leave the rest.',
+      does: ['Hand him the ticking, or tick as he says', 'Press Carry it out', 'Read what it did back to him']
+    },
+    {
+      n: 4, clock: '2 min', title: 'Undo, and what next',
+      say: 'Every rename is written down. If you want any of it back, it goes back.',
+      does: ['Show the traced list', 'Ask what else looks like this', 'Stop talking']
+    }
+  ];
+
+  var actBox = document.getElementById('acts');
+  acts.forEach(function (a) {
+    var card = el('div', 'act');
+    var h = el('header');
+    h.appendChild(el('span', 'n', a.n));
+    h.appendChild(el('span', 'title', a.title));
+    h.appendChild(el('span', 'clock', a.clock));
+    card.appendChild(h);
+    var body = el('div', 'body');
+    var left = el('div');
+    left.appendChild(el('div', 'lab', 'You do'));
+    var doIt = el('div', 'do');
+    a.does.forEach(function (d) { doIt.appendChild(el('div', '', d)); });
+    left.appendChild(doIt);
+    var right = el('div');
+    right.appendChild(el('div', 'lab', 'You say'));
+    right.appendChild(el('div', 'say', '“' + a.say + '”'));
+    body.appendChild(left);
+    body.appendChild(right);
+    card.appendChild(body);
+    actBox.appendChild(card);
+  });
+
+  if (data.reconstructed > 0) {
+    var rn = document.getElementById('reconstructed-note');
+    rn.hidden = false;
+    rn.appendChild(el('p', '', data.reconstructed + ' of these were worked out after the fact rather than logged when the rename ran, and are marked. '
+      + 'They were applied to the library and not written down at the time; the old name is gone and the new one is present, which is what places them. '
+      + 'The record now reconciles against the library, and a test fails if it stops doing so.'));
+  }
+
+  data.history.forEach(function (h) {
+    var tr = el('tr');
+    tr.appendChild(el('td', 'was', h.original));
+    var now = el('td', 'now');
+    now.appendChild(document.createTextNode(h.current));
+    if (h.reconstructed) {
+      now.appendChild(document.createTextNode(' '));
+      now.appendChild(el('span', 'tag', 'reconstructed'));
+    }
+    tr.appendChild(now);
+    var why = el('td', 'why');
+    if (h.assumptions.length === 0) {
+      why.appendChild(document.createTextNode('—'));
+    } else {
+      h.assumptions.forEach(function (a) { why.appendChild(el('span', 'assume', a)); });
+    }
+    tr.appendChild(why);
+    put('history', tr);
+  });
+
+  var ub = document.getElementById('untouched-box');
+  if (data.untouched.length > 0) {
+    var box = el('div', 'note');
+    box.appendChild(el('p', '', data.untouched.length === 1
+      ? 'One document has no rename history: it arrived already following the convention, so the tool left it alone.'
+      : data.untouched.length + ' documents have no rename history: they arrived already following the convention, so the tool left them alone.'));
+    ub.appendChild(box);
+  }
+
+  var fm = document.getElementById('folders-made');
+  if (data.foldersMade.length > 0) {
+    var list = el('ul');
+    data.foldersMade.forEach(function (f) {
+      var li = el('li');
+      li.appendChild(el('code', '', f));
+      list.appendChild(li);
+    });
+    fm.appendChild(el('p', '', data.foldersMade.length === 1 ? 'It proposed one folder:' : 'It proposed these folders:'));
+    fm.appendChild(list);
+  }
+  if (data.moves.length === 0) {
+    document.getElementById('moves-wrap').hidden = true;
+    if (data.foldersMade.length === 0) document.getElementById('filing-section').hidden = true;
+  } else {
     data.moves.forEach(function (m) {
-      var card = el('div', 'act');
-      var head = el('header');
-      head.appendChild(el('span', 'n', 'MOVE'));
-      head.appendChild(el('span', 'title', m.file));
-      card.appendChild(head);
-      var body = el('div', 'body');
-      var left = el('div');
-      left.appendChild(el('div', 'lab', 'Into'));
-      left.appendChild(el('div', 'do', m.into));
-      var right = el('div');
-      right.appendChild(el('div', 'lab', 'Because'));
-      right.appendChild(el('div', 'say', m.because));
-      body.appendChild(left);
-      body.appendChild(right);
-      card.appendChild(body);
-      moveBox.appendChild(card);
+      var tr = el('tr');
+      tr.appendChild(el('td', 'was', m.file));
+      tr.appendChild(el('td', 'why', m.from));
+      tr.appendChild(el('td', 'now', m.into));
+      put('moves', tr);
     });
-  })();
+  }
+})();
 </script>
+</body>
+</html>

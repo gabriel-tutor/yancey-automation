@@ -34,6 +34,13 @@ for (const applied of JSON.parse(
   known.add(String(applied.from));
   known.add(String(applied.to));
 }
+// The runbook is built from the library as it was measured, so the names it
+// quotes are the ones actually sitting there — which is the point of it.
+for (const doc of JSON.parse(
+  readFileSync(new URL('../fixtures/sharepoint/library-2026-09-04.json', import.meta.url), 'utf8'),
+).documents) {
+  known.add(String(doc.name));
+}
 
 /** A name in the convention's shape, which is what gets quoted in prose. */
 const QUOTED = /[A-Za-z0-9][A-Za-z0-9._-]*_\d{4}-\d{2}-\d{2}_(?:Draft|Review|Final|Archived)_v\d+\.\d+\.[A-Za-z0-9]+/g;
@@ -55,46 +62,64 @@ describe('file names quoted in documents are real', () => {
 
 /**
  * The runbook is read aloud in front of the client, so a name in it that the
- * workflow is not about to produce is worse than a name in a document. It is
- * generated from the pinned plan; this holds it to that.
+ * workflow is not about to produce is worse than a name in a document.
+ *
+ * It used to be generated from the pinned plan and held to that, which was
+ * right while the plan was pending and became wrong the moment it was applied:
+ * on 2026-09-04 the page still promised fifteen renames that had happened the
+ * day before. A plan records what somebody approved and can say nothing about
+ * whether it has happened yet, so the page — and this — now go by the library.
  */
-describe('the demo runbook matches the pinned plan', () => {
+describe('the demo runbook matches the library', () => {
   const html = readFileSync(new URL('../docs/demo-runbook.html', import.meta.url), 'utf8');
   const block = html.match(/<script type="application\/json" id="data">([\s\S]*?)<\/script>/);
   const data = JSON.parse(block?.[1] ?? '{}');
+  const live = new Set(
+    JSON.parse(readFileSync(new URL('../fixtures/sharepoint/library-2026-09-04.json', import.meta.url), 'utf8'))
+      .documents.map((/** @type {any} */ d) => String(d.name)),
+  );
 
-  it('lists exactly the approved renames, in order', () => {
-    expect(data.plan.map((/** @type {any} */ p) => [p.from, p.to])).toEqual(
-      renames.map((/** @type {any} */ p) => [p.from, p.to]),
+  it('calls pending exactly the approved renames the library has not had yet', () => {
+    expect(data.pending.map((/** @type {any} */ p) => p.from)).toEqual(
+      renames.filter((/** @type {any} */ l) => live.has(String(l.from))).map((/** @type {any} */ p) => p.from),
     );
   });
 
-  it('reverses every rename for the undo, and none is a no-op', () => {
-    expect(data.reverse.length).toBe(renames.length);
+  it('reverses every traced rename for the undo, and none is a no-op', () => {
+    expect(data.reverse.length).toBe(data.history.length);
     for (let i = 0; i < data.reverse.length; i += 1) {
-      expect(data.reverse[i].from).toBe(renames[i].to);
-      expect(data.reverse[i].to).toBe(renames[i].from);
+      expect(data.reverse[i].from).toBe(data.history[i].current);
+      expect(data.reverse[i].to).toBe(data.history[i].original);
       expect(data.reverse[i].from).not.toBe(data.reverse[i].to);
     }
   });
 
   /**
-   * A line with only `into` says where a document belongs and nothing about its
-   * name. It is on the page because it is what makes the folder appear on the
-   * day: the model's grouping is not repeatable, and this is.
+   * A folder the model proposed is on the page because it is what makes the
+   * structure appear on the day: the model's grouping is not repeatable, and a
+   * folder that was actually created is.
    */
-  it('lists every filing line, each with a destination and no rename', () => {
-    expect(data.filing.map((/** @type {any} */ p) => p.from)).toEqual(
-      plan.plan.filter((/** @type {any} */ l) => !l.to && l.into).map((/** @type {any} */ p) => p.from),
-    );
-    for (const line of data.filing) {
-      expect(line.into, line.from + ' is filed nowhere').toBeTruthy();
-      expect(line.to).toBeUndefined();
+  it('lists the folders it actually made, by a path inside the library', () => {
+    expect(data.foldersMade.length).toBeGreaterThan(0);
+    for (const folder of data.foldersMade) {
+      expect(String(folder)).not.toContain('/sites/');
+      expect(String(folder).length).toBeGreaterThan(3);
     }
   });
 
-  it('has something to demonstrate at all', () => {
-    expect(data.plan.length, 'nothing held back means the live run shows nothing').toBeGreaterThan(0);
+  /**
+   * The old version of this asserted there was always something left to rename,
+   * which stopped being true and made the failure look like a broken test
+   * rather than a page that had gone out of date. What matters is not that
+   * there is material — it is that the page says which of the two demos it is.
+   */
+  it('says which demo it is, rather than assuming there is material', () => {
+    const nothingLeft = data.pending.length === 0;
+    expect(nothingLeft).toBe(data.compliant === data.scanned);
+    if (nothingLeft) {
+      expect(html, 'with nothing to offer, the page has to say how to create some')
+        .toContain('If you want it to do something live');
+    }
   });
 });
 

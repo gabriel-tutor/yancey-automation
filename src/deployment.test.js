@@ -131,8 +131,34 @@ describe('the deployment map', () => {
   it.each(targets)('%s says what its deployed workflows must be set to', (target) => {
     const settings = deploy.targets[target].workflowSettings;
     expect(settings, target + ' records no workflow settings').toBeDefined();
-    expect(settings.executionTimeout).toBeGreaterThan(0);
-    expect(settings.saveDataErrorExecution).toBe('all');
+    expect(settings.saveDataErrorExecution, 'a failure you did not keep is one you cannot read').toBe('all');
+  });
+
+  /**
+   * A ceiling per unit, because the right one is not a single number: a poller
+   * that runs every minute must not still be running when the next one starts,
+   * and the organiser reads, names and files a whole library. What is always
+   * wrong is no ceiling at all — production's WF-D had none until 2026-09-04.
+   */
+  it.each(targets)('%s gives every workflow it deploys a time limit', (target) => {
+    const limits = deploy.targets[target].workflowSettings.executionTimeout;
+    for (const unit of Object.keys(deploy.targets[target].workflows)) {
+      expect(limits[unit], unit + ' has no time limit recorded').toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * The sandbox exists to be run against the same data with less freedom. A
+   * longer leash there than in production is the sandbox quietly becoming the
+   * more permissive environment, which is the opposite of the point.
+   */
+  it('never gives the sandbox a longer run than production', () => {
+    const prod = deploy.targets.prod.workflowSettings.executionTimeout;
+    const dev = deploy.targets.dev.workflowSettings.executionTimeout;
+    for (const unit of Object.keys(deploy.targets.dev.workflows)) {
+      if (prod[unit] === undefined) continue;
+      expect(dev[unit], unit + ' runs longer in the sandbox than in production').toBeLessThanOrEqual(prod[unit]);
+    }
   });
 
   /**
@@ -145,6 +171,16 @@ describe('the deployment map', () => {
     const settings = deploy.targets[target].workflowSettings;
     expect(settings.errorWorkflow, target + ' names no error workflow').toBeTruthy();
     expect(settings.errorWorkflow).toBe(deploy.targets[target].workflows.wfE);
+  });
+
+  /**
+   * WF-E is the handler, and pointing it at itself is a loop. One exception,
+   * named here rather than remembered, so the rule stays a rule.
+   */
+  it.each(targets)('%s excepts only the error handler itself', (target) => {
+    const settings = deploy.targets[target].workflowSettings;
+    expect(settings.errorWorkflowExcept).toBe('wfE');
+    expect(deploy.targets[target].workflows.wfE, 'the exception names a unit this target does not have').toBeTruthy();
   });
 
   it('writes the conventions down rather than leaving them to memory', () => {

@@ -190,6 +190,28 @@ const SAFETY_NOTE = [
   'anything. The path is a route, not a secret.',
 ].join('\n');
 
+/**
+ * The sandbox says so on its own canvas.
+ *
+ * The dev copies were created with hand-written notes because the generator had
+ * no way to say "this is the sandbox", and a hand-written note is one nobody
+ * rebuilds — this one went on claiming the webhook was unauthenticated for a
+ * day after it was not. Generating it means the next rebuild corrects it.
+ */
+const SANDBOX_NOTE = [
+  '## Sandbox — not the one Yancey runs',
+  '',
+  'This calls the **dev** organiser, whose `canArm` is false: every arming switch',
+  'is forced off, so a run reads the library and refuses to change it. The page',
+  'says so rather than pretending.',
+  '',
+  'It reads the **same library through the same credential** — there is only one,',
+  'and the real edge cases are in the real library. Isolated for deployment, not',
+  'for writes.',
+  '',
+  'Prove it here. Then production.',
+].join('\n');
+
 export async function build() {
   const wfF = (TARGET.workflows && TARGET.workflows.wfF) || '';
   if (!wfF) throw new Error('no WF-F workflow id for target ' + TARGET.name + '; deploy the organiser first');
@@ -313,7 +335,13 @@ const noteSafety = sticky(
   [answer, respond],
   { color: 3, width: 700, height: 420 }
 );
-
+${TARGET.name === 'prod' ? '' : `
+const noteSandbox = sticky(
+  ${S(SANDBOX_NOTE)},
+  [organise],
+  { color: 7, width: 700, height: 320 }
+);
+`}
 export default workflow(${S('upperform-wf-g-selfserve' + (TARGET.name === 'prod' ? '' : '-' + TARGET.name))}, ${S(NAME)})
   .add(hook)
   .to(decide)
@@ -321,6 +349,6 @@ export default workflow(${S('upperform-wf-g-selfserve' + (TARGET.name === 'prod'
   .to(answer)
   .to(respond)
   .add(noteHeader)
-  .add(noteSafety);
+  .add(noteSafety)${TARGET.name === 'prod' ? '' : '\n  .add(noteSandbox)'};
 `;
 }

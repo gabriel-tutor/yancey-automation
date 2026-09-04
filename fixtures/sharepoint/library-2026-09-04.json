@@ -1,0 +1,169 @@
+{
+  "_note": "Measured, not typed. Taken verbatim from the Review The Library output of dev run 11490 on 2026-09-04 via scripts, so the runbook is built from what the library actually holds rather than from a plan somebody believes is still pending.",
+  "capturedOn": "2026-09-04",
+  "run": "11490",
+  "library": "Documents",
+  "site": "/sites/TaskManagement",
+  "folders": [
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/2. In Progress",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/3. Under Review",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/4. Completed Tasks",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 1",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/DIMP Folder",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/PD alignment Excel and Power BI - Karen",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/PD alignment Excel and Power BI - Karen/Performance Management",
+    "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/DIMP Program Materials"
+  ],
+  "documents": [
+    {
+      "name": "Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Channel-Process-Guide_2025-04-07_Draft_v0.1.docx",
+      "compliant": true
+    },
+    {
+      "name": "Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Employee-Time-Log_2025-08-08_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Time-Zone-Reference_2025-04-07_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/TCO_Pilot-Project-Register_2025-04-08_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 1/Project-Management-Dashboard_2025-04-06_Draft_v0.1.png",
+      "compliant": true
+    },
+    {
+      "name": "TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/TCO_Oversight-Dashboard-Data_2025-04-14_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/4. Completed Tasks/TCO_Pilot-Program-Oversight-Dashboard_2025-04-14_Review_v0.1.pbix",
+      "compliant": true
+    },
+    {
+      "name": "Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Enterprise-Performance-Summary_2025-04-14_Draft_v0.1.png",
+      "compliant": true
+    },
+    {
+      "name": "Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Upperform_Metric-Development-Register_2025-04-15_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Sales-Dashboard-Overview_2025-04-06_Draft_v0.1.png",
+      "compliant": true
+    },
+    {
+      "name": "Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Net-Profit-Quarterly-Analysis_2025-04-06_Draft_v0.1.png",
+      "compliant": true
+    },
+    {
+      "name": "Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/Task 2/Units-Sold-Period-Analysis_2025-04-06_Draft_v0.1.png",
+      "compliant": true
+    },
+    {
+      "name": "Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/Metric-Dashboard_2025-06-06_Draft_v0.1.pbix",
+      "compliant": true
+    },
+    {
+      "name": "DIMP_Performance-Measures-Table_2026-09-03_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/DIMP Program Materials/DIMP_Performance-Measures-Table_2026-09-03_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/1. Assigned Tasks/DIMP Folder/DIMP_ASME-B31-8S-Standard_2025-03-19_Draft_v0.1.pdf",
+      "compliant": true
+    },
+    {
+      "name": "DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/DIMP Program Materials/DIMP_Performance-Measures-Data_2025-11-09_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/DIMP Program Materials/DIMP_Performance-Measures-Report_2025-07-14_Draft_v0.1.pbix",
+      "compliant": true
+    },
+    {
+      "name": "DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/DIMP Program Materials/DIMP_Proposed-Performance-Data_2025-08-03_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "NIPSCO_Master-Roster_2026-09-03_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/NIPSCO_Master-Roster_2026-09-03_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/PD alignment Excel and Power BI - Karen/Performance Management/Performance-Management-System-Workbook_2026-07-09_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/PD alignment Excel and Power BI - Karen/Performance Management/Performance-Management-System-Report_2026-07-10_Draft_v0.1.pbix",
+      "compliant": true
+    },
+    {
+      "name": "Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/Electric-Operations-Daily-Dashboard_2026-05-19_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Wiring-Assessment-Tool_2026-01-26_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/DIMP Program Materials/DIMP_Leak-Capacity-Dashboard_2026-05-04_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Damage-Prevention-Action-Tracker_2026-09-03_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/Cleaning-Performance-Gantt_2026-09-03_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Dashboards/Reliability-Preloaded-Workbook_2026-09-03_Final_v1.0.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Reliability-Report-Template_2026-09-04_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Reliability-Report-Template_2026-09-04_Draft_v0.1.xlsx",
+      "compliant": true
+    },
+    {
+      "name": "Reliability-Data-Workbook_2026-09-04_Draft_v0.1.xlsx",
+      "path": "/sites/TaskManagement/Shared Documents/Power BI Task Management/Resources and References/Reliability-Data-Workbook_2026-09-04_Draft_v0.1.xlsx",
+      "compliant": true
+    }
+  ]
+}

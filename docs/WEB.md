@@ -153,7 +153,9 @@ library first.
 | The page's wiring — that every control has a listener, that every element the script reaches for exists | `src/web-page.test.js` |
 | The proxy: the session gate, what it forwards, what it refuses to leak | `src/web-api.test.js` |
 | The session token and cookie | `src/session.test.js` |
-| The deploy gate itself: node diffs, missing settings, the wrong target | `src/verify-deployed.test.js` |
+| The deploy gate itself: node diffs, missing settings, canvas notes, the wrong target | `src/verify-deployed.test.js` |
+| That the undo record reconciles with the library | `src/undo.test.js` |
+| That the demo runbook never promises a rename already applied | `src/demo-runbook.test.js`, read out of the built page |
 | That each target routes failures to its own error handler | `src/deployment.test.js` |
 
 The wiring tests exist because two of the three bugs the page produced were
@@ -207,16 +209,64 @@ that left a line in production's `Read Reports` the repo had never built.
 | --- | --- | --- |
 | `errorWorkflow` | `XSKk6eHTFGqftrUM` (WF-E) | `E302rNL5D7NuBy5c` (WF-E · dev) |
 | `saveDataErrorExecution` | `all` | `all` |
-| `executionTimeout` | 900s | 900s |
+| `executionTimeout` | per unit — 900s for the organiser, 300s for the poller, 120s for a diagnostic | the same, and never longer |
 
-Two things hold them there: `src/deployment.test.js` fails if a target's
-`errorWorkflow` is not that target's own WF-E, and `npm run verify` compares the
-recorded settings against the deployment alongside the node bodies.
+The time limit is per unit because the right ceiling is not one number: a poller
+that runs every minute must not still be running when the next one starts, and
+the organiser reads, names and files a whole library. What is always wrong is no
+ceiling at all.
 
-A sandbox routing its failures to the production handler would write dev noise
-into the client's `agent_error_log` and alert a client about it. The sandbox had
-no error workflow at all until 2026-09-04, so a run that failed there failed
-silently.
+**The error handler is the one exception.** Pointing WF-E at itself is a loop, so
+it is the only workflow that routes nowhere — named in the file as
+`errorWorkflowExcept` rather than remembered.
+
+Three things hold all of this: `src/deployment.test.js` fails if a target's
+`errorWorkflow` is not that target's own WF-E or if a unit has no time limit,
+`src/verify-deployed.test.js` covers the check itself, and `npm run verify`
+compares the recorded settings against the deployment beside the node bodies.
+
+### What the audit of 2026-09-04 found
+
+Every workflow in both targets was read. Three were wrong:
+
+- **WF-D · Read Attachments, in production and active.** No error workflow, no
+  error-execution data, no time limit. It reads Yancey's mail attachments and
+  sends PDFs and images to OpenAI; a failure logged nothing, alerted nobody and
+  left nothing to read afterwards. WF-A, WF-B and WF-C had all three since
+  August — WF-D was added on 2 September and was missed.
+- **Both organiser sandbox copies**, and the dev copy of WF-D: the same three
+  missing. A sandbox failure failed silently.
+- **Both WF-G workflows carried no tags**, so they appeared in no environment
+  filter and no system filter, against the convention that every workflow has
+  exactly one of each.
+
+All fixed. The diagnostics (WF-T, WF-P, WF-S) were given the same settings even
+though n8n only fires an error workflow for production executions and they are
+hand-run — one uniform rule with one exception is easier to keep than several.
+
+## Sticky notes are checked too
+
+They are documentation on the canvas rather than behaviour, which is exactly why
+nothing looked at them. The sandbox's note went on saying the webhook was
+"unguessable but not authenticated" for a day after it was authenticated, and a
+note that lies is worse than no note: it sends the next person to add protection
+that is already there.
+
+They are keyed by their **heading**, because n8n names a sticky node with a
+generated hash that differs between the two deployments, so the node name is no
+key at all. `npm run emit` reads them back out of the SDK source each generator
+builds, so a note written inline at the call is covered like any other.
+
+Checking them found production's canvas describing an older workflow: the header
+note did not mention that reports are opened for their Power Query, the note on
+what stops this going wrong predated `approvedPlan`, the URL-length limit and the
+folder ordering, and the note on the folder structure — the one thing a client
+asked for by name — had never been deployed at all. The sandbox had one
+hand-written note where the build produces five.
+
+A note **on the canvas but not in the build** fails too. The convention here is
+that every workflow is generated, with no exceptions, so a note somebody typed
+into n8n is the same drift as a hand-pasted line in a Code node.
 
 ## Proving the deployment is the repo
 
@@ -276,21 +326,22 @@ the editor. That is the single largest remaining piece of manual handling here.
 
 ### Verified on 2026-09-04
 
-| | Nodes | Settings |
-| --- | --- | --- |
-| WF-F production | 11 of 11 match | match |
-| WF-F sandbox | 11 of 11 match | match |
-| WF-G production | 2 of 2 match | match |
-| WF-G sandbox | 2 of 2 match | match |
+| | Nodes | Canvas notes | Settings |
+| --- | --- | --- | --- |
+| WF-F production | 11 of 11 | 4 of 4 | match |
+| WF-F sandbox | 11 of 11 | 5 of 5 | match |
+| WF-G production | 2 of 2 | 2 of 2 | match |
+| WF-G sandbox | 2 of 2 | 3 of 3 | match |
 
-### What is not byte-checked
+The sandboxes carry one note more than production: a banner saying they are the
+sandbox, which the generator emits for dev only. It used to be hand-written,
+which is why its sibling was the note that went stale.
 
-Sticky-note text. The generator builds it, but n8n names sticky nodes by a
-generated hash that differs between the two deployments, so there is no stable
-key to compare them on. It is documentation on the canvas, and it can go stale:
-the sandbox's note claimed the webhook was "unguessable but not authenticated"
-for a day after it was authenticated. If a note here starts carrying a load-
-bearing claim, give the stickies stable names in the generator first.
+### What is not checked
+
+Node **positions** on the canvas, and the connections between nodes. A node
+moved or rewired by hand would pass. Bodies, notes and settings are what a
+rebuild would overwrite, and they are what this covers.
 
 ## Running it locally
 
