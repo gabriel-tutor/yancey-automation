@@ -3,16 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Upperform Partners AI Email Assistant (Phase 1) \u2014 n8n workflow source of truth",
+  "description": "Upperform Partners AI Email Assistant (Phase 1) — n8n workflow source of truth",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "build": "node scripts/build-workflows.mjs",
     "gate1": "node scripts/golden-set.mjs",
-    "verify": "npm run typecheck && npm run test && npm run build",
+    "verify": "node scripts/verify-deployed.mjs",
     "gate2": "node scripts/gate2.mjs",
-    "gate2:artifact": "node scripts/build-gate2-artifact.mjs"
+    "gate2:artifact": "node scripts/build-gate2-artifact.mjs",
+    "emit": "node scripts/emit-nodes.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

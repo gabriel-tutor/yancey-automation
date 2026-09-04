@@ -143,6 +143,22 @@ Every node body in both production workflows was byte-compared against the build
 before publishing, and every change was proved on the sandbox against this same
 library first.
 
+### What is tested, and where
+
+| | |
+| --- | --- |
+| The naming, placement and apply logic | `src/*.test.js` — the bulk of the suite |
+| Every Code node body, executed | `src/nodes.test.js` |
+| The page's rendering, settings and storage | `src/web-page.test.js`, read out of the shipped `web/index.html` |
+| The page's wiring — that every control has a listener, that every element the script reaches for exists | `src/web-page.test.js` |
+| The proxy: the session gate, what it forwards, what it refuses to leak | `src/web-api.test.js` |
+| The session token and cookie | `src/session.test.js` |
+
+The wiring tests exist because two of the three bugs the page produced were
+invisible to unit tests of the functions involved: the functions were right and
+nothing connected them. Each of those tests has been checked by putting the bug
+back and confirming the test fails.
+
 ## The one step left: Header Auth on the webhook
 
 **This is the last thing standing between production and being properly closed,
@@ -167,6 +183,31 @@ Vercel already sends the header. Only the n8n half is missing:
 
 Until step 2 is done, treat the webhook path as a secret: it is in this
 repository, so anyone with read access to the repo can reach production.
+
+## Proving the deployment is the repo
+
+Deploying through the n8n MCP means reproducing node bodies by hand, so the only
+honest answer to "is the workflow that is running the workflow this repo builds"
+is a byte comparison. It has earned its place: it caught 4.5KB of dead prompt
+riding into the apply node, a stray newline from splicing a node out of two
+pieces, and a line in production's Read Reports the repo had never produced.
+None of those would have failed a behaviour test.
+
+```sh
+# what the build says the nodes should be
+npm run emit wf-f dist/expected.json          # or: TARGET=dev npm run emit ...
+npm run emit wf-g dist/expected-web.json
+
+# what is actually deployed: the n8n MCP's get_workflow_details writes this
+# file when the answer is too large to return inline
+npm run verify -- <deployed.json> dist/expected.json
+```
+
+It exits non-zero on any difference and says which node and which character, so
+it can gate a deploy. Normalisation matters and it does it for you: esbuild
+emits `\uXXXX` escapes where a paste round-trips to the character itself — the
+same string at runtime, different bytes — so both sides are decoded before
+comparing.
 
 ## Running it locally
 

@@ -492,23 +492,33 @@ describe('applying a plan that was actually approved', () => {
   });
 
   /**
-   * The state after a plan has been applied. The renamed file comes back round
-   * as a fresh proposal, that proposal is dropped because it is not on the
-   * list, and the file must then read as already correct rather than blocked.
+   * The state after a plan has been applied: the renamed file comes back round
+   * on the next run, and must read as already correct rather than as a problem.
+   *
+   * It used to get there the long way. The model was shown the file, proposed
+   * something else for it, and the proposal was then dropped for not being on
+   * the list. Now it never gets a proposal at all — a document that satisfies
+   * the convention is not a naming candidate — so the file is correct from the
+   * first pass rather than corrected on the second. Both halves are asserted
+   * because the second is the one somebody sees.
    */
   it('reports an already-applied file as correct, not as a problem', () => {
     const done = [{ name: 'SCE_Plan_2026-04-15_Draft_v0.1.docx', path: ROOT + '/Task 2/SCE_Plan_2026-04-15_Draft_v0.1.docx', modified: '2026-04-15T10:00:00Z' }];
     const rows = planRenames(done, {});
+    expect(rows[0]?.compliant, 'the fixture is a correctly named file').toBe(true);
+
     applyProposals(
       rows,
       [{ file: done[0]?.name, project: 'SCE', document: 'Something-Else-Today', status: 'Draft', date: '2026-04-15', version: 'v0.1', category: '', why: '' }],
       { files: done, reports: [] },
     );
-    expect(rows[0]?.proposed).toBeTruthy();
+    expect(rows[0]?.proposed, 'a correct name is not re-proposed').toBe('');
+    expect(rows[0]?.compliant).toBe(true);
+
     applyApprovedPlan(rows, [{ from: 'Some Other File.xlsx', to: 'SCE_Other_2026-04-15_Draft_v0.1.xlsx' }], { reports: [] });
     expect(rows[0]?.proposed).toBe('');
     expect(rows[0]?.compliant).toBe(true);
-    expect(rows[0]?.blocked).toBe('');
+    expect(rows[0]?.blocked, 'a file nothing needs doing to is not blocked').toBe('');
   });
 
   it('applies a line whose capitalisation differs from the library', () => {

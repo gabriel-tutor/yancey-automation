@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { approvedFrom, mergeOverrides, outcomeHtml, reviewFields } from './selfserve.js';
+import { approvedFrom, mergeOverrides, offeredChanges } from './selfserve.js';
 
 /**
  * The front end is the first part of this that a person who cannot read the
@@ -207,13 +207,13 @@ const RUN = {
 
 describe('a run turned into things to tick', () => {
   it('offers folders before the documents that go in them', () => {
-    const { offered } = reviewFields(RUN);
+    const offered = offeredChanges(RUN);
     expect(must(offered[0]).kind).toBe('folder');
     expect(must(offered[1]).kind).toBe('folderRename');
   });
 
   it('makes one tick out of a document that is renamed and filed', () => {
-    const { offered } = reviewFields(RUN);
+    const offered = offeredChanges(RUN);
     const both = offered.filter((o) => o.kind === 'rename+move');
     expect(both).toHaveLength(1);
     expect(must(both[0]).from).toBe(LIB + '/DIMP_Dashboard.xlsx');
@@ -223,7 +223,7 @@ describe('a run turned into things to tick', () => {
   });
 
   it('offers a filing with no rename on its own', () => {
-    const { offered } = reviewFields(RUN);
+    const offered = offeredChanges(RUN);
     const move = must(offered.find((o) => o.kind === 'move'));
     expect(move.from).toBe(LIB + '/Loose.pdf');
   });
@@ -238,100 +238,22 @@ describe('a run turned into things to tick', () => {
         { file: LIB + '/b/Report.xlsx', becomes: 'X.xlsx' },
       ],
     };
-    const { offered } = reviewFields(twins);
+    const offered = offeredChanges(twins);
     expect(must(offered[0]).label).not.toBe(must(offered[1]).label);
     expect(new Set(offered.map((o) => o.label)).size).toBe(2);
   });
 
   it('shows paths without the part every path shares', () => {
-    const { offered } = reviewFields(RUN);
+    const offered = offeredChanges(RUN);
     const move = must(offered.find((o) => o.kind === 'move'));
     expect(move.label).toContain('Loose.pdf');
     expect(move.label).not.toContain('/sites/TaskManagement');
   });
 
-  it('puts a checkbox on the page with one option per change', () => {
-    const { fields, offered } = reviewFields(RUN);
-    const box = must(fields.find((f) => f.fieldType === 'checkbox'));
-    expect(box.fieldOptions.values).toHaveLength(offered.length);
-    expect(box.requiredField).toBe(false);
-  });
-
-  it('offers nothing to tick when there is nothing to do', () => {
-    const { fields, nothing } = reviewFields({ library: LIB, scanned: 27, compliant: 27 });
-    expect(nothing).toBe(true);
-    expect(fields.some((f) => f.fieldType === 'checkbox')).toBe(false);
-  });
-
-  it('says out loud when the run did not see the whole library', () => {
-    const { fields } = reviewFields(Object.assign({}, RUN, { truncated: true, pages: 12 }));
-    expect(must(fields[0]).html).toContain('did not see the whole library');
-  });
-
-  it('says when more documents could be renamed than were looked at', () => {
-    const { fields } = reviewFields(Object.assign({}, RUN, { beyondModel: 8 }));
-    expect(must(fields[0]).html).toContain('8 more document');
-  });
-
-  it('says when nothing inside a document was read', () => {
-    const { fields } = reviewFields(Object.assign({}, RUN, { readContents: false }));
-    expect(must(fields[0]).html).toContain('nothing inside a document was read');
-  });
-
-  it('shows what was left alone and why', () => {
-    const { fields } = reviewFields(RUN);
-    expect(must(fields[0]).html).toContain('weird~name.xlsx');
-    expect(must(fields[0]).html).toContain('SharePoint will not take');
-  });
-
-  it('says one reason once, however many things it applies to', () => {
-    // The first live run put the same sentence on the page eight times.
-    const stage = 'it sits inside a numbered stage folder';
-    const { fields } = reviewFields(Object.assign({}, RUN, {
-      folderRefusals: [
-        { name: 'Dashboards', because: stage },
-        { name: 'TCO Program Materials', because: stage },
-        { name: 'Task 1', because: stage },
-        { name: 'Lonely', because: 'only one document was put in it' },
-      ],
-    }));
-    const html = must(fields[0]).html;
-    expect(html.split(stage)).toHaveLength(2);
-    expect(html).toContain('Dashboards, TCO Program Materials, Task 1');
-    expect(html).toContain('only one document was put in it');
-  });
-
-  it('names the same folder once even when it is refused twice', () => {
-    const stage = 'inside a numbered stage folder';
-    const { fields } = reviewFields(Object.assign({}, RUN, {
-      folderRefusals: [
-        { name: 'Dashboards', because: stage },
-        { name: 'Dashboards', because: stage },
-      ],
-    }));
-    expect(must(fields[0]).html.split('Dashboards')).toHaveLength(2);
-  });
-
-  it('leads with nothing needing changing when the library is already tidy', () => {
-    const { fields, nothing } = reviewFields({ library: 'Documents', scanned: 27, compliant: 27 });
-    expect(nothing).toBe(true);
-    const html = must(fields[0]).html;
-    expect(html).toContain('Nothing needs changing');
-    expect(html).toContain('27 documents in the Documents library');
-    expect(html).not.toContain('proposed');
-  });
-
-  it('escapes a file name that would otherwise be markup', () => {
-    const { fields } = reviewFields(Object.assign({}, RUN, {
-      refused: [{ file: '<img src=x onerror=alert(1)>', because: 'no' }],
-    }));
-    expect(must(fields[0]).html).not.toContain('<img');
-    expect(must(fields[0]).html).toContain('&lt;img');
-  });
 });
 
 describe('ticks turned back into a plan', () => {
-  const { offered } = reviewFields(RUN);
+  const offered = offeredChanges(RUN);
   /** @param {string} kind */
   const label = (kind) => must(offered.find((o) => o.kind === kind)).label;
 
@@ -362,7 +284,7 @@ describe('ticks turned back into a plan', () => {
   });
 
   it('does not create a folder for a filing into one that is already there', () => {
-    const settled = reviewFields(Object.assign({}, RUN, { newFolders: [] }));
+    const settled = { offered: offeredChanges(Object.assign({}, RUN, { newFolders: [] })) };
     const move = must(settled.offered.find((o) => o.kind === 'move'));
     const { overrides } = approvedFrom([move.label], settled.offered);
     expect(overrides.applyMoves).toBe(true);
@@ -424,57 +346,5 @@ describe('ticks turned back into a plan', () => {
     expect(config.approvedPlan).toHaveLength(3);
     expect(config.applyRenames).toBe(true);
     expect(config.applyMoves).toBe(true);
-  });
-});
-
-describe('the page at the end', () => {
-  it('puts failures before successes', () => {
-    const html = outcomeHtml({
-      applied: [{ what: 'renamed a.xlsx' }],
-      failed: [{ what: 'b.xlsx', because: 'locked by another user' }],
-    });
-    expect(html.indexOf('could not be carried out')).toBeLessThan(html.indexOf('carried out.'));
-    expect(html).toContain('locked by another user');
-  });
-
-  it('says plainly when nothing was ticked out of changes that were offered', () => {
-    const html = outcomeHtml({ applied: [], failed: [] }, { chosen: [], proposed: 3 });
-    expect(html).toContain('Nothing was ticked');
-  });
-
-  it('says nothing needed changing when nothing was ever offered', () => {
-    // Not the same as ticking nothing, and the difference is the whole message:
-    // one is a shrug, the other is the library being in good order.
-    const html = outcomeHtml({ scanned: 27, compliant: 27, library: 'Documents', applied: [], failed: [] }, { chosen: [], proposed: 0 });
-    expect(html).toContain('Nothing needs changing');
-    expect(html).toContain('27 documents');
-    expect(html).not.toContain('Nothing was ticked');
-  });
-
-  it('still reports what a tidy run refused to do', () => {
-    const html = outcomeHtml(
-      { scanned: 27, compliant: 27, applied: [], failed: [], folderRefusals: [{ name: 'Dashboards', because: 'it is a numbered stage folder' }] },
-      { chosen: [], proposed: 0 }
-    );
-    expect(html).toContain('Dashboards');
-    expect(html).toContain('numbered stage folder');
-  });
-
-  it('says that running again finishes what did not fit', () => {
-    const html = outcomeHtml({ applied: [{ what: 'x' }], failed: [], heldBack: [{ what: 'y' }] });
-    expect(html).toContain('Run it again');
-  });
-
-  it('repeats what the deployment refused to do', () => {
-    const html = outcomeHtml({ applied: [], failed: [] }, {
-      proposed: 1,
-      refused: ['applyRenames was asked for, but this copy is not allowed to change the library'],
-    });
-    expect(html).toContain('not allowed to change the library');
-  });
-
-  it('escapes what it reports', () => {
-    const html = outcomeHtml({ applied: [], failed: [{ what: '<b>x</b>', because: 'no' }] });
-    expect(html).not.toContain('<b>x</b>');
   });
 });
