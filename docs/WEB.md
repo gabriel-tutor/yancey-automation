@@ -119,28 +119,54 @@ repo:
 
 | Name | Value |
 | --- | --- |
-| `N8N_ORGANISE_URL` | `https://n8n-wevu.srv1921545.hstgr.cloud/webhook/<path>` — the WF-G webhook's production URL |
+| `N8N_ORGANISE_URL` | `https://n8n-wevu.srv1921545.hstgr.cloud/webhook/organise-documents-a7f3c19e4b2d` — production. The dev copy is the same path with `-dev`. |
 | `N8N_ORGANISE_SECRET` | Optional today. See hardening below. |
 | `ORGANISE_PASSCODE` | The passcode Yancey types. Required — without it nobody can sign in. |
 | `SESSION_SECRET` | Signs the session cookie. Rotate it to end every session at once. |
 
-The dev sandbox has its own path (`…-dev`) and its own Vercel deployment if you
-want one. Its `canArm` is false, so it will read the library and refuse to change
-it — and the page says so rather than pretending.
+The dev sandbox has its own path (`…-dev`). Its `canArm` is false, so it will
+read the library and refuse to change it — and the page says so rather than
+pretending. To point the page at the sandbox instead, swap `N8N_ORGANISE_URL`
+for the `-dev` path and redeploy; nothing else changes.
 
-## Hardening: add Header Auth (two minutes, worth doing)
+## What production means here
 
-Today the webhook is protected by an unguessable path and by never being shown
-to a browser. That is a first line, not the last one. To close it properly:
+| | |
+| --- | --- |
+| Page | https://yancey-document-organiser.vercel.app |
+| Endpoint | WF-G `IoEjcbqG0OBu6yc6`, published |
+| Organiser | WF-F `CC8jik1RGti4JXZk`, published, `canArm: true` |
+| Failures | routed to WF-E, logged to `agent_error_log` and alerted |
+| Sandbox | WF-G `spVTAZQWeL9PONgW` → WF-F `6r1FMIaY7nZBnGWl`, `canArm: false` |
 
-1. In n8n: **Credentials → New → Header Auth**. Name it `Organise webhook key`.
-   Header name `X-Organise-Key`, value a long random string.
-2. Open **WF-G → the `Asked` node** → Authentication → **Header Auth** → pick
-   that credential. Save and publish.
-3. In Vercel: set `N8N_ORGANISE_SECRET` to the same random string. Redeploy.
+Every node body in both production workflows was byte-compared against the build
+before publishing, and every change was proved on the sandbox against this same
+library first.
 
-The proxy already sends the header when the variable is set, so step 3 is the
-only change on this side.
+## The one step left: Header Auth on the webhook
+
+**This is the last thing standing between production and being properly closed,
+and it needs two minutes in the n8n UI that no API can do for you.**
+
+Today the webhook is guarded by an unguessable path and by never being shown to
+a browser. That was proportionate for a sandbox. It is thinner in production for
+two reasons: the path is committed to this repo, and production's `canArm` is
+true, so anyone who reached the webhook with a well-formed payload could rename
+a client's documents.
+
+Vercel already sends the header. Only the n8n half is missing:
+
+1. **Credentials → New → Header Auth.** Name it `Organise webhook key`.
+   - Header name: `X-Organise-Key`
+   - Value: the key printed when `N8N_ORGANISE_SECRET` was set. Read it back with
+     `cd web && vercel env pull` if you no longer have it.
+2. **WF-G → the `Asked` node → Authentication → Header Auth**, pick that
+   credential, save, publish.
+3. Nothing to do on the Vercel side — `web/api/organise.js` sends the header
+   whenever `N8N_ORGANISE_SECRET` is set, which it is.
+
+Until step 2 is done, treat the webhook path as a secret: it is in this
+repository, so anyone with read access to the repo can reach production.
 
 ## Running it locally
 
