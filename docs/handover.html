@@ -1,0 +1,267 @@
+<title>Organiser Handover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;600;700;800&family=Poppins:wght@300;400;500;600&display=swap">
+<style>
+  :root {
+    --navy:#1e1e3d; --ink:#4a4a5c; --faint:#74748a;
+    --paper:#fbfbfd; --card:#ffffff; --alt:#f4f5f9;
+    --rule:#e3e4ec; --rule-soft:#eeeff4;
+    --accent:#086bb5; --accent-lite:#2aa7df; --accent-wash:#eaf3fb;
+    --good:#1a6b46; --good-wash:#e8f4ee;
+    --care:#8a5a12; --care-wash:#fbf2e3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --navy:#eceef6; --ink:#b6b9cb; --faint:#8b8fa5;
+      --paper:#14141f; --card:#1c1c2a; --alt:#232333;
+      --rule:#33334a; --rule-soft:#2a2a3d;
+      --accent:#58b0ee; --accent-lite:#2aa7df; --accent-wash:#16283a;
+      --good:#63c497; --good-wash:#162c22;
+      --care:#d9a95c; --care-wash:#2e2517;
+    }
+  }
+  :root[data-theme="dark"] {
+    --navy:#eceef6; --ink:#b6b9cb; --faint:#8b8fa5;
+    --paper:#14141f; --card:#1c1c2a; --alt:#232333;
+    --rule:#33334a; --rule-soft:#2a2a3d;
+    --accent:#58b0ee; --accent-lite:#2aa7df; --accent-wash:#16283a;
+    --good:#63c497; --good-wash:#162c22;
+    --care:#d9a95c; --care-wash:#2e2517;
+  }
+
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:Poppins, ui-sans-serif, system-ui, sans-serif;
+    font-size:15.5px; font-weight:300; line-height:1.66;
+    -webkit-font-smoothing:antialiased;
+  }
+  .shell { max-width:1000px; margin:0 auto; padding:44px 24px 90px; }
+  h1,h2,h3 { font-family:"Libre Franklin", ui-sans-serif, system-ui, sans-serif; color:var(--navy); text-wrap:balance; }
+  h1 { font-size:clamp(30px,4.6vw,46px); font-weight:800; letter-spacing:-.022em; line-height:1.08; margin:10px 0 14px; }
+  h2 { font-size:13px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--accent); margin:0 0 16px; }
+  h3 { font-size:18px; font-weight:700; letter-spacing:-.01em; margin:0 0 7px; }
+  p { margin:0 0 13px; max-width:66ch; }
+  strong { font-weight:600; color:var(--navy); }
+  a { color:var(--accent); }
+  code { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.84em;
+    background:var(--alt); color:var(--navy); padding:1.5px 5px; border-radius:3px;
+    border:1px solid var(--rule-soft); word-break:break-word; }
+  .eyebrow { font-family:"Libre Franklin",sans-serif; font-size:11px; font-weight:700;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--accent); }
+  header.top { border-bottom:3px solid var(--navy); padding-bottom:24px; }
+  .stand { font-size:18.5px; color:var(--ink); max-width:60ch; margin:0; line-height:1.55; }
+  section { margin-top:48px; }
+  .lede { margin-bottom:20px; }
+
+  /* the figures are the point of this page, so they lead */
+  .figures { display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:1px;
+    background:var(--rule); border:1px solid var(--rule); border-radius:5px; overflow:hidden; margin:28px 0 0; }
+  .fig { background:var(--card); padding:18px 20px; }
+  .fig .n { font-family:"Libre Franklin",sans-serif; font-size:30px; font-weight:800;
+    color:var(--navy); line-height:1.1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .fig .n.ok { color:var(--good); }
+  .fig .k { font-family:"Libre Franklin",sans-serif; font-size:10.5px; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-top:6px; }
+
+  .steps { counter-reset:s; display:flex; flex-direction:column; gap:16px; }
+  .step { counter-increment:s; display:grid; grid-template-columns:32px 1fr; gap:16px; align-items:start; }
+  .step::before { content:counter(s); font-family:"Libre Franklin",sans-serif; font-size:12px; font-weight:800;
+    width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff;
+    display:flex; align-items:center; justify-content:center; margin-top:2px; }
+  .step p { margin:0; font-size:14.5px; }
+
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--rule); border-radius:5px; padding:18px 20px; }
+  .card p:last-child { margin-bottom:0; }
+  .card p { font-size:14.5px; }
+
+  .wrap { overflow-x:auto; border:1px solid var(--rule); border-radius:5px; background:var(--card); }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; min-width:520px; }
+  th { text-align:left; font-family:"Libre Franklin",sans-serif; font-size:10px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--faint); padding:10px 14px; background:var(--alt);
+    border-bottom:1px solid var(--rule); font-weight:700; white-space:nowrap; }
+  td { padding:10px 14px; border-bottom:1px solid var(--rule-soft); vertical-align:top; }
+  tr:last-child td { border-bottom:0; }
+  td.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:var(--faint); }
+  .tick { color:var(--good); font-weight:600; white-space:nowrap; }
+
+  .note { background:var(--accent-wash); border-left:3px solid var(--accent); padding:14px 16px;
+    border-radius:0 4px 4px 0; margin:16px 0; }
+  .care-box { background:var(--care-wash); border-left:3px solid var(--care); padding:14px 16px;
+    border-radius:0 4px 4px 0; margin:16px 0; }
+  .note p:last-child, .care-box p:last-child { margin-bottom:0; }
+
+  ul { margin:0 0 13px; padding-left:20px; max-width:66ch; }
+  li { margin-bottom:8px; font-size:14.5px; }
+
+  footer { margin-top:56px; padding-top:18px; border-top:1px solid var(--rule);
+    font-size:12.5px; color:var(--faint); }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+
+<div class="shell">
+
+  <header class="top">
+    <div class="eyebrow">Upperform Partners &middot; document organiser &middot; handover</div>
+    <h1>Organiser Handover</h1>
+    <p class="stand">
+      A page Yancey opens, presses one button on, reads, and ticks. Everything below
+      was measured rather than assumed &mdash; the numbers come from live runs and a
+      byte comparison against the code that built them.
+    </p>
+    <div class="figures">
+      <div class="fig"><div class="n ok">32/32</div><div class="k">documents compliant</div></div>
+      <div class="fig"><div class="n">29</div><div class="k">renames traceable back</div></div>
+      <div class="fig"><div class="n ok">0</div><div class="k">gaps in the record</div></div>
+      <div class="fig"><div class="n">1199</div><div class="k">tests passing</div></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>What Yancey does</h2>
+    <div class="steps">
+      <div class="step"><p><strong>Opens the page</strong> at
+        <a href="https://yancey-document-organiser.vercel.app">yancey-document-organiser.vercel.app</a>
+        and types the passcode. It lasts twelve hours. No n8n, no install, works on a phone.</p></div>
+      <div class="step"><p><strong>Presses Look again.</strong> About a minute. It reads the library,
+        opens the documents, and comes back with what it would change &mdash; and what it refuses to
+        touch, with the reason.</p></div>
+      <div class="step"><p><strong>Ticks what he agrees with</strong> and presses Carry it out.
+        Nothing at all happens until he does. What he ticked is what gets applied, not what the
+        model thinks a second time.</p></div>
+    </div>
+    <div class="note">
+      <p><strong>To point it at a different library</strong>, paste the SharePoint address straight
+      from the browser bar into <em>Which library to look at</em> &mdash; the whole URL, exactly as
+      it appears. The site and the library are read out of it, shown in the boxes, and used on the
+      next <em>Look again</em>.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What it will not do</h2>
+    <p class="lede">Each of these is a property of the code, not an instruction the model is asked to follow.</p>
+    <div class="grid2">
+      <div class="card">
+        <h3>Change anything unasked</h3>
+        <p>Every arming switch ships off. They are turned on by ticking a change and nothing else &mdash;
+        a setting cannot arm a run.</p>
+      </div>
+      <div class="card">
+        <h3>Overwrite or collide</h3>
+        <p>The call uses <code>flags=0</code>, so anything already on the new path fails rather than
+        being destroyed. Two files that would land on one name are both refused.</p>
+      </div>
+      <div class="card">
+        <h3>Touch Power BI by default</h3>
+        <p>It opens each <code>.pbix</code> and reads the Power Query inside to find which workbooks
+        the report actually reads, then refuses those and quotes the query. One switch covers
+        renaming <em>and</em> filing them.</p>
+      </div>
+      <div class="card">
+        <h3>Guess about stage folders</h3>
+        <p>Nothing moves into or out of a numbered folder under any setting. Those record how far
+        work has got, and no file knows that.</p>
+      </div>
+      <div class="card">
+        <h3>Invent</h3>
+        <p>An invented project code is worse than none. Status defaults to Draft, the weakest claim,
+        and every assumption is printed beside the change.</p>
+      </div>
+      <div class="card">
+        <h3>Leave the tenant</h3>
+        <p>The host is fixed. Word, PowerPoint and Excel are opened on the server and only their
+        text is sent; one setting turns reading off entirely.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Can you undo it?</h2>
+    <p>
+      Yes, and that is checkable rather than promised. <strong>All 29 documents the tool renamed
+      trace back to the name they arrived under</strong>, in
+      <code>fixtures/sharepoint/renames-applied.json</code>. A test reconciles that record against a
+      measured listing of the library and fails on any chain that does not end where the file
+      actually is.
+    </p>
+    <p>
+      Seven entries are marked <em>reconstructed</em>: they were applied and not written down at the
+      time, and were worked out afterwards from the approved plan and the library. They carry their
+      evidence, because an inferred line and a logged one are not the same thing and a reader
+      deserves to know which they are looking at.
+    </p>
+  </section>
+
+  <section>
+    <h2>What is deployed, and how that is known</h2>
+    <p class="lede">
+      Deploying through the n8n MCP means reproducing node bodies by hand, so the only honest answer
+      to <em>is the workflow that is running the workflow this repo builds</em> is a byte comparison.
+      It has earned its place repeatedly.
+    </p>
+    <div class="wrap">
+      <table>
+        <thead><tr><th>What</th><th>Where</th><th>Checked</th></tr></thead>
+        <tbody>
+          <tr><td>The page</td><td class="mono">yancey-document-organiser.vercel.app</td><td class="tick">byte-identical to the repo</td></tr>
+          <tr><td>Organiser</td><td class="mono">WF-F &middot; CC8jik1RGti4JXZk</td><td class="tick">nodes, notes, settings</td></tr>
+          <tr><td>Organiser sandbox</td><td class="mono">WF-F &middot; 6r1FMIaY7nZBnGWl</td><td class="tick">nodes, notes, settings</td></tr>
+          <tr><td>Web endpoint</td><td class="mono">WF-G &middot; IoEjcbqG0OBu6yc6</td><td class="tick">nodes, notes, settings</td></tr>
+          <tr><td>Web endpoint sandbox</td><td class="mono">WF-G &middot; spVTAZQWeL9PONgW</td><td class="tick">nodes, notes, settings</td></tr>
+          <tr><td>Drafting sandbox</td><td class="mono">WF-B &middot; Ps0RYrfT3auUNwKw</td><td class="tick">nodes, notes, settings</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:16px">
+      Both webhooks answer <code>403</code> without the header key; the page's own endpoint answers
+      <code>401</code> without a session. The sandbox reads the same library through the same
+      credential and <strong>cannot write to it</strong> &mdash; every arming switch is forced off there
+      regardless of what a caller asks.
+    </p>
+  </section>
+
+  <section>
+    <h2>Running it after today</h2>
+    <ul>
+      <li><strong>Change a setting Yancey can reach</strong> &mdash; the page. Reports in scope, reading
+        documents, the change cap, folder limits, status when unstated, which library. All persist.</li>
+      <li><strong>Change a rule</strong> &mdash; edit <code>src/</code>, run <code>npm test</code>,
+        <code>npm run emit</code>, deploy to the sandbox, prove it there, then production.
+        <code>npm run verify</code> gates it.</li>
+      <li><strong>Check a deployment against the repo</strong> &mdash; <code>npm run emit</code> then
+        <code>npm run verify</code>. Works for all ten workflows. It says when a difference is only
+        the generated formatting, so red that matters is distinguishable from red that does not.</li>
+      <li><strong>If a run seems stuck</strong> &mdash; it takes about a minute, and the workflow does
+        not stop because the page stopped listening. Wait, then press <em>Look again</em>. Do not
+        press it twice.</li>
+      <li><strong>If something fails</strong> &mdash; it is logged, alerted, and the sandbox's failures
+        go to the sandbox's handler, never the client's error log.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Worth doing next</h2>
+    <div class="care-box">
+      <p><strong>An n8n API key.</strong> The single largest piece of manual handling left. Without
+      one, deploying means reproducing node bodies by hand and then byte-checking the paste; with
+      one, the repo could push and verify on its own. Two minutes in the n8n UI.</p>
+    </div>
+    <p>
+      Two smaller things, both decisions rather than defects. <strong>Removing <code>Mail.Send</code></strong>
+      from the Entra app would turn the email agent's no-send property from <em>verified</em> into
+      <em>enforced</em> &mdash; nothing reaches it today, but Microsoft would still accept one.
+      And <strong>whether moving a Power BI report deserves its own switch</strong>, separate from
+      renaming one: the code treats them as a single decision on purpose, because both change the
+      path, and that is defensible &mdash; but it is Yancey's call, not a reading of a note.
+    </p>
+  </section>
+
+  <footer>
+    Prepared by Gabriel O. Tutor &middot; state measured 4&ndash;5 September 2026.
+    Every figure on this page comes from a live run or a byte comparison; nothing is estimated.
+  </footer>
+
+</div>
