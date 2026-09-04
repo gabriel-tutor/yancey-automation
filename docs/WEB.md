@@ -433,6 +433,37 @@ outright if the file is a sandbox workflow being checked against production's
 settings, or the reverse — that difference is a mistake in the command, not in
 the deployment, and reporting it as drift would train people to ignore it.
 
+### Every workflow, not just these two
+
+`npm run emit` reads node bodies out of whatever SDK source a generator builds,
+so all ten workflows are covered rather than the two whose constants were listed
+by hand. The two that can be checked both ways are checked both ways on every
+emit, and the emitter fails if reading the source ever disagrees with naming the
+constants directly.
+
+That paid for itself immediately. **WF-B's sandbox was running August's logic**
+— it had never received production's 2 September fix, the one that stops the
+model's refusal ("No draft — flag for Yancey.") being repaired into a draft
+signed as Yancey. Nothing could have noticed, because nothing could check it.
+
+### Cosmetic drift is named as cosmetic
+
+A difference is still a difference and still fails. But *differs* is not one
+fact: a node can be behind because somebody hand-edited it, or because the
+bundler learned to wrap long arrays across lines since it was deployed. An
+operator who cannot tell those apart at a glance learns to ignore the check,
+which is the same as not having it.
+
+So the answer says which, and the summary counts them separately. Only the
+generated banner comment and pure whitespace are discounted — anything a person
+wrote still counts.
+
+Checked across the instance on 4 September: the email-agent workflows differ
+from the current build in generated formatting and comments, with one node
+(`WF-A · Prepare Email`) carrying an older copy of a shared helper whose output
+is rebuilt downstream by `Attach Findings` before the classifier sees it. Traced
+node by node; production behaves correctly.
+
 ### Getting the deployed file
 
 The n8n MCP writes `get_workflow_details` to a file when the answer is large and

@@ -112,6 +112,13 @@ return [{
 
 export const NAME = 'WF-T · Preflight (scope proof)' + SUFFIX;
 
+/**
+ * One Graph call on the preflight canvas.
+ *
+ * @param {string} varName @param {string} label @param {string} method
+ * @param {string} urlSuffix @param {string} position the canvas coordinates, as they appear
+ * in the generated source @param {string} [jsonBody]
+ */
 function graphNode(varName, label, method, urlSuffix, position, jsonBody) {
   return `
 const ${varName} = node({

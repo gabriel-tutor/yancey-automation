@@ -40,6 +40,30 @@ import { TARGET } from '../workflows/shared.mjs';
 const decodeEscapes = (value) =>
   String(value).replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 
+/**
+ * Would this difference survive losing the generated comment and the layout?
+ *
+ * The byte check earns its keep by being exact, and nothing here softens it: a
+ * difference is still a difference and still fails. But "differs" is not one
+ * fact. A deployment can be behind because somebody hand-edited a node, or
+ * because the bundler learned to wrap long arrays across lines since it was
+ * deployed - and an operator who cannot tell those apart at a glance learns to
+ * ignore the check, which is the same as not having it.
+ *
+ * So the answer says which. Only the banner the bundler writes at the top and
+ * pure whitespace are discounted; anything a person wrote still counts.
+ *
+ * @param {string} a @param {string} b
+ */
+function onlyFormatting(a, b) {
+  const bare = (/** @type {string} */ text) =>
+    String(text)
+      .replace(/^\/\/ ---- shared helpers \(generated from [^)]*\) ----/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  return bare(a) === bare(b);
+}
+
 const [deployedPath, expectedPath] = process.argv.slice(2);
 if (!deployedPath || !expectedPath) {
   console.error('usage: node scripts/verify-deployed.mjs <deployed.json> <expected.json>');
@@ -74,6 +98,9 @@ for (const node of workflow.nodes || []) {
 }
 
 let wrong = 0;
+/** Differences that survive nothing but a reformat. Counted so the summary can
+ * say how much of the red is worth acting on. */
+let cosmeticOnly = 0;
 for (const [name, want] of Object.entries(expected)) {
   if (!(name in deployed)) {
     console.log('MISSING  ' + name + '  — the deployed workflow has no such node');
@@ -88,7 +115,11 @@ for (const [name, want] of Object.entries(expected)) {
   }
 
   wrong += 1;
-  console.log('DIFFER   ' + name.padEnd(22) + 'deployed=' + there.length + ' built=' + here.length);
+  const cosmetic = onlyFormatting(there, here);
+  if (cosmetic) cosmeticOnly += 1;
+  console.log('DIFFER   ' + name.padEnd(22) + 'deployed=' + there.length + ' built=' + here.length +
+    (cosmetic ? '   (same code — only the generated comment and layout differ)' : ''));
+  if (cosmetic) continue;
   // Say WHERE, because "these 45KB differ" is not a finding anybody can act on.
   const shortest = Math.min(there.length, here.length);
   let at = shortest;
@@ -198,5 +229,9 @@ console.log(workflow.name + '  ·  ' + (workflow.nodeCount || (workflow.nodes ||
   (workflow.active ? 'published' : 'NOT published') + '  ·  checked against ' + TARGET.name);
 console.log(wrong === 0
   ? 'every node and setting matches what the repo requires'
-  : wrong + ' difference(s) from what the repo requires');
+  : wrong + ' difference(s) from what the repo requires' +
+    (cosmeticOnly > 0
+      ? ' — ' + cosmeticOnly + ' of them the same code under different generated formatting, ' +
+        (wrong - cosmeticOnly) + ' real'
+      : ''));
 process.exit(wrong === 0 ? 0 : 1);
